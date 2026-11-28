@@ -107,6 +107,17 @@ class CliFinalPreparationTest < Minitest::Test
     end
   end
 
+  def test_message_publication_lists_pr_numbers_to_check
+    with_fixture do |root, ref, bin|
+      write_comments(bin, HEAD)
+      File.write(File.join(bin, 'message'), JSON.generate('title' => 'Fix', 'body' => 'Ends #1242.'))
+      output, error, status = run_command(root, ref, bin, 'squash-message')
+
+      assert_predicate status, :success?, error
+      assert_equal ['#1242'], JSON.parse(output).dig('squash_message_references', 'references')
+    end
+  end
+
   def test_stale_review_blocks_message_publication
     with_fixture do |root, ref, bin|
       write_comments(bin, 'b' * 40)

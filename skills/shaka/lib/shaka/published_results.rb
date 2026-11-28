@@ -9,17 +9,33 @@ module Shaka
   # It stays outside evidence/ so a change here supersedes no earlier result.
   module PublishedResults
     SETTINGS_DRIFT = /\A(?:settings components differ: |public settings snapshot differs)/
-    GAPS = /^#{Regexp.escape(VerificationLine::GAPS)} .+$/
+    # The helper writes the full line first in the first Evidence and limitations fold, even when the
+    # Verification section shows only a short summary. Agent details items render later, inside that fold.
+    FOLD = %r{^<details>\r?\n<summary>Evidence and limitations</summary>\r?\n\r?\n}
+    CODES = /`[^`\r\n]+`(?:, `[^`\r\n]+`)*/
+    COMMENT_LINK = %r{ \(\[review comment\]\(https://[^)\s]+\)\)}
+    SHORTFALL = /\d+ of \d+ configured reviewers completed(?:; #{CODES} did not)?(?:#{COMMENT_LINK})?\./
+    WHY = Regexp.escape("([why](#{VerificationLine::CONTAINER_GUIDE})).")
+    BLIND = /#{CODES} could not start (?:its|their) sandbox, so (?:it|they) reviewed only the diff #{WHY}/
+    # Only the sentences the helper writes for a missing reviewer or a sandbox that refused every command.
+    GAPS = /#{Regexp.escape(VerificationLine::GAPS)} (?:#{SHORTFALL}(?: #{BLIND})?|#{BLIND})(?=\r?$)/
 
     module_function
 
-    # A fork's author can edit its description, so only a same-repository one counts.
+    # A fork's author can edit its description, so only a same-repository one counts. A summary or
+    # check worded like the line sits outside the fold, so it never counts.
     def read(pull, repository)
       return unless pull.dig('head', 'repo', 'full_name').to_s.casecmp?(repository)
 
       region = Publishing.managed_region(pull['body'])
-      line = region && region[verified_line(pull.dig('head', 'sha').to_s[0, 7])]
-      line && { 'kept_line' => line, 'kept_gaps' => region[GAPS] }
+      fold = region&.match(FOLD)
+      line = fold && region[fold.end(0)..][/\A#{verified_line(pull.dig('head', 'sha')).source}/]
+      line && { 'kept_line' => line, 'kept_gaps' => gaps(region, line) }
+    end
+
+    # Setup gaps follow the line under the heading and are not repeated in the fold.
+    def gaps(region, line)
+      region[/^## Verification\r?\n\r?\n#{Regexp.escape(line)}[^\r\n]*\r?\n\r?\n\K#{GAPS.source}/]
     end
 
     # Every required result was supplied, none reports a failure, and only settings keep some from binding.
@@ -41,9 +57,9 @@ module Shaka
       entry['status'] == 'bound' || entry['reasons'].all? { |reason| reason.match?(SETTINGS_DRIFT) }
     end
 
-    def verified_line(short_head)
-      /^#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN).* at `#{Regexp.escape(short_head)}`\./
+    def verified_line(head)
+      /#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN)[^\r\n]* at `#{Regexp.escape(head.to_s[0, 7])}`\./
     end
-    private_class_method :verified_line, :passed?, :drifted_only?
+    private_class_method :verified_line, :passed?, :drifted_only?, :gaps
   end
 end
