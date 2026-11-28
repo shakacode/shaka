@@ -63,10 +63,11 @@ deterministic risk gate:
 
 - `attempted`, `unattempted`, `rated`, `ratings`, `consistent`: the repeats run, the
   planned ones never run, the ones that gave a rating, what each said, and whether they
-  agree. Agreement is `UNKNOWN` with fewer than two ratings. A report with no rating,
-  which the checkpoint parser records as `unknown`, counts as failed, not as a rating.
+  agree. Agreement is `UNKNOWN` with fewer than two ratings. A report that omits its
+  rating counts as failed. A reviewer's explicit `unknown` counts as a rating that holds
+  at the gate, and as `abstain` against a reference.
 - `matches_published`: repeats matching the rating the original checkpoint published.
-- `against_reference`: `under`, `over`, or `match` against the maintainer's rating.
+- `against_reference`: `under`, `over`, `match`, or `abstain` against the maintainer's rating.
   An under-rating is the costly error, because it can let Auto merge the PR.
 - `risk_gate`: for `merge.auto_merge_max_risk` set to `low` and to `medium`, how many
   repeats pass after the arm's risk areas raise the rating. `configured_max_risk` names

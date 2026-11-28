@@ -63,8 +63,10 @@ module Shaka
         ratings.map { |rating| compare(rating, reference) }.tally
       end
 
+      # An unknown rating is no judgment, so it is counted apart rather than credited or blamed.
       def compare(rating, reference)
-        return 'match' if rank(rating) == rank(reference)
+        return 'abstain' if rating == 'unknown'
+        return 'match' if rating == reference
 
         rank(rating) < rank(reference) ? 'under' : 'over'
       end

@@ -72,10 +72,10 @@ class EvaluationRiskReplayScoreTest < Minitest::Test
     assert_equal 1, arm.dig('cases', 'k1', 'risk_gate', 'low', 'holds')
   end
 
-  def test_an_unknown_rating_matches_a_high_reference
+  def test_an_unknown_rating_counts_as_an_abstention_against_any_reference
     entry = score([rated('unknown')], paths: ['lib/a.rb'], reference: 'high').dig('candidate', 'cases', 'k1')
 
-    assert_equal({ 'match' => 1 }, entry.fetch('against_reference'))
+    assert_equal({ 'abstain' => 1 }, entry.fetch('against_reference'))
   end
 
   def test_scoring_refuses_a_state_directory_holding_two_comparisons
