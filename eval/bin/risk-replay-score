@@ -7,7 +7,6 @@ require 'open3'
 require 'optparse'
 require_relative '../lib/shaka/evaluation/risk_replay'
 require_relative '../lib/shaka/evaluation/risk_replay_score'
-require_relative '../../skills/shaka/lib/shaka/configuration'
 
 # Scores the private records a `review-replay --checkpoint-risk` run left in its state directory.
 SOURCE = File.realpath('../..', __dir__)
@@ -42,10 +41,8 @@ end
 # Each arm's own committed settings decide its risk areas and threshold, as they did in the replay's fresh
 # fixture; a settings preview or individual settings in this checkout must not stand in for them.
 def settings(plan)
-  plan.fetch('arms').transform_values { |selection| selection.fetch('criteria') }.transform_values do |ref|
-    config = Shaka::Configuration.trusted(root: SOURCE, ref:, candidate_commands: false)
-    high, medium = Shaka::PostImplementationRisk.areas(config)
-    { 'high' => high, 'medium' => medium, 'max_risk' => Shaka::PostImplementationRisk.max_risk(config) }
+  plan.fetch('arms').transform_values do |selection|
+    Shaka::Evaluation::RiskReplayInputs.policy(SOURCE, selection.fetch('criteria'))
   end
 end
 

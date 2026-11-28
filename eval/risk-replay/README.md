@@ -35,6 +35,10 @@ rubric, so comparing changes to that rubric needs two helpers and is not covered
 Each run calls `shaka post-implementation run` on the case's head with its frozen
 packet. The arm's settings commit, not the one in force when the PR merged, decides
 the custom prompt, the risk areas, and the threshold; it is the setting under test.
+Before it signs in or spends anything, the replay refuses arms whose risk areas or
+threshold differ, so a gate difference comes from the rating alone. Each record names
+the helper revision and the reviewer CLI version that produced it. An arm whose
+checkpoint is turned off spends nothing and stops the run.
 
 Use a new state directory for each comparison. The first call that ends without a
 rating stops the run, as in the reviewer replay, and the scorer counts the calls it

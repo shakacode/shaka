@@ -4,6 +4,7 @@ require_relative '../../../../skills/shaka/lib/shaka/post_implementation_report'
 require 'digest'
 require 'securerandom'
 require_relative 'review_replay'
+require_relative 'risk_replay_inputs'
 
 module Shaka
   module Evaluation
@@ -32,6 +33,8 @@ module Shaka
       # Each arm reads the packet copy taken here, so an edit to a packet mid-run cannot reach one arm only;
       # the digests let the scorer refuse a packet that has changed since.
       def run(rows)
+        same_policy!
+        @comparison[:tools] = RiskReplayInputs.tools(@helper, @host)
         @comparison[:cases] = rows.map { |row| row.fetch('id') }
         @packets = rows.to_h { |row| [row.fetch('id'), File.binread(File.join(CASES, row.fetch('packet')))] }
         @comparison[:packets] = @packets.transform_values { |bytes| Digest::SHA256.hexdigest(bytes) }
@@ -39,6 +42,22 @@ module Shaka
       end
 
       private
+
+      # Checked before any sign-in or spend, so a comparison the scorer would refuse never runs.
+      def same_policy!
+        policies = @comparison.fetch(:arms).values.map { |arm| RiskReplayInputs.policy(@source, arm.fetch(:criteria)) }
+        return if policies.uniq.one?
+
+        raise ArgumentError,
+              'The arms apply different risk areas or thresholds; keep them the same in both settings commits'
+      end
+
+      # A disabled checkpoint launches no reviewer, so it spent nothing; the replay still stops on its missing rating.
+      def usage_for(result)
+        return { 'cache_neutral_dollars' => 0, 'billed_dollars' => 0 } if result['status'] == 'opted_out'
+
+        super
+      end
 
       # Repeats measure whether one setting rates the same change the same way twice. Shifting the index
       # alternates which arm goes first on each repeat, as the reviewer replay alternates it by case.
