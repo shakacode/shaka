@@ -189,8 +189,8 @@ phases:
         request that already chooses, gets no new question. When the user chooses to agree first,
         follow [agree on the design first](<{{package_root}}/skills/shaka/references/delivery.md#agree-on-the-design-first>),
         and do not make implementation edits until the user approves the design.
-      - When the task changes how work is reviewed or merged, such as merge gates, risk areas,
-        review requirements, or the settings that govern them, settle that policy before the
+      - When the task changes how work is trusted, reviewed, or merged, such as trusted commenters,
+        merge gates, risk areas, review requirements, or the settings that govern them, settle that policy before the
         first edit, even after a start instruction. List every path class the change touches
         with the risk area it belongs in, high, medium, or none, and every setting it retires or
         renames with its upgrade path. Rate the planned change with the checkpoint's rubric,
@@ -198,7 +198,7 @@ phases:
         [Shaka rates risk](https://github.com/shakacode/shaka/blob/main/docs/settings.md#change-how-risk-is-rated).
         Ask the maintainer every policy question the request leaves open, together, each with a
         recommendation, and wait for the answers. Planning is complete when every touched path has an assigned area; every retired setting has an upgrade path.
-        A renamed setting needs one too. First team setup skips this step and follows
+        A renamed setting needs an upgrade path too. First team setup skips this step and follows
         [its own procedure](<{{package_root}}/skills/shaka/references/repository-setup.md#publish-team-configuration>).
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report. Follow
