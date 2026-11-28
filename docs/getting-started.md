@@ -14,7 +14,7 @@ Ask your coding agent:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka
-Use the latest published stable release. If none is published, install from source
+Use the latest published stable release (1.0.0 or later). If none is published, install from source
 ```
 
 Prefer to install it manually? Follow [manual installation](manual-installation.md).

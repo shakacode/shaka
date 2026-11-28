@@ -18,6 +18,7 @@ Ask your coding agent to install Shaka:
 
 ```text
 Install Shaka from https://github.com/shakacode/shaka
+Use the latest published stable release (1.0.0 or later). If none is published, install from source
 ```
 
 Then open your project in the agent and give Shaka a small task. For example:

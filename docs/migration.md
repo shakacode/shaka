@@ -66,21 +66,25 @@ Name any other projects you want checked. Your agent uses the target release in 
 separate checkout to check the settings and confirm the command wrapper files are
 executable. The preview leaves wrapper execution to your normal task checks. If
 an individual setup fails, keep the current installation while you review the
-reported errors.
+reported errors. When every project passes, switch with the verified-checkout prompt under
+[keep a tested release](manual-installation.md#keep-a-tested-release).
 
 <details>
-<summary>Run the checks from a terminal</summary>
+<summary>Ask your agent to run the checks</summary>
 
-Clone the official release tag in a separate directory. Use that checkout's
-`skills/shaka/scripts/shaka` as the helper. Set `SHAKA_RUBY` to the absolute path
-to Ruby 3.4 or later for the command. Use the project's verified default-branch
-commit for `DEFAULT_SHA`.
+```text
+Prepare a branchless detached checkout of Shaka 1.0.0 for this project's compatibility checks. Keep my current installation. Use the official Install a published release clone and inspect steps, set SHAKA_RUBY to Ruby 3.4 or later for the helper (or use RUBY --disable-gems --disable-rubyopt on native Windows), then run the applicable team or individual seam check for this project's settings against its verified default-branch commit
+```
 
-- For team settings, run the helper with `seam check --root PROJECT --ref DEFAULT_SHA`
-  in a clean checkout at that commit. Confirm it reports `trusted/ref` for the same SHA.
-- For individual settings, run the helper with `seam private check --root PROJECT --ref DEFAULT_SHA`
-  against the local copy that has those settings. The result reports any setting
-  or wrapper that needs attention.
+Your agent prepares the checkout, records its `HEAD`, and runs the check that
+matches the settings in use:
+
+- Team settings: `seam check --root PROJECT --ref DEFAULT_SHA` in a clean
+  checkout at that commit, requiring `trusted/ref` for the same SHA before a
+  switch (a selected settings preview can report `preview/local` instead).
+- Individual settings: `seam private check --root PROJECT --ref DEFAULT_SHA`
+  against the local copy that has those settings, treating a successful private
+  report as local validation for that setup.
 
 </details>
 
@@ -98,5 +102,10 @@ Preview a migration of this repository's shared pilot settings using the migrati
   [pilot changelog](https://github.com/shakacode/shaka/blob/b11f2f7d0d0cf3c7dd9ca78760a7a8c1eac708cb/CHANGELOG.md#removed).
   The preview identifies work you need to do before applying the conversion.
 
-Review the settings PR and its checks before coordinating the installation
-switch with your team.
+Review the settings PR and its checks. Ask your agent whether any installation
+still in use would reject the merged contract (renamed keys, dropped
+command-path mappings, or other validation failures). When the answer is yes or
+unknown, ask it to finish running affected tasks and hold new ones before
+merging, then switch with the verified-checkout prompt under
+[keep a tested release](manual-installation.md#keep-a-tested-release) once the
+merged commit passes.
