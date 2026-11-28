@@ -8,33 +8,23 @@ require 'shaka/supplied_prose'
 # about 30% of the limit, and a higher risk rating took more (issue #1336). The length limit now counts the prose the
 # agent supplied, so the same text fits whatever the rating.
 class SuppliedProseTest < Minitest::Test
-  def test_counts_the_authors_visible_text_without_the_helpers_labels
-    content = { 'summary' => 'Count `only these words` here.',
+  def test_counts_the_authors_words_without_the_helpers_labels
+    content = { 'summary' => 'Count `these words` here.',
                 'intent' => INTENT.merge('task_understanding' => { 'goal' => 'One two.', 'done_when' => 'Three.' }),
                 'verification' => VERIFICATION.merge('summary' => 'See [the run](https://example.com/a/b).') }
 
-    # Summary 3 (a code span is one word), why 8, scope 6, leaves out 4, safe because 7, goal 2, done when 1,
-    # verification 3.
-    assert_equal 34, Shaka::SuppliedProse.words(content)
+    # Summary 4, why 8, scope 6, leaves out 4, safe because 7, goal 2, done when 1, verification 3: a link's address
+    # joins its last word.
+    assert_equal 35, Shaka::SuppliedProse.words(content)
   end
 
-  # Words count as written, whatever Markdown makes of them; only a collapsed block's body, addresses and images drop
-  # out. A collapsed block's summary label stays, as GitHub shows it.
-  def test_words_count_as_written_except_folded_text_addresses_and_images
-    body = "Two words ![a diagram](https://example.com/d.png).\n\n<details>\n<summary>Label</summary>\n\n" \
-           "Hidden body text.\n\n</details>\n\n| a | b |\n| --- | --- |\n\n> Quoted words\n\nTitle\n====="
+  # Every word-bearing token counts as written; Markdown and HTML are not interpreted, so nothing can hide words.
+  def test_markup_is_not_interpreted
+    body = "Two ![a diagram](u).\n\n<details>\n<summary>Label</summary>\n\nHidden.\n\n</details>\n\n" \
+           "```sh\nx=`printf one`\n```\n\n| --- | --- |"
     content = { 'summary' => 'One.', 'sections' => [{ 'heading' => 'Heading words', 'body' => body }] }
 
-    # One, two, label, a, b, two quoted, one title.
-    assert_equal 9, Shaka::SuppliedProse.words(content)
-  end
-
-  # A fenced block's lines count; only an inline span shrinks to one word. Angle brackets are not taken for tags.
-  def test_fenced_code_and_angle_brackets_count_as_written
-    body = "Run `bin/validate --fast` first.\n\n```ruby\nputs one two\n```\n\nA List<String> and <https://x.test>."
-
-    # Run, code span, first; ```ruby, puts, one, two; A, List<String>, and, the address.
-    assert_equal 11, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
+    assert_equal 11, Shaka::SuppliedProse.words(content)
   end
 
   # Shaka's publisher attribution writes the note, so it is helper text.
@@ -100,7 +90,7 @@ class SuppliedProseCoverageTest < Minitest::Test
     content = marked(rich_content)
     rendered = rough_html(Shaka::Publication.description(content, nil, pull))
     visible = marks(Shaka::VisibleProse.new(rendered).paragraphs.join(' '))
-    counted = marks(Shaka::SuppliedProse.markdown(content))
+    counted = marks(Shaka::SuppliedProse.text(content))
 
     refute_empty visible
     assert_empty visible - counted, 'a supplied field renders visibly but is not counted'

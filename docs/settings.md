@@ -1168,10 +1168,10 @@ risk record summary, and sections. The lines Shaka adds, such as the links line,
 metrics, field labels, publisher note, and the risk text that grows with the risk
 rating, do not count, so the same text fits at every rating.
 
-Shaka counts those words as the agent wrote them, so the count is the same when
-GitHub declines to render. Only link and image addresses, images, and the body of
-a collapsed details block are left out, and an inline code span counts as one
-word. Tables, headings, quotes, and code blocks in those fields do count. Put
+Shaka counts those words exactly as the agent wrote them, without reading the
+Markdown, so the count is predictable and the same when GitHub declines to render.
+Tables, headings, quotes, code, and collapsed details inside those fields count.
+A link's address adds no word, because it joins the link text's last word. Put
 supporting material in the description's `details` or `table`, or in
 verification checks, which do not count. Sentence and paragraph limits still apply
 to everything a reader sees, and a walkthrough's length counts all its visible

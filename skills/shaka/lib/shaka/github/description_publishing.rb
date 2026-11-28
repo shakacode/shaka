@@ -33,7 +33,10 @@ module Shaka
 
     private
 
-    def measured(prose, supplied) = supplied ? prose.with_supplied(supplied.call) : prose
+    def measured(prose, supplied)
+      content = supplied&.call
+      content.is_a?(Hash) ? prose.with_supplied(content) : prose
+    end
 
     def description_plan(archive, current, rendered, writer)
       base = MergeWarningRegion.answered_by_merge(current['body'].to_s, @repository, current)
