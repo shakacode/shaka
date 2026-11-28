@@ -19,12 +19,18 @@ module Shaka
     # one, and a copy must stand alone, so ```` ```` ```` text cannot stand in for ```.
     # HTML comments render as nothing, so examples inside them are not counted.
     def check!(source, html)
-      written = source.gsub(/<!--.*?-->/m, '').to_enum(:scan, CANDIDATE).map { Regexp.last_match[0] }.tally
+      written = candidates(source).tally
       return if written.empty?
 
       shown = visible(html)
       lost = written.find { |candidate, count| shown.scan(/(?<!`)#{Regexp.escape(candidate)}(?!`)/).size < count }
       raise Error, "GitHub renders #{lost.first} as inline code and drops its backticks; #{ADVICE}." if lost
+    end
+
+    # A removed comment keeps its line breaks, so the lines around it cannot join into a candidate.
+    def candidates(source)
+      source.gsub(/<!--.*?-->/m) { |comment| "\n" * comment.count("\n") }
+            .to_enum(:scan, CANDIDATE).map { Regexp.last_match[0] }
     end
 
     # Highlighting splits code into elements, so tags go before the comparison.
