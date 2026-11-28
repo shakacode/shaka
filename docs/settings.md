@@ -49,9 +49,9 @@ An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging. `shaka merge` also ignores the merge
-settings in your file and uses Shaka's defaults, including the default
-[hold label](#mergehold_labels).
+disable required merge gates or authorize merging. `shaka merge` uses Shaka's defaults
+for the merge settings in your file, except that your [hold labels](#mergehold_labels) add to the
+default `hold`.
 
 A settings PR becomes the team's default after it merges into the default branch.
 You can also select it for one task before adoption. Local settings do not override
@@ -273,9 +273,9 @@ label added while the agent checks the PR still stops it. The agent then names t
 hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
 may merge. Label names match without regard to case.
 
-With individual setup, `shaka merge` checks the default `hold` label instead of your local
-`merge.hold_labels`. If your file lists `[hold, do-not-merge]`, `hold` still stops a merge and
-`do-not-merge` does not, even though the agent's handoff reports `do-not-merge` as a hold.
+With individual setup, your labels add to the default instead of replacing it, because local
+settings can add merge gates but never remove one. If your file lists `[do-not-merge]`, both
+`hold` and `do-not-merge` stop a merge.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
@@ -354,8 +354,10 @@ A review of an earlier commit still counts in two cases:
   new review.
 
 The PR description uses the same two cases. When the agent publishes without
-validation and review results, and the description holds no verified line for
-this commit to keep, the Validation and review line says UNKNOWN. It then names
+validation and review results, and the description holds no verified line that
+Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
+reads that line from the top of the Evidence and limitations fold, so a verification
+summary or check worded like it does not count. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,

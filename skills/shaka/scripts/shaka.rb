@@ -125,18 +125,24 @@ def require_merge_ref!(options)
   raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
 end
 
+# Returns the merge policy seam and the hold labels that apply. Individual settings grant no policy, but their hold
+# labels still stop a merge. A first-setup preview keeps Ask after adoption.
 def merge_policy(options)
   root = options[:root] || Dir.pwd
   ref = options[:ref]
-  # Individual settings grant no policy. A first-setup preview keeps Ask after adoption.
   seam, source, kind = Shaka::Configuration.resolve_source(root:, ref:)
-  return if kind == 'private/local'
+  hold = merge_hold(seam, kind)
+  return [nil, hold] if kind == 'private/local'
 
   if options[:auto] && source[:first_setup]
     raise Shaka::Error, 'The first setup settings preview uses Ask. Use the Ask handoff to obtain a merge decision.'
   end
 
-  seam
+  [seam, hold]
+end
+
+def merge_hold(seam, kind)
+  kind == 'private/local' ? Shaka::MergeHold.individual(seam) : Shaka::MergeHold.from(seam)
 end
 
 # Reads effective limits through the opening check's guarded Git; unavailable settings are reported.
@@ -460,9 +466,10 @@ begin
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough handoff squash-message attention].include?(command) && options[:ref]
-    seam = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref]).first
+    seam, _source, kind = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref])
+    hold = merge_hold(seam, kind)
   elsif command == 'merge'
-    seam = merge_policy(options)
+    seam, hold = merge_policy(options)
   end
   seam_required_checks = seam.merge['required_checks'] if seam&.sha
   if command == 'merge' && !options[:squash_message]
@@ -558,7 +565,7 @@ begin
                                    Shaka::MergeBaseFailures.new(github, options[:base_failures])
              merge.walkthrough_due = Shaka::WalkthroughDue.new(github, publish: walkthrough_publish)
              merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
-             merge.hold = Shaka::MergeHold.from(seam)
+             merge.hold = hold
              merge.call(head:, base: options.fetch(:base), walkthrough: options[:walkthrough],
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'
@@ -573,11 +580,11 @@ begin
              end
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
-             github.squash_comment(head: options.fetch(:head), message:)
+             github.squash_comment(head: options.fetch(:head), message:).merge(message.reference_check)
            when 'handoff'
              Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint, review: merge_wait,
                                         walkthrough_publish:)
-                           .tap { |handoff| handoff.hold = Shaka::MergeHold.from(seam) }
+                           .tap { |handoff| handoff.hold = hold }
                            .call(head: options[:head], woken_by: options[:woken_by])
            end
   if native_wake
