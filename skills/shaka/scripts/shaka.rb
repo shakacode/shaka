@@ -131,13 +131,14 @@ def merge_policy(options)
   root = options[:root] || Dir.pwd
   ref = options[:ref]
   seam, source, kind = Shaka::Configuration.resolve_source(root:, ref:)
-  return [nil, merge_hold(seam, kind)] if kind == 'private/local'
+  hold = merge_hold(seam, kind)
+  return [nil, hold] if kind == 'private/local'
 
   if options[:auto] && source[:first_setup]
     raise Shaka::Error, 'The first setup settings preview uses Ask. Use the Ask handoff to obtain a merge decision.'
   end
 
-  [seam, merge_hold(seam, kind)]
+  [seam, hold]
 end
 
 def merge_hold(seam, kind)
