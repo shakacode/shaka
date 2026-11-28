@@ -1,0 +1,21 @@
+{
+  "summary": "When a PR has no test or review results, its description now links the local review that still covers the commit. Shaka refuses description text that cites a review finding only by a number such as `N3`.",
+  "intent": {
+    "why": "#1301 said nothing was verified although a review covered it, and cited a finding only as `N3`.",
+    "user_impact": "Maintainers see which review covers an unverified PR.",
+    "root_cause": "Results attach only to the exact tested files, and the message ignored reviews `merge` accepts.",
+    "safe_because": "Uses `merge`'s rule, records no results, and adds nothing when no review applies.",
+    "scope": "Review link when results are missing, finding-number refusal, settings guide."
+  },
+  "verification": {
+    "checks": [
+      "Validation passed with `validate` on the reviewed head.",
+      "A CLI test in `test/` renders a description with no results and asserts the covering review link."
+    ],
+    "not_verified": "A live no-results description; a CLI test covers that path."
+  },
+  "checkpoint": {
+    "audience": "Maintainers deciding whether to merge a PR whose description has no results.",
+    "repair_history": "Not recorded in the frozen case."
+  }
+}
