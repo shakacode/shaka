@@ -333,13 +333,22 @@ from earlier commits as stale. The agent reruns affected checks and republishes 
 results. Shaka keeps control of delivery; pstack's separate delivery playbooks are
 not part of this flow.
 
-When the harness can run unattended, call it from your
-[validate script](settings.md#standard-command-scripts) and let a harness failure fail the
-script. When the agent runs that script during delivery, Shaka records the result with the
-code it tested, and a later code change needs a new run. A result covers the harness only
-when the script that ran calls it, so a
-passing [`validate-local`](settings.md#count-a-faster-check-as-validation) run leaves the
-harness unchecked unless that script calls it too.
+create-verification-skill can also leave you a script, often called a harness, that
+drives your app the way a person would and reports pass or fail. A run the agent reports
+is only its account, and the next commit can make it out of date. To hold every PR to the
+harness the way you hold it to your tests, add it to your
+[validate script](settings.md#standard-command-scripts):
+
+```text
+Add our verification harness to .agents/shaka/bin/validate so a harness failure fails validation
+```
+
+The agent runs validate before calling a PR ready and again after each code change, so a
+failing harness keeps the PR from being ready. If you also have a faster
+[`validate-local`](settings.md#count-a-faster-check-as-validation) script, the agent may use
+it instead between review fixes; add the harness there too, or those runs won't check it.
+A harness that needs a person, such as one that waits for a sign-in code, can't run there;
+keep reporting those runs in **Companion skill results**.
 
 ## Review a session for improvements
 
