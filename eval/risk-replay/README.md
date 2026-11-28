@@ -36,7 +36,8 @@ Each run calls `shaka post-implementation run` on the case's head with its froze
 packet. The arm's settings commit, not the one in force when the PR merged, decides
 the custom prompt, the risk areas, and the threshold; it is the setting under test.
 Before it signs in or spends anything, the replay refuses arms whose risk areas or
-threshold differ, so a gate difference comes from the rating alone. Each record names
+threshold differ, so a gate difference comes from the rating alone, and records the
+policy it checked; the scorer applies that recorded policy. Each record names
 the helper revision and the reviewer CLI version that produced it. An arm whose
 checkpoint is turned off spends nothing and stops the run.
 

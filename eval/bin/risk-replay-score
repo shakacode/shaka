@@ -38,14 +38,6 @@ def changed_paths(row)
   output.split("\0")
 end
 
-# Each arm's own committed settings decide its risk areas and threshold, as they did in the replay's fresh
-# fixture; a settings preview or individual settings in this checkout must not stand in for them.
-def settings(plan)
-  plan.fetch('arms').transform_values do |selection|
-    Shaka::Evaluation::RiskReplayInputs.policy(SOURCE, selection.fetch('criteria'))
-  end
-end
-
 # A state directory holds one replay invocation; records from another would be pooled under the same arm names.
 def one_comparison!(records)
   plans = records.map { |record| record['comparison'] }.uniq
@@ -74,13 +66,6 @@ def recorded_inputs(plan, planned)
   end.merge('case file' => [plan['case_file'], Shaka::Evaluation::RiskReplay::CASE_FILE])
 end
 
-# A prompt or model comparison keeps policy fixed, so a gate difference comes from the rating alone.
-def same_policy!(settings)
-  return settings if settings.values.uniq.one?
-
-  raise ArgumentError, 'The arms apply different risk areas or thresholds; keep them the same in both settings commits'
-end
-
 begin
   saved = records(options.fetch(:state))
   raise ArgumentError, 'No replay records in the state directory' if saved.empty?
@@ -88,8 +73,9 @@ begin
   plan = one_comparison!(saved)
   cases = unchanged_inputs!(plan).to_h { |row| [row.fetch('id'), row] }
   paths = cases.transform_values { |row| changed_paths(row) }
-  policy = same_policy!(settings(plan))
-  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings: policy, plan:)
+  # The policy the replay checked before spending, so a later Shaka cannot change how these ratings score.
+  settings = plan.fetch('arms').keys.to_h { |arm| [arm, plan.fetch('policy')] }
+  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings:, plan:)
   puts JSON.pretty_generate(score)
 rescue ArgumentError, IndexError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError,
        Shaka::Error => e

@@ -18,6 +18,13 @@ class EvaluationRiskReplayInputsTest < Minitest::Test
     assert_includes error.message, 'different risk areas or thresholds'
   end
 
+  def test_the_checked_policy_is_recorded_for_scoring
+    replay = Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex', **ARMS)
+    replace(:policy, ->(_source, _ref) { { 'max_risk' => 'low' } }) { replay.send(:same_policy!) }
+
+    assert_equal({ 'max_risk' => 'low' }, replay.instance_variable_get(:@comparison)[:policy])
+  end
+
   def test_a_disabled_checkpoint_settles_at_zero_spend
     replay = Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex')
 

@@ -64,7 +64,7 @@ module Shaka
       end
 
       def compare(rating, reference)
-        return 'match' if rating == reference
+        return 'match' if rank(rating) == rank(reference)
 
         rank(rating) < rank(reference) ? 'under' : 'over'
       end

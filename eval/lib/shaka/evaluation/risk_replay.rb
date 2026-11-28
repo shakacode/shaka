@@ -43,10 +43,10 @@ module Shaka
 
       private
 
-      # Checked before any sign-in or spend, so a comparison the scorer would refuse never runs.
+      # Checked before any sign-in or spend, and recorded, so the scorer applies the same policy the arms ran under.
       def same_policy!
         policies = @comparison.fetch(:arms).values.map { |arm| RiskReplayInputs.policy(@source, arm.fetch(:criteria)) }
-        return if policies.uniq.one?
+        return @comparison[:policy] = policies.first if policies.uniq.one?
 
         raise ArgumentError,
               'The arms apply different risk areas or thresholds; keep them the same in both settings commits'
