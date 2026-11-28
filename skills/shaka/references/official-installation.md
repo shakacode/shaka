@@ -103,23 +103,27 @@ Prepare a dedicated detached tag checkout `DIR` with no local branch refs (the
 installer requires a detached HEAD and refuses extra local branches):
 
 ```bash
-set -euo pipefail
-test ! -e DIR
-git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
-git -C DIR fetch --quiet origin tag "vVERSION"
-git -C DIR checkout --detach "refs/tags/vVERSION"
-git -C DIR for-each-ref --format='%(refname:short)' refs/heads/ | while read -r name; do
-  git -C DIR branch -D "$name"
-done
+(
+  set -euo pipefail
+  umask 022
+  test ! -e DIR
+  git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
+  git -C DIR fetch --quiet origin tag "vVERSION"
+  git -C DIR checkout --detach "refs/tags/vVERSION"
+  git -C DIR for-each-ref --format='%(refname:lstrip=2)' refs/heads/ | while read -r name; do
+    git -C DIR branch -D "$name"
+  done
+)
 ```
 
 Do not use `git clone --branch vVERSION`: when the remote also has a branch with
 that name, clone creates a local branch that can remain after detach and make
-installation refuse the checkout. On Windows, add
-`--config core.autocrlf=false --config core.eol=lf` to the `git clone`, as in
-the source-install path above, or the installer refuses the checkout because
-Git converted its line endings. From PowerShell or cmd, start the installer as
-`ruby DIR\bin\install`, since Windows cannot run the extensionless script.
+installation refuse the checkout. On Windows, run this block in Git Bash (or
+another POSIX shell), and add `--config core.autocrlf=false --config core.eol=lf`
+to the `git clone`, as in the source-install path above, or the installer
+refuses the checkout because Git converted its line endings. From PowerShell or
+cmd, start the installer as `ruby DIR\bin\install`, since Windows cannot run the
+extensionless script.
 
 Confirm `git -C DIR branch --show-current` prints nothing and
 `git -C DIR for-each-ref --format='%(refname)' refs/heads/` is empty. Do not

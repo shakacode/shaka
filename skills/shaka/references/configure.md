@@ -77,8 +77,10 @@ To refresh Shaka configuration for the installed version, which regenerates
    merging, apply the pre-merge pause in
    [Migrate an older contract](migration.md#migrate-an-older-contract) whenever any
    installation in use would reject the proposed contract or compatibility is unknown
-   (including removal-only changes that older installations still reject). Ruby does not
-   enforce that pause.
+   (including removal-only changes that older installations still reject). When that pause
+   applies, record it as a `before merge` row in `steps_besides_merging` even if the
+   settings edit would otherwise list `none`, so the published description keeps the hold
+   visible. Ruby does not enforce that pause.
 5. The change takes effect when its PR merges. To try it on one task first, follow
    [settings preview](settings-preview.md).
 
