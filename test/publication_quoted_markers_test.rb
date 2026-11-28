@@ -54,36 +54,25 @@ class PublicationQuotedMarkersTest < Minitest::Test
     assert_includes Shaka::Publication.description(carried), 'codex-review'
   end
 
-  # Issue #1344: description reads its Verification line back from these lines, so agent text
-  # that copies one could stand in for the real line on a republish.
-  ANCHORS = ['## Verification', '<summary>Evidence and limitations</summary>',
-             '**Validation and review:** `validate` passed at `abcdef1`.', '**Setup gaps:** none.'].freeze
+  # Issue #1344: the paragraph after the marked line reads back as setup gaps when it is the helper's sentence.
+  GAPS_LINE = '**Setup gaps:** 1 of 2 configured reviewers completed.'
   AGENT_FIELDS = {
-    'summary' => ->(text) { { 'summary' => "Moves it.\n\n#{text}" } },
+    'verification.summary' => ->(text) { { 'verification' => VERIFICATION.merge('summary' => "#{text} `x`") } },
     'sections[0].body' => ->(text) { { 'sections' => [{ 'heading' => 'Outcome', 'body' => "First.\n\n#{text}" }] } },
     'risk_record.body' => ->(text) { { 'risk_record' => { 'summary' => 'Low.', 'body' => text } } }
   }.freeze
 
-  def test_agent_text_copying_a_verification_anchor_is_refused_naming_the_field
-    ANCHORS.product(AGENT_FIELDS.to_a).each do |anchor, (field, change)|
-      error = assert_raises(Shaka::Error, "#{field}: #{anchor}") do
-        Shaka::Publication.description(content(**change.call(anchor)))
-      end
-      # risk_record already refuses a summary tag, naming the field its own way.
-      assert_match(Regexp.union(field, field.sub('.', ' ')), error.message)
+  def test_agent_text_starting_a_line_with_the_setup_gaps_label_is_refused_naming_the_field
+    AGENT_FIELDS.each do |field, change|
+      error = assert_raises(Shaka::Error, field) { Shaka::Publication.description(content(**change.call(GAPS_LINE))) }
+      assert_includes error.message, field
     end
   end
 
-  # Reviewers of #1344: a CRLF ending, closing hashes, or more words slipped past a whole-line match.
-  def test_heading_variants_are_refused
-    ["## Verification\r\nBody.", '## Verification ##', '## Verification results'].each do |text|
-      error = assert_raises(Shaka::Error, text.inspect) { Shaka::Publication.description(content('summary' => text)) }
-      assert_includes error.message, 'summary'
-    end
-  end
-
-  def test_anchor_words_inside_a_sentence_still_render
-    summary = 'Refuses a line starting with `**Setup gaps:**` or `## Verification`.'
+  # The marker, not these lines, finds the helper's own result, so free-form text may show them.
+  def test_other_verification_lines_and_an_inline_label_still_render
+    summary = "Refuses a line starting with `**Setup gaps:**`.\n\n## Verification\n\n" \
+              '**Validation and review:** passed, as an example.'
     assert_includes Shaka::Publication.description(content('summary' => summary)), summary
   end
 

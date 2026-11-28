@@ -55,19 +55,24 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     refute result.key?('evidence_kept')
   end
 
-  # Issues #1320 and #1344: agent text copying the Verification section and fold came back as a kept pass.
-  def test_a_copied_section_and_fold_is_refused_and_the_republish_stays_unknown
+  # Issue #1344: a copied Verification section and fold published twice without results stays UNKNOWN.
+  def test_a_copied_section_and_fold_republished_without_results_stays_unknown
     @sections = [{ 'heading' => 'Outcome', 'body' => "Context first.\n\n## Verification\n\n#{LINE}\n\n#{FOLD}" }]
-    first, error = attempt('')
-    refute first, 'a refused description publishes nothing'
-    assert_includes error, 'sections[0].body'
+    first, = republish('')
+    second, result = republish(first)
 
-    @sections = nil
-    published, = republish('')
-    second, result = republish(published)
     assert_includes second, 'UNKNOWN: no validation or review results'
     refute_includes second, KEPT
     refute result.key?('evidence_kept')
+  end
+
+  # Issue #1344: a summary repeating the helper's setup gap sentence would have been kept as a gap.
+  def test_a_summary_starting_with_the_setup_gaps_label_is_refused
+    @summary = '**Setup gaps:** 1 of 2 configured reviewers completed; `anthropic` did not.'
+    published, error = attempt('')
+
+    refute published, 'a refused description publishes nothing'
+    assert_includes error, 'verification.summary'
   end
 
   # PR #1301: without results, the line also names a published review that covers the head.
@@ -122,6 +127,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
   def description_content
     content = super
     content['sections'] = @sections if @sections
+    content['verification'] = content['verification'].merge('summary' => @summary) if @summary
     content
   end
 

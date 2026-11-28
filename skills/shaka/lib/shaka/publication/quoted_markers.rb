@@ -7,11 +7,11 @@ require_relative 'verification_line'
 module Shaka
   # Shaka finds its regions by reading its own HTML-comment markers back from the body,
   # so supplied description text that quotes one would leave the next read ambiguous.
-  # It reads the Verification line back the same way (issue #1344), from these lines.
+  # The paragraph after the marked Verification line counts as Setup gaps when it is the helper's
+  # sentence, so supplied text cannot start a line with that label either (issue #1344).
   module QuotedMarkers
     MARKER = %r{<!--\s*/?shaka:[\w:.-]*}
-    ANCHOR = %r{^(?:## Verification|<summary>Evidence and limitations</summary>|#{
-      Regexp.escape(VerificationLine::LABEL)}|#{Regexp.escape(VerificationLine::GAPS)})}
+    GAPS = /^#{Regexp.escape(VerificationLine::GAPS)}/
 
     module_function
 
@@ -32,7 +32,7 @@ module Shaka
     end
 
     def refuse_string(text, path)
-      refuse_anchor(text, path)
+      refuse_gaps(text, path)
       quoted = text[MARKER] or return
 
       name = quoted.sub(/\A<!--\s*/, '')
@@ -40,12 +40,11 @@ module Shaka
                    "marker back from the pull request body. Name it without `<!--`, such as `#{name}`."
     end
 
-    # A section the agent heads Verification renders after Shaka's own, so the reader never meets it first.
-    def refuse_anchor(text, path)
-      anchor = text[ANCHOR] or return
+    def refuse_gaps(text, path)
+      return unless text.match?(GAPS)
 
-      raise Error, "#{path.delete_prefix('content.')} starts a line with `#{anchor}`; Shaka reads its " \
-                   'Verification line back from that text. Reword the line so it starts differently.'
+      raise Error, "#{path.delete_prefix('content.')} starts a line with `#{VerificationLine::GAPS}`; Shaka reads " \
+                   'that label back as its own setup gaps. Reword the line so it starts differently.'
     end
   end
 end
