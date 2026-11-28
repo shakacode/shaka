@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'open3'
 require 'tmpdir'
+require_relative 'refusal'
 
 module Shaka
   module Install
@@ -66,6 +67,30 @@ module Shaka
             remove_staging(path)
           end
         end
+      end
+
+      # Clone and fetch fail alike when origin lacks the branch and when Git cannot reach origin. ls-remote's
+      # exit status tells them apart, because Git's wording changes with version and locale. When origin has the
+      # branch, the failure is neither, so Git's own message stands.
+      def reaching(remote, list)
+        yield
+      rescue ArgumentError => e
+        raise ArgumentError, remote_refusal(remote, list) || e.message
+      end
+
+      def remote_refusal(remote, list)
+        _, _, status = run_git('ls-remote', '--exit-code', '--heads', remote, "refs/heads/#{@branch}")
+        return if status.success?
+
+        shown = Refusal.url(@repository)
+        if status.exitstatus == 2
+          step = Refusal.decide('which branch to install', 'to list its branches', list)
+          return Refusal.message("Installation branch #{@branch} is not on #{shown}",
+                                 "#{shown} has no branch #{@branch}", step)
+        end
+
+        Refusal.message('Installation could not download Shaka', "Git could not reach #{shown}",
+                        "run #{list} to check the network and access, then run this command again")
       end
 
       def git(*)

@@ -56,7 +56,9 @@ module Shaka
       def update(&)
         return check_release if release?
 
-        git('fetch', '--quiet', 'origin', @branch)
+        reaching('origin', Refusal.command('git', '-C', @root, 'ls-remote', '--heads', 'origin')) do
+          git('fetch', '--quiet', 'origin', @branch)
+        end
         validate
         candidate = git('rev-parse', "refs/remotes/origin/#{@branch}")
         refuse_rewrite(candidate)
@@ -109,7 +111,9 @@ module Shaka
         return clone_release if release?
 
         @branch ||= 'main'
-        git('clone', *ReleaseCheckout.clone_config, '--quiet', '--branch', @branch, '--', @repository, @root)
+        reaching(@repository, Refusal.command('git', 'ls-remote', '--heads', Refusal.url(@repository))) do
+          git('clone', *ReleaseCheckout.clone_config, '--quiet', '--branch', @branch, '--', @repository, @root)
+        end
       end
     end
   end
