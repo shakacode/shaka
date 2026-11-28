@@ -70,31 +70,20 @@ reported errors. When every project passes, switch with the verified-checkout pr
 [keep a tested release](manual-installation.md#keep-a-tested-release).
 
 <details>
-<summary>Run the checks from a terminal</summary>
-
-Ask your agent to prepare a branchless detached checkout of the target release
-using the Install a published release procedure (clone, detach, and inspect
-only; keep the current installation), then run these checks from that checkout.
-On native Windows, have it launch the helper with the absolute path to Ruby 3.4
-or later as
-`RUBY --disable-gems --disable-rubyopt DIR\skills\shaka\scripts\shaka.rb`.
+<summary>Ask your agent to run the checks</summary>
 
 ```text
-Prepare a branchless detached checkout of Shaka 1.0.0 for the compatibility checks in docs/migration.md. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the applicable team or individual seam check for this project's settings against its verified default-branch commit
+Prepare a branchless detached checkout of Shaka 1.0.0 for this project's compatibility checks. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the applicable team or individual seam check for this project's settings against its verified default-branch commit
 ```
 
-Use that checkout's helper. On POSIX, set `SHAKA_RUBY` to the absolute path to
-Ruby 3.4 or later before invoking `DIR/skills/shaka/scripts/shaka` (an
-unregistered release checkout does not select Ruby on its own). Use the
-project's verified default-branch commit for `DEFAULT_SHA`. Choose the check
-that matches the settings in use:
+Your agent prepares the checkout, records its `HEAD`, and runs the check that
+matches the settings in use:
 
-- For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a
-  clean checkout at that commit. Require `trusted/ref` for the same SHA before
-  offering a switch (a selected settings preview can report `preview/local`
-  instead).
-- For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
-  against the local copy that has those settings. Treat a successful private
+- Team settings: `seam check --root PROJECT --ref DEFAULT_SHA` in a clean
+  checkout at that commit, requiring `trusted/ref` for the same SHA before a
+  switch (a selected settings preview can report `preview/local` instead).
+- Individual settings: `seam private check --root PROJECT --ref DEFAULT_SHA`
+  against the local copy that has those settings, treating a successful private
   report as local validation for that setup.
 
 </details>

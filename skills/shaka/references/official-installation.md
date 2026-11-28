@@ -135,8 +135,9 @@ Windows cannot run the extensionless script.
 Confirm `git -C DIR branch --show-current` prints nothing and
 `git -C DIR for-each-ref --format='%(refname)' refs/heads/` is empty. Do not
 use `git branch --list` for emptiness: it can print a detached-HEAD display
-line even with no local branch refs. Inspect the checked-out files, and record
-`git -C DIR rev-parse HEAD` if you are previewing a release cutover.
+line even with no local branch refs. Inspect the checked-out files, and always
+record `git -C DIR rev-parse HEAD` for that destination (every take-over and
+every preview reuse that value).
 For a first installation, run
 `DIR/bin/install --release VERSION --directory DIR --agent HOST`.
 Use the requested host or pass `--skills-dir SKILLS_DIR` for a custom skills directory.
@@ -152,10 +153,11 @@ Follow [Before take-over](#before-take-over) when switching from an existing
 installation. Prepare `DIR` with the clone recipe above (or reuse a verified
 preview checkout). Before take-over, confirm from outside `DIR` that
 `git -C DIR rev-parse HEAD` still matches the recorded commit and
-`git -C DIR status --porcelain` is empty. Then run take-over with
-`--directory DIR --release VERSION` (add `--skills-dir SKILLS_DIR` when
-replacing a custom-only install, and `--repository URL` when the destination
-origin differs from the previous installation's recorded URL):
+`git -C DIR status --porcelain --untracked-files=all` is empty. Then run:
+`bin/install --take-over --directory DIR --release VERSION` (add
+`--skills-dir SKILLS_DIR` when replacing a custom-only install, and
+`--repository URL` when the destination origin differs from the previous
+installation's recorded URL):
 
 - Prefer the currently registered installer's `bin/install` when that checkout
   already accepts `--release`.
