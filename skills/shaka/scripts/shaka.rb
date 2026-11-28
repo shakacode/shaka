@@ -318,7 +318,7 @@ end
 
 def handoff_flags(flags, options)
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
-  flags.on('--usage-gap REASON', 'For handoff: why this host cannot publish a usage snapshot') do |value|
+  flags.on('--usage-gap REASON', 'For handoff: why no measured usage can be published') do |value|
     options[:usage_gap] = value
   end
   flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|

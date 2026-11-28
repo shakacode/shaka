@@ -26,8 +26,8 @@ module Shaka
 
       owe('no usage snapshot', "Publish usage for #{live} with `usage publish #{@github.repository} " \
                                "#{@github.number} --commit #{live} --contribution CATEGORY --event handoff` and " \
-                               "this task's source selection, or pass `--usage-gap REASON` when this host has no " \
-                               'usage reader.')
+                               "this task's source selection, or pass `--usage-gap REASON` when no measured response " \
+                               'can be published, as for a host without a reader or an aggregate-only source.')
     # A gap excuses only a host with no reader; a journal no one can read still needs its comment repaired.
     rescue Error => e
       owe('usage unread', "Usage snapshots are unread: #{e.message}")

@@ -118,8 +118,9 @@ once even if two agents saved it. Comments from accounts without write access ar
 
 Before the agent stops, `handoff` lists usage as owed work until a snapshot with a
 measured response for the PR's current commit is on the PR. A snapshot an earlier owner
-published for that commit also counts. When the coding tool records no usage, the agent
-passes `handoff --usage-gap REASON`, and the reason stays visible as a note instead.
+published for that commit also counts. When the coding tool records no per-response usage
+to publish, the agent passes `handoff --usage-gap REASON`, and the reason stays visible as
+a note instead.
 A usage comment that cannot be read stays owed until someone repairs or deletes it.
 To save usage at another point, ask the agent:
 
