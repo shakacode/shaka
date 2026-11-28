@@ -1,12 +1,11 @@
 name: CodeQL
 
-# A change that touches only Markdown under docs/ or internal/ has no Ruby to analyze.
+# Every pull request reports Analyze (ruby), so main can require it. A change the shared
+# classifier admits as documentation only has no Ruby to analyze and skips the analysis.
 on:
   pull_request:
-    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
   push:
     branches: [main]
-    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
@@ -19,6 +18,8 @@ jobs:
   analyze:
     name: Analyze (ruby)
     runs-on: ubuntu-latest
+    env:
+      SHAKA_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
     permissions:
       actions: read
       contents: read
@@ -32,11 +33,31 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - name: Detect documentation-only changes
+        id: changes
+        run: |
+          if ! comparison=$(git merge-base "$SHAKA_BASE_REF" HEAD 2>/dev/null); then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          trusted_classifier="$RUNNER_TEMP/docs-only-change"
+          if git show "${SHAKA_BASE_REF}:bin/docs-only-change" > "$trusted_classifier"; then
+            chmod +x "$trusted_classifier"
+            if "$trusted_classifier" "$SHAKA_BASE_REF"; then
+              git diff --check "$comparison" --
+              echo "docs_only=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "docs_only=false" >> "$GITHUB_OUTPUT"
       - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        if: steps.changes.outputs.docs_only != 'true'
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
       - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        if: steps.changes.outputs.docs_only != 'true'
         with:
           category: "/language:${{ matrix.language }}"

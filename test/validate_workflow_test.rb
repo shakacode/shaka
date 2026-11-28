@@ -11,8 +11,6 @@ class ValidateWorkflowTest < Minitest::Test
     @workflow = YAML.load_file(File.expand_path('../.github/workflows/validate.yml', __dir__))
     @steps = @workflow.dig('jobs', 'validate', 'steps')
     @detector_script = @steps.find { |step| step['id'] == 'changes' }.fetch('run')
-    @codeql = YAML.load_file(File.expand_path('../.github/workflows/codeql.yml', __dir__))
-    @codeql_steps = @codeql.dig('jobs', 'analyze', 'steps')
   end
 
   def test_runs_required_validation_for_pull_requests_merge_groups_and_main
@@ -63,12 +61,6 @@ class ValidateWorkflowTest < Minitest::Test
 
   def test_full_validation_is_skipped_for_docs
     assert_docs_condition(@steps.find { |step| step['run'] == 'bin/validate' })
-  end
-
-  def test_codeql_remains_always_on
-    refute(@codeql_steps.any? { |step| step['id'] == 'changes' })
-    refute step_using('github/codeql-action/init@', @codeql_steps).key?('if')
-    refute step_using('github/codeql-action/analyze@', @codeql_steps).key?('if')
   end
 
   def test_local_validation_checks_untracked_document_whitespace
