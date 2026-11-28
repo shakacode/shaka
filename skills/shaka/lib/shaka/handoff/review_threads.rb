@@ -25,10 +25,20 @@ module Shaka
         owed -= excluded_threads(owed)
         return if owed.empty?
 
+        withdraw_merge_wait
         owe("#{owed.length} unanswered thread#{'s' if owed.length > 1}",
             "Reply on review threads waiting for an answer: #{owed.join(', ')}.")
       rescue Error => e
         note(nil, "Review threads are unread: #{e.message}")
+      end
+
+      # A thread waiting for an answer is feedback the person clicking merge has not seen settled, so the
+      # merge wait comes off until the agent assesses it. Unread and excluded threads stay notes for a person.
+      def withdraw_merge_wait
+        return unless merge_requested?
+
+        @owed << 'Review threads wait for an answer while awaiting-merge-approval is set: run ' \
+                 '`attention --state none` and withdraw the merge-ready handoff in WIP Details before working on them.'
       end
 
       def thread_notes(answered, unknown)

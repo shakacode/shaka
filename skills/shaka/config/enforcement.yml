@@ -721,6 +721,21 @@ rules:
     detector: >-
       `DecisionLabels.guard` refuses a non-empty list while `awaiting-merge-approval` is set,
       before the body is written.
+  - id: withdraw-merge-wait-on-feedback
+    phase: always
+    quote: >-
+      When work resumes for actionable feedback, remove the awaiting label and withdraw the old
+      merge-ready handoff until the feedback is assessed
+    enforced_by: reported
+    detector: >-
+      `handoff` owes running `attention --state none` while `awaiting-merge-approval` is set and
+      a review thread it owes an answer remains, and exits 2. It counts the threads
+      settled-resolution describes, so a thread past its first 100 comments, an unreadable thread
+      list, or a public thread only an excluded author opened leaves the label in place.
+      Conversation comments do not count. Replying on the thread clears the item, so an agent
+      that answers without removing the label leaves the merge wait standing. Nothing checks that
+      WIP Details withdraws the handoff, and nothing runs when feedback arrives with no session to
+      run `handoff`.
   - id: stop-time-handoff
     phase: always
     quote: Settle each owed item and run it again before stopping.
@@ -730,7 +745,7 @@ rules:
       label (or, with `--woken-by`, still carries one; with `--woken-by`, a required check held for a manual
       approval voids it and is owed until a person approves it or the agent drops `--woken-by`), holds
       `awaiting-merge-approval` with
-      required checks not passing,
+      required checks not passing or a review thread waiting for an answer,
       with findings open in the published local review (`attention --state merge` refuses the same state before
       labeling), or without this account's checkpoint and, unless the base has a merge queue, squash message for
       the live head, or has a walkthrough
