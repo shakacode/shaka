@@ -33,7 +33,8 @@ module Shaka
       def record(github, seam)
         snapshot = Status.new(github, seam_required_checks: seam.merge&.fetch('required_checks', nil)).call
         publisher = publisher(github, snapshot.fetch('headRefOid'), seam.review)
-        record_ready(publisher, snapshot)
+        required, times = gate_evidence(github, snapshot)
+        publisher.call(required:, times:)
         publisher.merged
         { 'head' => snapshot['headRefOid'], 'state' => snapshot['state'],
           'stats' => ThroughputStats.read(body(github)) }
@@ -50,22 +51,17 @@ module Shaka
 
       def merge_unrecorded?(stats) = stats && [nil, 'UNKNOWN'].include?(stats['t3'])
 
-      def record_ready(publisher, snapshot)
+      # Unreadable checks give no ready time, and the log says why. The writer still runs with no rows, so it moves a
+      # block that named an earlier head to the merged head and marks a fork's carried ready time unverified. Only
+      # these reads fall back: a failed write fails the job, which can be rerun.
+      def gate_evidence(github, snapshot)
         rows = snapshot['requiredChecks']
-        return publisher.call(required: rows.filter_map { |row| row['name'] if row.is_a?(Hash) }) if rows
+        raise Error, snapshot['requiredChecksUnavailable'].to_s unless rows
 
-        unreadable(publisher, snapshot['requiredChecksUnavailable'])
+        [rows.filter_map { |row| row['name'] if row.is_a?(Hash) }, github.check_times]
       rescue Error => e
-        unreadable(publisher, e.message)
-      end
-
-      # Without readable checks no ready time is guessed and the log says why. The writer still moves the block to
-      # the merged head, so the merge time can follow, and marks a fork's carried ready time unverified.
-      def unreadable(publisher, reason)
-        warn "shaka pr stats: no ready time recorded: #{reason.to_s.gsub(/[\r\n]+/, ' ')}"
-        publisher.call(required: [], times: [])
-      rescue Error => e
-        warn "shaka pr stats: stats not updated: #{e.message.gsub(/[\r\n]+/, ' ')}"
+        warn "shaka pr stats: no ready time recorded: #{e.message.gsub(/[\r\n]+/, ' ')}"
+        [[], []]
       end
 
       def body(github) = github.api("repos/#{github.repository}/pulls/#{github.number}").fetch('body').to_s

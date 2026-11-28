@@ -1,15 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'throughput_helper'
-require 'open3'
-require 'shaka/pr_watch/stats_command'
+require_relative 'pr_stats_helper'
 
 # After a GitHub merge click, pr stats fills the times no watcher recorded.
 class PrStatsTest < Minitest::Test
-  include ThroughputHelper
-
-  Seam = Struct.new(:merge, :review)
-  SEAM = Seam.new({}, { 'ci_review_jobs' => [], 'ci_review_wait' => 'none' })
+  include PrStatsHelper
 
   def test_a_merged_pull_request_gets_its_ready_and_merge_times
     github = MergedFakeGitHub.new("Intro.\n\n#{unready_block}\n", merged_page)
@@ -75,72 +70,4 @@ class PrStatsTest < Minitest::Test
     assert_nil Shaka::PrWatch::StatsCommand.record(github, SEAM)['stats']
     assert_empty github.patches
   end
-
-  def test_the_command_reads_its_arguments_and_prints_the_recorded_stats
-    github = MergedFakeGitHub.new("Intro.\n\n#{unready_block}\n", merged_page)
-    out, = capture_io do
-      with_stubs(github) { assert_equal 0, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7 --ref main]) }
-    end
-    assert_equal MERGED.iso8601, JSON.parse(out).dig('stats', 't3')
-  end
-
-  def test_the_command_fails_when_the_merge_time_was_not_recorded
-    github = MergedFakeGitHub.new("Intro.\n\n#{unready_block}\n", merged_page.except('mergedAt'))
-    _, err = capture_io do
-      with_stubs(github) { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7 --ref main]) }
-    end
-    assert_includes err, 'the merge time was not recorded'
-  end
-
-  def test_an_unknown_merge_time_also_fails_the_command
-    block = Shaka::ThroughputStats.update(unready_block, 't3' => 'UNKNOWN')
-    github = MergedFakeGitHub.new("Intro.\n\n#{block}\n", merged_page.except('mergedAt'))
-    capture_io do
-      with_stubs(github) { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7 --ref main]) }
-    end
-  end
-
-  def test_the_command_refuses_to_run_without_a_trusted_ref
-    _, err = capture_io { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7]) }
-    assert_includes err, '--ref SHA'
-  end
-
-  def test_the_helper_dispatches_pr_stats
-    output, status = Open3.capture2e('skills/shaka/scripts/shaka', 'pr', 'stats', '--help',
-                                     chdir: File.expand_path('..', __dir__))
-    assert_predicate status, :success?, output
-    assert_includes output, 'Usage: shaka pr stats OWNER/REPO NUMBER --ref SHA'
-  end
-
-  private
-
-  def unready_block = describe('$4.12', timeline: push_times, pull: head_pull)
-
-  def merged_page
-    { 'headRefOid' => HEAD, 'mergedAt' => MERGED.iso8601,
-      'commits' => { 'nodes' => [{ 'commit' => gql(HEAD, PUSH.iso8601, []) }] } }
-  end
-
-  # Replaces GitHub and the trusted settings for one block, so run exercises its real argument handling.
-  def with_stubs(github)
-    swaps = { Shaka::GitHub => [:new, github], Shaka::PrWatch::StatsCommand => [:trusted_seam, SEAM] }
-    originals = swaps.to_h { |owner, (name, _)| [owner, owner.method(name)] }
-    swaps.each { |owner, (name, value)| owner.define_singleton_method(name) { |*| value } }
-    yield
-  ensure
-    originals.each { |owner, original| owner.define_singleton_method(original.name, original) }
-  end
-end
-
-# A pull request GitHub merged after its required check passed, with nothing recorded since publication.
-class MergedFakeGitHub < ThroughputFakeGitHub
-  def initialize(body, pull, times = [{ 'name' => 'validate', 'bucket' => 'pass',
-                                        'completedAt' => ThroughputHelper::READY.iso8601 }])
-    super
-  end
-
-  def snapshot = { 'headRefOid' => ThroughputHelper::HEAD, 'state' => 'MERGED', 'baseRefName' => 'main' }
-  def required_checks = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
-  def configured_required_checks = []
-  def checks = required_checks
 end
