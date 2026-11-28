@@ -54,26 +54,22 @@ class PublicationQuotedMarkersTest < Minitest::Test
     assert_includes Shaka::Publication.description(carried), 'codex-review'
   end
 
-  # Issue #1344: the paragraph after the marked line reads back as setup gaps when it is the helper's sentence.
-  GAPS_LINE = '**Setup gaps:** 1 of 2 configured reviewers completed.'
-  AGENT_FIELDS = {
-    'verification.summary' => ->(text) { { 'verification' => VERIFICATION.merge('summary' => "#{text} `x`") } },
-    'sections[0].body' => ->(text) { { 'sections' => [{ 'heading' => 'Outcome', 'body' => "First.\n\n#{text}" }] } },
-    'risk_record.body' => ->(text) { { 'risk_record' => { 'summary' => 'Low.', 'body' => text } } }
-  }.freeze
-
-  def test_agent_text_starting_a_line_with_the_setup_gaps_label_is_refused_naming_the_field
-    AGENT_FIELDS.each do |field, change|
-      error = assert_raises(Shaka::Error, field) { Shaka::Publication.description(content(**change.call(GAPS_LINE))) }
-      assert_includes error.message, field
+  # Issue #1344: without real gaps the summary follows the marked line and could read back as setup gaps.
+  def test_a_verification_summary_starting_with_the_setup_gaps_label_is_refused
+    ['**Setup gaps:** 1 of 2 configured reviewers completed; `x` did not.',
+     " \t**Setup gaps:** see `x`."].each do |text|
+      error = assert_raises(Shaka::Error, text.inspect) do
+        Shaka::Publication.description(content('verification' => VERIFICATION.merge('summary' => text)))
+      end
+      assert_includes error.message, 'verification.summary'
     end
   end
 
-  # The marker, not these lines, finds the helper's own result, so free-form text may show them.
-  def test_other_verification_lines_and_an_inline_label_still_render
-    summary = "Refuses a line starting with `**Setup gaps:**`.\n\n## Verification\n\n" \
-              '**Validation and review:** passed, as an example.'
-    assert_includes Shaka::Publication.description(content('summary' => summary)), summary
+  # Only the summary can sit where the reader looks, so other text may quote the label and the headings.
+  def test_other_text_may_quote_the_label_and_the_verification_lines
+    body = "**Setup gaps:** is Shaka's label.\n\n## Verification\n\n**Validation and review:** an example."
+    sections = [{ 'heading' => 'Outcome', 'body' => body }]
+    assert_includes Shaka::Publication.description(content('sections' => sections)), body
   end
 
   def test_marker_names_without_comment_delimiters_still_render

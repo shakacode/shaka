@@ -7,11 +7,8 @@ require_relative 'verification_line'
 module Shaka
   # Shaka finds its regions by reading its own HTML-comment markers back from the body,
   # so supplied description text that quotes one would leave the next read ambiguous.
-  # The paragraph after the marked Verification line counts as Setup gaps when it is the helper's
-  # sentence, so supplied text cannot start a line with that label either (issue #1344).
   module QuotedMarkers
     MARKER = %r{<!--\s*/?shaka:[\w:.-]*}
-    GAPS = /^#{Regexp.escape(VerificationLine::GAPS)}/
 
     module_function
 
@@ -21,6 +18,7 @@ module Shaka
       usage = content['usage']
       supplied = content.except(HumanComments::KEY)
       walk(usage.is_a?(Hash) ? supplied.merge('usage' => usage.except('carried')) : supplied, 'content')
+      refuse_gaps(content['verification'])
     end
 
     def walk(value, path)
@@ -32,7 +30,6 @@ module Shaka
     end
 
     def refuse_string(text, path)
-      refuse_gaps(text, path)
       quoted = text[MARKER] or return
 
       name = quoted.sub(/\A<!--\s*/, '')
@@ -40,11 +37,14 @@ module Shaka
                    "marker back from the pull request body. Name it without `<!--`, such as `#{name}`."
     end
 
-    def refuse_gaps(text, path)
-      return unless text.match?(GAPS)
+    # Issue #1344: without real gaps the summary follows the marked line, and the reader strips that
+    # paragraph and keeps it as setup gaps when it matches the helper's sentence.
+    def refuse_gaps(verification)
+      summary = verification['summary'] if verification.is_a?(Hash)
+      return unless summary.is_a?(String) && summary.strip.start_with?(VerificationLine::GAPS)
 
-      raise Error, "#{path.delete_prefix('content.')} starts a line with `#{VerificationLine::GAPS}`; Shaka reads " \
-                   'that label back as its own setup gaps. Reword the line so it starts differently.'
+      raise Error, "verification.summary starts with `#{VerificationLine::GAPS}`; Shaka reads that label back " \
+                   'as its own setup gaps. Reword the summary so it starts differently.'
     end
   end
 end
