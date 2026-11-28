@@ -72,9 +72,10 @@ class WindowsWorkflowTest < Minitest::Test
     assert_operator @steps.index(first), :<, checkout
   end
 
-  def test_reports_on_every_pull_request_so_main_can_require_it
+  def test_reports_on_every_pull_request_and_merge_group_so_main_can_require_it
     on = @workflow['on'] || @workflow[true]
 
+    assert on.key?('merge_group')
     refute on['pull_request'].to_h.key?('paths-ignore')
     refute on['push'].to_h.key?('paths-ignore')
   end

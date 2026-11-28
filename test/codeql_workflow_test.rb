@@ -5,7 +5,6 @@ require 'yaml'
 
 class CodeqlWorkflowTest < Minitest::Test
   PIN = /\A[0-9a-f]{40}\z/
-  DOCS_GATE = "steps.changes.outputs.docs_only != 'true'"
 
   def setup
     @path = File.expand_path('../.github/workflows/codeql.yml', __dir__)
@@ -53,34 +52,22 @@ class CodeqlWorkflowTest < Minitest::Test
     assert_equal "${{ github.event_name == 'pull_request' }}", concurrency.fetch('cancel-in-progress')
   end
 
-  def test_reports_on_every_pull_request_so_main_can_require_it
+  def test_reports_on_every_pull_request_and_merge_group_so_main_can_require_it
     on = @workflow['on'] || @workflow[true]
 
+    assert on.key?('merge_group')
     refute on['pull_request'].to_h.key?('paths-ignore')
     refute on['push'].to_h.key?('paths-ignore')
   end
 
-  def test_detects_documentation_changes_like_validate
-    validate_job = @validate.dig('jobs', 'validate')
+  def test_analyzes_every_change_including_documentation
+    steps = @workflow.dig('jobs', 'analyze', 'steps')
 
-    assert_equal validate_job.dig('env', 'SHAKA_BASE_REF'), @workflow.dig('jobs', 'analyze', 'env', 'SHAKA_BASE_REF')
-    assert_equal detector_run(validate_job.fetch('steps')), detector_run(steps)
-  end
-
-  def test_detects_right_after_a_full_history_checkout
-    assert_equal 0, steps.first.dig('with', 'fetch-depth')
-    assert_equal 'changes', steps.fetch(1)['id']
-  end
-
-  def test_skips_analysis_for_documentation
-    assert_equal([DOCS_GATE], steps.drop(2).map { |step| step['if'] }.uniq)
+    refute(steps.any? { |step| step['id'] == 'changes' })
+    assert(steps.none? { |step| step.key?('if') })
   end
 
   private
-
-  def steps = @workflow.dig('jobs', 'analyze', 'steps')
-
-  def detector_run(list) = list.find { |step| step['id'] == 'changes' }.fetch('run')
 
   def matrix
     @workflow.dig('jobs', 'analyze', 'strategy', 'matrix', 'include').fetch(0)

@@ -8,6 +8,7 @@ name: Windows
 # classifier admits as documentation only skips every step after detection.
 on:
   pull_request:
+  merge_group:
   push:
     branches: [main]
   schedule:
