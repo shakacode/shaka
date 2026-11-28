@@ -32,15 +32,16 @@ module Shaka
         @wait = wait
       end
 
-      def call(required:)
+      # Passing times: [] records no ready time but still moves the block to this head.
+      def call(required:, times: nil)
         2.times do
-          times = @github.check_times
+          rows = times || @github.check_times
           next unless (pull = timeline) && same_head?(pull)
 
           carried = ThroughputStats.read(body = description_body)
           return unless carried
 
-          updated = ThroughputStats.update(body, fields(pull, required, carried, times))
+          updated = ThroughputStats.update(body, fields(pull, required, carried, rows))
           return if updated == body
           next unless safe_to_write?(body)
 
@@ -78,9 +79,24 @@ module Shaka
       end
 
       def fields(pull, required, carried, times)
-        ready = ThroughputStats.ready_at(times, required:, review_jobs: @review_jobs, wait: @wait)
+        ready = ThroughputStats.ready_at(before_merge(times, pull['mergedAt']), required:, review_jobs: @review_jobs,
+                                                                                wait: @wait)
         start = prompt_time(pull.dig('commits', 'nodes', 0, 'commit'), carried)
         { 'head' => @head, 't1' => start }.merge(readiness_fields(ready, carried, pull))
+      end
+
+      # A check rerun after the merge cannot say when the pull request became ready.
+      def before_merge(rows, merged_at)
+        return rows unless merged_at
+
+        cutoff = Time.iso8601(merged_at)
+        Array(rows).reject { |row| row.is_a?(Hash) && completed_after?(row['completedAt'], cutoff) }
+      end
+
+      def completed_after?(value, cutoff)
+        value.is_a?(String) && Time.iso8601(value) > cutoff
+      rescue ArgumentError
+        false
       end
 
       # Times recorded for another head must not be relabelled as this head's.
