@@ -20,10 +20,16 @@ class ChangedTestsRepositoryTest < Minitest::Test
     assert_nil ChangedTests.new(ROOT).tests_for([%w[M test/support/worker_plan.rb]])
   end
 
+  # bin/docs-only-change no longer forces the whole suite for this guide; this selection replaces that.
+  def test_this_repository_selects_the_skill_test_for_the_maintenance_guide
+    assert_includes ChangedTests.new(ROOT).tests_for([%w[M internal/improving-shaka.md]]), 'test/skill_test.rb'
+  end
+
   def test_this_repository_selects_the_tests_that_read_a_guide
     selected = ChangedTests.new(ROOT).tests_for([%w[M docs/settings.md]])
 
     assert_includes selected, 'test/configure_settings_test.rb'
-    assert_operator selected.size, :<, Dir.glob('test/**/*_test.rb', base: ROOT).size
+    # Library files name the page only in links, so the selection stays a small share of the suite.
+    assert_operator selected.size, :<, Dir.glob('test/**/*_test.rb', base: ROOT).size / 4
   end
 end
