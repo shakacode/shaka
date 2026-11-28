@@ -17,10 +17,11 @@ module Shaka
       # records: saved run records of one comparison; cases: frozen rows by id; paths: changed files by case id;
       # settings: each arm's risk areas and threshold from its settings commit, as
       # { 'high' => areas, 'medium' => areas, 'max_risk' => level }, keyed by arm; plan: the comparison's
-      # planned 'cases' and 'repeats', so runs a stopped replay never made count as unattempted.
+      # planned 'arms', 'cases' and 'repeats', so an arm or run a stopped replay never reached counts as unattempted.
       def score(records:, cases:, paths:, settings:, plan:)
-        records.group_by { |record| record.fetch('arm') }.to_h do |arm, runs|
-          [arm, arm_score(runs, cases, paths, settings.fetch(arm), plan)]
+        by_arm = records.group_by { |record| record.fetch('arm') }
+        plan.fetch('arms').keys.to_h do |arm|
+          [arm, arm_score(by_arm.fetch(arm, []), cases, paths, settings.fetch(arm), plan)]
         end
       end
 

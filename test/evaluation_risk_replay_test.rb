@@ -50,16 +50,13 @@ class EvaluationRiskReplayTest < Minitest::Test
   end
 
   def test_each_record_names_its_whole_comparison_and_repeat
-    replay = Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex', effort: 'low', repeat: 2)
-    replay.instance_variable_get(:@comparison)[:cases] = %w[k01]
-    saved = []
-    replay.define_singleton_method(:replay) { |*| saved << save_run_metadata }
-    replay.define_singleton_method(:save_run_metadata) { [@comparison.dup, @repeat] }
+    saved = saved_plans(Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex', effort: 'low', repeat: 2))
 
-    replay.send(:replay_pair, 'k01', 0)
-
-    plan = { reviewer: 'openai/codex', effort: 'low', repeats: 2, cases: %w[k01] }
-    assert_equal [[plan, 0], [plan, 0], [plan, 1], [plan, 1]], saved
+    assert_equal [0, 0, 1, 1], saved.map(&:last)
+    plans = saved.map(&:first).uniq
+    assert_equal 1, plans.size
+    assert_equal({ reviewer: 'openai/codex', effort: 'low', repeats: 2, cases: %w[k01] },
+                 plans.first.slice(:reviewer, :effort, :repeats, :cases))
   end
 
   def test_repeat_is_refused_outside_a_checkpoint_risk_replay
@@ -74,6 +71,15 @@ class EvaluationRiskReplayTest < Minitest::Test
   end
 
   private
+
+  # The comparison and repeat each replayed call would save, without running a fixture or a model.
+  def saved_plans(replay)
+    replay.instance_variable_get(:@comparison)[:cases] = %w[k01]
+    saved = []
+    replay.define_singleton_method(:replay) { |*| saved << [@comparison.dup, @repeat] }
+    replay.send(:replay_pair, 'k01', 0)
+    saved
+  end
 
   def assert_frozen_case(row)
     assert_match(/\A[0-9a-f]{40}\z/, row.fetch('head'))

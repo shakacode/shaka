@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../../../../skills/shaka/lib/shaka/post_implementation_report'
+require 'digest'
+require 'securerandom'
 require_relative 'review_replay'
 
 module Shaka
@@ -18,10 +20,13 @@ module Shaka
         PostImplementationReport::RISK.include?(risk&.dig('rating')) && risk != PostImplementationReport::LEGACY_RISK
       end
 
-      # Every record names its whole comparison, so the scorer can refuse to pool two and count missing runs.
+      # Every record names its whole comparison, down to the invocation and the case file it read, so the scorer
+      # can refuse to pool two runs, count the runs a stop prevented, and refuse a case file that has changed since.
       def initialize(options)
         super
-        @comparison = { reviewer: @reviewer, effort: options[:effort], repeats: options.fetch(:repeat, 1) }
+        @comparison = { invocation: SecureRandom.uuid, reviewer: @reviewer, effort: options[:effort],
+                        repeats: options.fetch(:repeat, 1), case_file: Digest::SHA256.file(CASE_FILE).hexdigest,
+                        arms: options.slice(:baseline, :candidate) }
       end
 
       def run(rows)

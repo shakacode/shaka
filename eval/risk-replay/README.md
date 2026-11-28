@@ -51,8 +51,9 @@ eval/bin/risk-replay-score --state PRIVATE_STATE_DIR
 ```
 
 The scorer prints JSON for each arm and case, and refuses a state directory that
-holds more than one comparison: records name their reviewer, effort, cases, and
-repeats as well as each arm's model and settings commit. It keeps the model's judgment apart from Shaka's
+holds more than one replay run or was recorded against a different case file.
+Records name their run, reviewer, effort, cases, repeats, and each arm's model and
+settings commit, so an arm the replay never reached still shows as unattempted. It keeps the model's judgment apart from Shaka's
 deterministic risk gate:
 
 - `attempted`, `unattempted`, `rated`, `ratings`, `consistent`: the repeats run, the

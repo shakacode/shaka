@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'json'
 require_relative 'test_helper'
 require_relative '../eval/lib/shaka/evaluation/risk_replay_score'
@@ -53,10 +54,12 @@ class EvaluationRiskReplayScoreTest < Minitest::Test
   end
 
   def test_runs_a_stopped_replay_never_made_count_as_unattempted
-    arm = score([rated('low')], paths: ['lib/a.rb'], plan: { 'cases' => %w[k1 k2], 'repeats' => 3 }).fetch('candidate')
+    plan = { 'arms' => { 'baseline' => {}, 'candidate' => {} }, 'cases' => %w[k1 k2], 'repeats' => 3 }
+    result = score([rated('low')], paths: ['lib/a.rb'], plan:)
 
-    assert_equal 5, arm.fetch('unattempted')
-    assert_equal([2, 3], arm.fetch('cases').values.map { |entry| entry.fetch('unattempted') })
+    assert_equal 5, result.dig('candidate', 'unattempted')
+    assert_equal([2, 3], result.dig('candidate', 'cases').values.map { |entry| entry.fetch('unattempted') })
+    assert_equal [0, 6], result.fetch('baseline').values_at('runs', 'unattempted')
   end
 
   def test_a_report_whose_rating_the_parser_filled_in_counts_as_failed
@@ -70,24 +73,28 @@ class EvaluationRiskReplayScoreTest < Minitest::Test
   end
 
   def test_scoring_refuses_a_state_directory_holding_two_comparisons
-    [[{ 'model' => 'b' }, {}], [{}, { 'effort' => 'high' }]].each do |selection, comparison|
-      assert_includes score_directory([{}, {}], [selection, comparison]), 'mixes comparisons'
-    end
+    assert_includes score_directory([{}, { 'invocation' => 'second' }]), 'mixes comparisons'
+    assert_includes score_directory([{}, { 'effort' => 'high' }]), 'mixes comparisons'
+  end
+
+  def test_scoring_refuses_records_read_from_another_case_file
+    assert_includes score_directory([{ 'case_file' => 'older' }]), 'case file changed since this replay'
   end
 
   private
 
-  def score(records, paths:, reference: 'medium', plan: { 'cases' => %w[k1], 'repeats' => 2 })
+  def score(records, paths:, reference: 'medium',
+            plan: { 'arms' => { 'candidate' => {} }, 'cases' => %w[k1], 'repeats' => 2 })
     cases = plan.fetch('cases').to_h { |id| [id, ROW.merge('id' => id, 'reference' => reference)] }
     Shaka::Evaluation::RiskReplayScore.score(records:, cases:, paths: cases.transform_values { paths },
-                                             settings: { 'candidate' => SETTINGS }, plan:)
+                                             settings: plan.fetch('arms').transform_values { SETTINGS }, plan:)
   end
 
-  # Two records whose selection and comparison differ by the given changes; returns the scorer's error.
-  def score_directory(*changes)
+  # One record per change to its comparison; returns the scorer's error.
+  def score_directory(changes)
     Dir.mktmpdir do |directory|
-      changes.transpose.each_with_index do |(selection, comparison), index|
-        File.write(File.join(directory, "#{index}.json"), JSON.generate(record(selection, comparison)))
+      changes.each_with_index do |comparison, index|
+        File.write(File.join(directory, "#{index}.json"), JSON.generate(record(comparison)))
       end
       _, error, status = Open3.capture3(RbConfig.ruby, SCORE, '--state', directory)
       refute_predicate status, :success?
@@ -95,9 +102,11 @@ class EvaluationRiskReplayScoreTest < Minitest::Test
     end
   end
 
-  def record(selection, comparison)
-    rated('low').merge('selection' => { 'criteria' => 'a' * 40, 'model' => 'a' }.merge(selection),
-                       'comparison' => { 'effort' => 'low' }.merge(comparison))
+  def record(comparison)
+    case_file = Digest::SHA256.file(Shaka::Evaluation::RiskReplay::CASE_FILE).hexdigest
+    rated('low').merge('comparison' => { 'invocation' => 'first', 'effort' => 'low', 'case_file' => case_file,
+                                         'arms' => { 'candidate' => { 'criteria' => 'a' * 40 } },
+                                         'cases' => %w[k01], 'repeats' => 1 }.merge(comparison))
   end
 
   def failed = { 'arm' => 'candidate', 'case' => 'k1', 'result' => { 'status' => 'incomplete' }, 'usage' => {} }

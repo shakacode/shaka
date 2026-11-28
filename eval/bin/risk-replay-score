@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'digest'
 require 'json'
 require 'open3'
 require 'optparse'
@@ -37,23 +38,26 @@ end
 
 # Each arm's own committed settings decide its risk areas and threshold, as they did in the replay's fresh
 # fixture; a settings preview or individual settings in this checkout must not stand in for them.
-def settings(records)
-  records.to_h { |record| [record.fetch('arm'), record.dig('selection', 'criteria')] }.transform_values do |ref|
+def settings(plan)
+  plan.fetch('arms').transform_values { |selection| selection.fetch('criteria') }.transform_values do |ref|
     config = Shaka::Configuration.trusted(root: SOURCE, ref:, candidate_commands: false)
     high, medium = Shaka::PostImplementationRisk.areas(config)
     { 'high' => high, 'medium' => medium, 'max_risk' => Shaka::PostImplementationRisk.max_risk(config) }
   end
 end
 
-# A state directory holds one comparison; records from another would be pooled under the same arm names.
-# Returns the comparison's plan: its reviewer, effort, cases and repeats.
+# A state directory holds one replay invocation; records from another would be pooled under the same arm names.
+# Returns its plan, and refuses one whose case file has changed since, which would rescore it silently.
 def one_comparison!(records)
   plans = records.map { |record| record['comparison'] }.uniq
-  selections = records.map { |record| record.values_at('arm', 'selection') }.uniq
-  arms = selections.map(&:first)
-  return plans.first if plans.one? && plans.first && arms.uniq.size == arms.size
+  unless plans.one? && plans.first
+    raise ArgumentError, 'The state directory mixes comparisons; score each comparison from its own state directory'
+  end
+  if plans.first['case_file'] == Digest::SHA256.file(Shaka::Evaluation::RiskReplay::CASE_FILE).hexdigest
+    return plans.first
+  end
 
-  raise ArgumentError, 'The state directory mixes comparisons; score each comparison from its own state directory'
+  raise ArgumentError, 'The case file changed since this replay; score it with the case file it read'
 end
 
 begin
@@ -61,9 +65,10 @@ begin
   raise ArgumentError, 'No replay records in the state directory' if saved.empty?
 
   plan = one_comparison!(saved)
-  cases = File.foreach(Shaka::Evaluation::RiskReplay::CASE_FILE).to_h { |line| JSON.parse(line).then { |row| [row.fetch('id'), row] } }
+  rows = File.foreach(Shaka::Evaluation::RiskReplay::CASE_FILE).map { |line| JSON.parse(line) }
+  cases = rows.to_h { |row| [row.fetch('id'), row] }.slice(*plan.fetch('cases'))
   paths = cases.transform_values { |row| changed_paths(row) }
-  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings: settings(saved),
+  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings: settings(plan),
                                                    plan:)
   puts JSON.pretty_generate(score)
 rescue ArgumentError, IndexError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError,
