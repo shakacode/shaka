@@ -5,6 +5,7 @@ require 'optparse'
 require_relative '../branch_head'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
+require_relative '../local_review/path_guard'
 require_relative 'handover'
 require_relative 'owner_tag'
 require_relative 'ownership'
@@ -40,10 +41,11 @@ module Shaka
       end
 
       def outcome(operation, options)
-        pull = pull_request(options[:pr])
+        cli = gh_runtime(options[:root])
+        pull = pull_request(options[:pr], cli)
         raise Error, "The PR is #{pull['state'].to_s.downcase}; nothing to hand over." unless pull['state'] == 'OPEN'
 
-        ownership = Ownership.new(options[:pr], pull['author'])
+        ownership = Ownership.new(options[:pr], pull['author'], cli)
         return status(options[:root], ownership) if operation == 'status'
 
         hand_over(operation, ownership, pull, options)
@@ -77,8 +79,8 @@ module Shaka
         raise Error, "Cannot parse the content file: #{e.message}"
       end
 
-      def pull_request(request)
-        argv = ['gh', 'pr', 'view', request[:number], '--repo', request[:repository], '--json', FIELDS]
+      def pull_request(request, cli)
+        argv = [*cli, 'pr', 'view', request[:number], '--repo', request[:repository], '--json', FIELDS]
         output, error, success = Doctor::BoundedCommand.new(timeout: SECONDS).call(argv)
         raise Error, "Cannot read PR #{request}: #{error.strip}" unless success
 
@@ -87,6 +89,16 @@ module Shaka
           'checks' => pull['statusCheckRollup'], 'body' => pull['body'], 'author' => pull.dig('author', 'login') }
       rescue JSON::ParserError => e
         raise Error, "Cannot parse PR #{request}: #{e.message}"
+      end
+
+      # A PATH without the checkout's directories and a gh from it, so a gh committed in the checkout never runs.
+      def gh_runtime(root)
+        checkout = File.realpath(root)
+        path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: checkout, drop_candidate: true)
+        gh = LocalReviewPathGuard.safe_executable(path, 'gh', checkout)
+        raise Error, 'gh is not on PATH outside the checkout' unless gh
+
+        [{ 'PATH' => path }, gh]
       end
 
       def parse(operation, arguments)
@@ -125,7 +137,8 @@ module Shaka
         flags.on(flag, text) { options[flag.delete_prefix('--').to_sym] = true }
       end
 
-      private_class_method :outcome, :hand_over, :content, :pull_request, :parse, :option_parser, :authority_flags
+      private_class_method :outcome, :hand_over, :content, :pull_request, :gh_runtime, :parse, :option_parser,
+                           :authority_flags
     end
   end
 end

@@ -104,7 +104,7 @@ module BranchHeadOwnershipFixture
 
   private
 
-  def ownership = Shaka::BranchHead::Ownership.new(REQUEST, 'owner')
+  def ownership = Shaka::BranchHead::Ownership.new(REQUEST, 'owner', ['gh'])
 
   def content(tag) = { 'identity' => IDENTITY, 'owner_tag' => tag, 'remaining' => 'Write the docs' }
 
@@ -155,7 +155,12 @@ module BranchHeadOwnershipFixture
     @original_new = Shaka::Doctor::BoundedCommand.method(:new)
     fake.git = @original_new.call(timeout: 120)
     Shaka::Doctor::BoundedCommand.define_singleton_method(:new) { |**| fake }
+    @original_cli = Shaka::BranchHead::HandoverCommand.method(:gh_runtime)
+    Shaka::BranchHead::HandoverCommand.define_singleton_method(:gh_runtime) { |_root| ['gh'] }
   end
 
-  def restore_gh = Shaka::Doctor::BoundedCommand.define_singleton_method(:new, @original_new)
+  def restore_gh
+    Shaka::Doctor::BoundedCommand.define_singleton_method(:new, @original_new)
+    Shaka::BranchHead::HandoverCommand.define_singleton_method(:gh_runtime, @original_cli)
+  end
 end

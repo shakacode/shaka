@@ -37,7 +37,9 @@ module Shaka
       end
 
       # request is the --pr match, with repository and number; author is the PR author, who holds it at first.
-      def initialize(request, author)
+      # cli is [environment, path] for a GitHub CLI outside the checkout.
+      def initialize(request, author, cli)
+        @cli = cli
         @repository = request[:repository]
         @number = request[:number]
         @author = author
@@ -115,7 +117,7 @@ module Shaka
       end
 
       def gh(*arguments, missing: nil)
-        argv = ['gh', *arguments]
+        argv = [*@cli, *arguments]
         output, error, success = Doctor::BoundedCommand.new(timeout: SECONDS).call(argv)
         return output if success
         return missing if missing && error.include?('HTTP 404')

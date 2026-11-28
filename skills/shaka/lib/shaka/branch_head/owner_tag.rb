@@ -1,51 +1,55 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'open3'
 require_relative '../error'
 require_relative 'destination'
 
 module Shaka
   class BranchHead
-    # The tag this checkout won a pickup with, kept in its branch config beside the accepted head. The PR's original
-    # owner never picked it up, so it has none.
+    # The tag this worktree won a pickup with, by branch. It lives in the worktree's own Git directory rather than in
+    # repository config, which linked worktrees share, so another worktree of the same clone never reads it. The PR's
+    # original owner never picked the PR up, so it has none.
     module OwnerTag
+      FILE = 'shaka-owner-tags.json'
+
       module_function
 
-      def recorded(root)
-        output, error, status = config(root, '--get', key(root))
-        return output.strip if status.success?
-        return if status.exitstatus == 1
+      def recorded(root) = tags(root)[branch(root)]
 
-        raise Error, "Cannot read #{key(root)}: #{error.strip}"
-      end
+      def record(root, tag) = write(root, tags(root).merge(branch(root) => tag))
 
-      def record(root, tag)
-        _output, error, status = config(root, key(root), tag)
-        raise Error, "Cannot record #{key(root)}: #{error.strip}" unless status.success?
-      end
-
-      # Puts back the tag a checkout had before a pickup that did not count; nil removes it.
+      # Puts back the tag a worktree had before a pickup that did not count; nil removes it.
       def restore(root, tag)
         return record(root, tag) if tag
 
-        _output, error, status = config(root, '--unset-all', key(root))
-        raise Error, "Cannot clear #{key(root)}: #{error.strip}" unless status.success? || status.exitstatus == 5
+        write(root, tags(root).except(branch(root)))
       end
 
-      # The checked-out branch, which `branch check` requires to be the PR head branch.
-      def branch(root)
-        output, error, status = git(root, 'symbolic-ref', '--quiet', 'HEAD')
-        raise Error, "No branch is checked out: #{error.strip}" unless status.success?
+      # The checked-out branch, which a pickup requires to be the PR head branch.
+      def branch(root) = git(root, 'symbolic-ref', '--quiet', 'HEAD').delete_prefix('refs/heads/')
 
-        output.strip.delete_prefix('refs/heads/')
+      def tags(root)
+        path = file(root)
+        tags = File.exist?(path) ? JSON.parse(File.read(path, encoding: 'UTF-8')) : {}
+        raise Error, "#{path} does not hold a JSON object." unless tags.is_a?(Hash)
+
+        tags
+      rescue JSON::ParserError => e
+        raise Error, "Cannot parse #{path}: #{e.message}"
       end
 
-      def key(root) = "branch.#{branch(root)}.shakaOwnerTag"
+      def write(root, tags) = File.write(file(root), "#{JSON.pretty_generate(tags)}\n")
 
-      def config(root, *) = git(root, 'config', '--local', *)
+      def file(root) = File.join(git(root, 'rev-parse', '--absolute-git-dir'), FILE)
 
       # Git from outside the checkout, as `shaka branch` runs it, so nothing committed in the checkout runs.
-      def git(root, *) = Open3.capture3(*Destination.runtime(root), '-C', root, *)
+      def git(root, *arguments)
+        output, error, status = Open3.capture3(*Destination.runtime(root), '-C', root, *arguments)
+        raise Error, "git #{arguments.first} failed: #{error.strip}" unless status.success?
+
+        output.strip
+      end
     end
   end
 end

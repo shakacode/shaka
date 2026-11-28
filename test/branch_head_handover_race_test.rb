@@ -66,6 +66,18 @@ class BranchHeadHandoverRaceTest < Minitest::Test
     assert_paused nil, @teammate
   end
 
+  # A tag lives in each worktree's own Git directory, so another worktree of the clone never reads it.
+  def test_an_owner_tag_stays_with_its_worktree
+    released_task
+    assert_equal 'picked_up', pickup(teammate_clone, 'newtag')['state']
+    git(@teammate, 'switch', '--quiet', '-c', 'other')
+    linked = File.join(@dir, 'linked')
+    git(@teammate, 'worktree', 'add', '--quiet', linked, BRANCH)
+
+    assert_nil Shaka::BranchHead::OwnerTag.recorded(linked)
+    assert_paused 'taken_over', linked
+  end
+
   private
 
   def stale_release_race(sha)
