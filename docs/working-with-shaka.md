@@ -343,12 +343,16 @@ harness the way you hold it to your tests, add it to your
 Add our verification harness to .agents/shaka/bin/validate so a harness failure fails validation
 ```
 
-The agent runs validate before calling a PR ready and again after each code change, so a
-failing harness keeps the PR from being ready. If you also have a faster
-[`validate-local`](settings.md#count-a-faster-check-as-validation) script, the agent may use
-it instead between review fixes; add the harness there too, or those runs won't check it.
-A harness that needs a person, such as one that waits for a sign-in code, can't run there;
-keep reporting those runs in **Companion skill results**.
+When the agent runs validate while delivering a PR, Shaka records the result together
+with the exact code it tested. Before calling a PR ready, the agent needs a passing result
+for the PR's latest code, so a failing harness holds the PR back.
+
+- If you also have a faster
+  [`validate-local`](settings.md#count-a-faster-check-as-validation) script, the agent may
+  run it instead of validate during local review. Add the harness to `validate-local` too,
+  or those runs won't check it.
+- A harness that needs a person, such as one that waits for a sign-in code, can't run in
+  validate. Keep reporting those runs in **Companion skill results**.
 
 ## Review a session for improvements
 
