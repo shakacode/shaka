@@ -26,11 +26,15 @@ class InstallGitFailureNextStepTest < Minitest::Test
     assert_includes git_words_free(output), "#{@remote} has no branch topic"
   end
 
-  # The clone reads a hyphenated repository as a path, so the check after its failure must too.
+  # The clone reads a hyphenated repository as a path, so the check after its failure must too: no such path
+  # can be reached, and the option it spells never runs.
   def test_a_failed_clone_never_reads_the_repository_as_an_option
     marker = File.join(@directory, 'ran')
-    refusal(@root, '--directory', File.join(@directory, 'new'), '--repository', "--upload-pack=touch #{marker}",
-            '--agent', 'claude')
+    repository = "--upload-pack=touch #{marker}"
+    output = refusal(@root, '--directory', File.join(@directory, 'new'), '--repository', repository,
+                     '--agent', 'claude')
+    assert_includes git_words_free(output), "Found: Git could not reach #{repository}. Next: run git -C "
+    assert_includes output, "ls-remote --heads -- #{Shellwords.escape(repository)} to check"
     refute_path_exists marker
   end
 
