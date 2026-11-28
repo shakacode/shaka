@@ -122,8 +122,9 @@ installation refuse the checkout. On Windows, run this block in Git Bash (or
 another POSIX shell), and add `--config core.autocrlf=false --config core.eol=lf`
 to the `git clone`, as in the source-install path above, or the installer
 refuses the checkout because Git converted its line endings. From PowerShell or
-cmd, start the installer as `ruby DIR\bin\install`, since Windows cannot run the
-extensionless script.
+cmd, start the installer as
+`RUBY DIR\bin\install` with the absolute path to Ruby 3.4 or later, since
+Windows cannot run the extensionless script.
 
 Confirm `git -C DIR branch --show-current` prints nothing and
 `git -C DIR for-each-ref --format='%(refname)' refs/heads/` is empty. Do not

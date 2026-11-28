@@ -10,9 +10,11 @@ detached tag checkout using the clone, detach, and inspection steps under
 [Install a published release](official-installation.md#install-a-published-release)
 (stop before `bin/install`) while the previous installation stays active, and
 record its `HEAD` commit. Use the absolute path to that checkout's
-`skills/shaka/scripts/shaka` (or `ruby …\skills\shaka\scripts\shaka.rb` on
-native Windows) and set `SHAKA_RUBY` to the absolute path to Ruby 3.4 or later
-for each POSIX-launcher invocation of the target helper.
+`skills/shaka/scripts/shaka` and set `SHAKA_RUBY` to the absolute path to Ruby
+3.4 or later for each POSIX-launcher invocation. On native Windows, invoke
+`RUBY --disable-gems --disable-rubyopt …\skills\shaka\scripts\shaka.rb` with
+that same absolute Ruby path so project Ruby and `RUBYOPT` cannot select an
+older interpreter.
 
 In this section, "the helper" is the target helper for a release cutover and
 otherwise the trusted installed helper. Run the helper's `seam migrate --root ROOT

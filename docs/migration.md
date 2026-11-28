@@ -74,13 +74,25 @@ reported errors. When every project passes, switch with the verified-checkout pr
 
 Ask your agent to prepare a branchless detached checkout of the target release
 using the Install a published release procedure (clone, detach, and inspect
-only; keep the current installation), then run the team or individual
-compatibility checks from that checkout. On native Windows, have it launch the
-helper with `ruby …\skills\shaka\scripts\shaka.rb`.
+only; keep the current installation), then run these checks from that checkout.
+On native Windows, have it launch the helper with the absolute path to Ruby 3.4
+or later as
+`RUBY --disable-gems --disable-rubyopt DIR\skills\shaka\scripts\shaka.rb`.
 
 ```text
 Prepare a branchless detached checkout of Shaka 1.0.0 for the compatibility checks in docs/migration.md. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the team and individual seam checks against this project's verified default-branch commit
 ```
+
+Use that checkout's helper. Use the project's verified default-branch commit for
+`DEFAULT_SHA`.
+
+- For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a
+  clean checkout at that commit. Require `trusted/ref` for the same SHA before
+  offering a switch (a selected settings preview can report `preview/local`
+  instead).
+- For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
+  against the local copy that has those settings. The result reports any setting
+  or wrapper that needs attention.
 
 </details>
 

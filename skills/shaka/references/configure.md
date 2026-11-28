@@ -112,6 +112,8 @@ List it as `after merge`: Update Shaka (branch installations: `shaka install --u
 pinned releases: switch to a compatible release using
 [keep a tested release](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md#keep-a-tested-release)),
 who: everyone running Shaka on this repository, where: each machine with an
-installation, verify: `shaka doctor --brief` reports Repository seam HEALTHY.
+installation, verify: the updated helper's `seam check --root ROOT --ref MERGED_SHA`
+reports `trusted/ref` for the merged default-branch SHA (do not treat a working-tree
+`shaka doctor --brief` alone as recovery proof after a compatibility hold).
 Keep the pre-merge pause from the publish step above; this update runs after merge.
 Ruby checks none of this; the agent applies it.
