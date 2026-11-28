@@ -50,6 +50,9 @@ jobs:
         if: steps.changes.outputs.docs_only == 'true'
         run: |
           ruby bin/check-docs-navigation
-          echo "Documentation-only change; Ruby tests and RuboCop skipped."
+          # The classifier admitted only documentation, so this runner and its selector are as they
+          # were at the merge base.
+          bundle exec ruby bin/run-tests --changed "$SHAKA_BASE_REF"
+          echo "Documentation-only change; RuboCop skipped."
       - if: steps.changes.outputs.docs_only != 'true'
         run: bin/validate

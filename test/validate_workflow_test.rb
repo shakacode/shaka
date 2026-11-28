@@ -115,6 +115,45 @@ class ValidateWorkflowTest < Minitest::Test
     FileUtils.remove_entry(root) if root && File.exist?(root)
   end
 
+  def test_documentation_fast_path_runs_the_tests_that_name_a_changed_page
+    root = validation_fixture
+    File.write(File.join(root, 'docs/guide.md'), "# Clearer guide\n")
+
+    output, status = run_local_validation(root)
+
+    assert_predicate status, :success?, output
+    assert_includes output, "RUN_TESTS --changed HEAD with #{File.realpath(root)}/Gemfile"
+  ensure
+    FileUtils.remove_entry(root) if root && File.exist?(root)
+  end
+
+  def test_documentation_fast_path_fails_when_those_tests_fail
+    root = validation_fixture
+    File.write(File.join(root, 'docs/guide.md'), "# Clearer guide\n")
+
+    output, status = run_local_validation(root, { 'RUN_TESTS_STATUS' => '1' })
+
+    refute_predicate status, :success?
+    assert_includes output, 'RUN_TESTS --changed HEAD'
+  ensure
+    FileUtils.remove_entry(root) if root && File.exist?(root)
+  end
+
+  def test_remote_documentation_step_runs_the_tests_that_name_a_changed_page
+    root = validation_fixture
+    File.write(File.join(root, 'docs/guide.md'), "# Clearer guide\n")
+
+    output, status = run_documentation_step(root)
+    assert_predicate status, :success?, output
+    assert_includes output, 'RUN_TESTS --changed HEAD'
+
+    output, status = run_documentation_step(root, { 'RUN_TESTS_STATUS' => '1' })
+    refute_predicate status, :success?
+    refute_includes output, 'RuboCop skipped'
+  ensure
+    FileUtils.remove_entry(root) if root && File.exist?(root)
+  end
+
   def test_local_validation_rejects_staged_whitespace_hidden_by_the_working_tree
     root = validation_fixture
     guide = File.join(root, 'docs/guide.md')
@@ -283,7 +322,17 @@ class ValidateWorkflowTest < Minitest::Test
     install_validation_scripts(root)
     File.write(File.join(root, 'README.md'), "[Guide](docs/guide.md)\n")
     File.write(File.join(root, 'docs/guide.md'), "# Guide\n")
-    root.tap { |path| initialize_repository(path) }
+    initialize_repository(root)
+    install_bundle_stub(root)
+    root
+  end
+
+  # Runs bundle exec without Bundler: on CI, a fixture outside the checkout has no installed gem path.
+  def install_bundle_stub(root)
+    directory = File.join(root, '.git/bundle-bin')
+    FileUtils.mkdir_p(directory)
+    File.write(File.join(directory, 'bundle'), %(#!/bin/sh\n[ "$1" = exec ] || exit 64\nshift\nexec "$@"\n))
+    FileUtils.chmod(0o755, File.join(directory, 'bundle'))
   end
 
   def hide_committed_guide_with_index(root, content: "# Guide\n", executable: false)
@@ -301,6 +350,10 @@ class ValidateWorkflowTest < Minitest::Test
     copy_validation_sources(root)
     File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')
     File.write(File.join(root, 'bin/validate'), "#!/bin/sh\necho FULL_VALIDATION\n")
+    File.write(File.join(root, 'bin/run-tests'), <<~'RUBY')
+      puts "RUN_TESTS #{ARGV.join(' ')} with #{ENV.fetch('BUNDLE_GEMFILE', '')}"
+      exit Integer(ENV.fetch('RUN_TESTS_STATUS', '0'))
+    RUBY
     FileUtils.chmod(0o755, File.join(root, 'bin/validate'))
   end
 
@@ -349,8 +402,17 @@ class ValidateWorkflowTest < Minitest::Test
 
   # A developer's BASH_ENV can put the real git ahead of a fake one on PATH.
   def run_local_validation(root, environment = {}, chdir: root)
-    Open3.capture2e({ 'BASH_ENV' => nil, 'SHAKA_BASE_REF' => 'HEAD' }.merge(environment),
-                    File.join(root, '.agents/shaka/bin/validate'), chdir:)
+    Open3.capture2e(fixture_environment(root, environment), File.join(root, '.agents/shaka/bin/validate'), chdir:)
+  end
+
+  def run_documentation_step(root, environment = {})
+    script = @steps.find { |step| step['name'] == 'Report documentation-only validation' }.fetch('run')
+    Open3.capture2e(fixture_environment(root, environment), 'bash', '-e', '-c', script, chdir: root)
+  end
+
+  def fixture_environment(root, environment)
+    path = "#{File.join(root, '.git/bundle-bin')}:#{environment.fetch('PATH', ENV.fetch('PATH'))}"
+    { 'BASH_ENV' => nil, 'SHAKA_BASE_REF' => 'HEAD' }.merge(environment, 'PATH' => path)
   end
 
   def run_detector(root, base)
