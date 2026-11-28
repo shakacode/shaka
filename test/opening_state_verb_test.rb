@@ -22,13 +22,13 @@ class OpeningStateVerbTest < Minitest::Test
   end
 
   def test_flags_a_state_verb_without_a_change_marker
-    ['still has', 'Remains', 'automatically retains', "doesn't keep"].each do |action|
+    ['still has', 'Remains', 'automatically retains'].each do |action|
       assert_equal 'flagged', verdict(action, ['publishing'])['status'], action
     end
   end
 
-  def test_passes_a_state_verb_that_says_the_condition_is_new
-    ['now retains', 'no longer keeps', 'has again'].each do |action|
+  def test_passes_a_state_verb_that_says_what_changed
+    ['now retains', 'no longer keeps', 'has again', 'starts to retain', "doesn't keep"].each do |action|
       assert_equal 'passed', verdict(action, ['approval'])['status'], action
     end
   end

@@ -7,8 +7,9 @@ module Shaka
   module OpeningVerdict
     # Bump this with any rule change below, so verdicts cached under older rules are not reused.
     RULES_VERSION = 2
-    # A main verb that reports a lasting condition rather than an event, such as "keeps its decisions".
-    STATE_VERBS = %w[keep keeps has have remain remains stay stays retain retains].freeze
+    # A finite main verb that reports a lasting condition rather than an event, such as "keeps its decisions".
+    # Base forms stay out, so "starts to retain" and "doesn't keep" read as the events they name.
+    STATE_VERBS = %w[keeps has remains stays retains].freeze
     # Words that say the condition is new, such as "now keeps" or "no longer has", so the change is stated.
     CHANGE_MARKERS = %w[now longer again anymore].freeze
 
