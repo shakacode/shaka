@@ -102,7 +102,8 @@ module Shaka
     # An unproven claim stays visible: a maintainer deciding whether to merge must not have to open the fold.
     def verification(spec, verification_line)
       summary = evidenced(PublicationText.single_line(spec['summary'], 'verification summary')) if spec['summary']
-      ['## Verification', verification_line, summary, *not_verified(spec['not_verified']),
+      marked = "#{VerificationLine::MARKER}\n#{verification_line}"
+      ['## Verification', marked, summary, *not_verified(spec['not_verified']),
        *merge_limitations(spec['merge_limitations'])].compact.join("\n\n")
     end
 
