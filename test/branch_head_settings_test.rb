@@ -25,7 +25,7 @@ class BranchHeadSettingsTest < Minitest::Test
     git(@task, 'remote', 'add', 'fork', bare_copy('fork.git'))
     git(@task, 'config', "branch.#{BRANCH}.remote", 'fork')
 
-    assert_includes check['error'], 'tracks fork'
+    assert_includes check['error'], 'tracks "fork"'
   end
 
   # Only an unset upstream or exactly origin passes; `.` and a value with an embedded newline both pause.
