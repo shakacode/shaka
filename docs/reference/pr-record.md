@@ -135,7 +135,7 @@ Some skills come from a skill pack, a set of skills published together, such as
 column naming where the pack is published, such as `cursor/plugins/pstack`. The agent
 names the original pack even when you installed a fork or a copy that renamed its
 skills, so `pstack-tdd` from a fork still shows `cursor/plugins/pstack`. To see how
-often a pack helped, search your PRs for that one value. You don't need to do anything;
+often a pack was used, search your PRs for that one value. You don't need to do anything;
 the agent fills it in.
 
 ## Before and after merge
