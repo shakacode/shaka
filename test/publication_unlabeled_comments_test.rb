@@ -6,6 +6,7 @@ require_relative 'publication_human_comments_test'
 # login, so its `gh` reply looks the same; `shaka resolve` refuses that reply, and nothing can
 # tell the two apart well enough to warn about it.
 class PublicationUnlabeledCommentsTest < Minitest::Test
+  VERIFIED = "## Verification\n\n#{Shaka::VerificationLine::MARKER}\n".freeze
   include HumanCommentsFixture
 
   # https://github.com/shakacode/shaka/pull/995#issuecomment-6541201159
@@ -16,8 +17,8 @@ class PublicationUnlabeledCommentsTest < Minitest::Test
                                               Shaka::PublicationSettings.new(verdict: routine_verdict))
 
     assert_includes rendered, 'This reads as a warning'
-    assert_includes rendered, "## Verification\n\nValidation passed; local review completed at ccccccc."
-    refute_includes rendered, Shaka::VerificationGates::GAPS
+    assert_includes rendered, "#{VERIFIED}**Validation and review:** `validate` passed"
+    refute_includes rendered, Shaka::VerificationLine::GAPS
   end
 
   private

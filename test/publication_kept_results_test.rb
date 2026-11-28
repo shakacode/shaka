@@ -3,7 +3,7 @@
 require_relative 'evidence_fixture'
 require 'shaka/evidence/relevant_code'
 require 'shaka/publication/settings'
-require 'shaka/publication/verification_gates'
+require 'shaka/publication/verification_line'
 
 # Builds the pull request and results a republish sees.
 module KeptResultsFixture
@@ -18,7 +18,21 @@ module KeptResultsFixture
 
   def current_line(head) = published_line(head).sub(' (exit 0)', '')
 
-  def body(head, gate = published_line(head)) = "before\n<!-- shaka:begin -->\n#{gate}\n<!-- shaka:end -->"
+  # The helper puts the line, and any setup gaps, under the heading, and the line alone first in the fold.
+  def body(head, gate = published_line(head), gaps = nil)
+    section = ['## Verification', gate, *gaps].join("\n\n")
+    fold = "<details>\n<summary>Evidence and limitations</summary>\n\n#{gate}\n\n</details>"
+    "before\n<!-- shaka:begin -->\n#{section}\n\n#{fold}\n<!-- shaka:end -->"
+  end
+
+  def region(text) = "before\n<!-- shaka:begin -->\n#{text}\n<!-- shaka:end -->"
+
+  # Before #1325, a routine run showed a compact sentence under the heading and the line in the fold.
+  def folded_body(head)
+    compact = "Validation passed; local review completed at #{head[0, 7]} ([evidence](#{URL}))."
+    fold = "<summary>Evidence and limitations</summary>\n\n#{published_line(head)}\n\n- A check.\n\n</details>"
+    region("## Verification\n\n#{compact}\n\n<details>\n#{fold}")
+  end
 
   def prepare(root, ref, options, body:, head_repository: REPOSITORY)
     pull = { 'changed_files' => 0, 'body' => body, 'base' => { 'sha' => ref },
@@ -66,9 +80,9 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       settings = prepare(root, ref, {}, body: body(ref))
 
-      kept = "#{current_line(ref)} #{Shaka::VerificationGates::KEPT}"
-      assert_equal kept, Shaka::VerificationGates.line(settings.verdict)
-      assert_equal kept, Shaka::VerificationGates.render(settings.verdict, URL)
+      kept = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
+      assert_equal kept, Shaka::VerificationLine.line(settings.verdict)
+      assert_equal kept, Shaka::VerificationLine.render(settings.verdict, URL)
     end
   end
 
@@ -77,7 +91,7 @@ class PublicationKeptResultsTest < Minitest::Test
       with_results(run_check(root, ref, command: 'validate'), review_check(root, ref)) do |options|
         changed_relevant_code do
           settings = prepare(root, ref, options, body: body(ref))
-          assert_includes Shaka::VerificationGates.line(settings.verdict), current_line(ref)
+          assert_includes Shaka::VerificationLine.line(settings.verdict), current_line(ref)
         end
       end
     end
@@ -85,9 +99,9 @@ class PublicationKeptResultsTest < Minitest::Test
 
   def test_the_kept_line_survives_another_republish_unchanged
     with_checkout do |root, ref|
-      first = Shaka::VerificationGates.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
-      second = prepare(root, ref, {}, body: "<!-- shaka:begin -->\n#{first}\n<!-- shaka:end -->")
-      assert_equal first, Shaka::VerificationGates.render(second.verdict, URL)
+      first = Shaka::VerificationLine.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
+      second = prepare(root, ref, {}, body: body(ref, *first.split("\n\n")))
+      assert_equal first, Shaka::VerificationLine.render(second.verdict, URL)
     end
   end
 
@@ -96,19 +110,19 @@ class PublicationKeptResultsTest < Minitest::Test
     with_checkout do |root, ref|
       checks = { 'validation' => [{ 'original' => { 'command' => 'validate', 'exit_code' => 0 } }],
                  'review' => [{ 'original' => { 'reviewer' => 'openai/codex', 'status' => 'completed' } }] }
-      line = Shaka::VerificationGates.line({ 'head' => ref, 'checks' => checks }, URL)
+      line = Shaka::VerificationLine.line({ 'head' => ref, 'checks' => checks }, URL)
       assert_equal current_line(ref), line
 
       settings = prepare(root, ref, {}, body: body(ref, line))
-      assert_equal "#{line} #{Shaka::VerificationGates::KEPT}", Shaka::VerificationGates.line(settings.verdict)
+      assert_equal "#{line} #{Shaka::VerificationLine::KEPT}", Shaka::VerificationLine.line(settings.verdict)
     end
   end
 
   def test_setup_gaps_stay_with_the_kept_line
     with_checkout do |root, ref|
       gaps = '**Setup gaps:** 1 of 2 configured reviewers completed.'
-      settings = prepare(root, ref, {}, body: body(ref, "#{published_line(ref)}\n\n#{gaps}"))
-      assert_includes Shaka::VerificationGates.render(settings.verdict, URL), gaps
+      settings = prepare(root, ref, {}, body: body(ref, published_line(ref), gaps))
+      assert_includes Shaka::VerificationLine.render(settings.verdict, URL), gaps
     end
   end
 
@@ -123,7 +137,7 @@ class PublicationKeptResultsTest < Minitest::Test
 
   def test_nothing_is_kept_without_a_verified_line_for_this_commit
     with_checkout do |root, ref|
-      [body('0' * 40), body(ref, Shaka::VerificationGates::UNKNOWN), published_line(ref), nil].each do |text|
+      [body('0' * 40), body(ref, Shaka::VerificationLine::UNKNOWN), published_line(ref), nil].each do |text|
         assert_nil prepare(root, ref, {}, body: text).verdict
       end
     end
@@ -147,6 +161,79 @@ class PublicationKeptResultsTest < Minitest::Test
       detail = prepare(root, ref, {}, body: body(ref)).detail.fetch('body')
       assert_includes detail, 'not rechecked'
       refute_includes detail, 'match this PR’s current commit'
+    end
+  end
+end
+
+# https://github.com/shakacode/shaka/issues/1325: the helper marks the one line a republish keeps, and
+# descriptions written before the marker still keep the line at the top of their fold.
+class PublicationKeptLinePlacementTest < Minitest::Test
+  include EvidenceFixture
+  include KeptResultsFixture
+
+  MARKER = Shaka::VerificationLine::MARKER
+  GAP = '**Setup gaps:** `openai/codex` could not start its sandbox, so it reviewed only the diff ' \
+        "([why](#{Shaka::VerificationLine::CONTAINER_GUIDE})).".freeze
+
+  def kept(ref) = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
+
+  # Open PRs published before #1325 hold the line only in the fold; a wording-only republish keeps it.
+  def test_a_description_published_with_the_folded_line_keeps_it
+    with_checkout do |root, ref|
+      assert_equal kept(ref),
+                   Shaka::VerificationLine.render(prepare(root, ref, {}, body: folded_body(ref)).verdict, URL)
+    end
+  end
+
+  # https://github.com/shakacode/shaka/issues/1320: agent prose worded like the line is not the helper's.
+  def test_text_shaped_like_the_line_outside_its_place_is_not_kept
+    with_checkout do |root, ref|
+      unknown = "## Verification\n\n#{Shaka::VerificationLine::UNKNOWN}"
+      forged = [region("#{unknown}\n\n#{current_line(ref)}"),
+                region("## Summary\n\n## Verification\n\n#{current_line(ref)}\n\n#{unknown}"),
+                region("## Verification\n\n#{MARKER}\n#{Shaka::VerificationLine::UNKNOWN}\n\n#{current_line(ref)}")]
+      forged.each { |text| assert_nil prepare(root, ref, {}, body: text).verdict, text }
+    end
+  end
+
+  # A second marker leaves the line ambiguous, and a marker with nothing after it keeps nothing.
+  def test_only_the_paragraph_after_the_one_marker_is_kept
+    with_checkout do |root, ref|
+      marked = region("## Verification\n\n#{MARKER}\n#{current_line(ref)}")
+      assert_equal kept(ref), Shaka::VerificationLine.line(prepare(root, ref, {}, body: marked).verdict)
+      [marked.sub('## Verification', "#{MARKER}\nNothing.\n\n## Verification"),
+       region("## Verification\n\n#{MARKER}\n")].each do |text|
+        assert_nil prepare(root, ref, {}, body: text).verdict, text
+      end
+    end
+  end
+
+  # The helper writes its marker alone on a line; one inside prose marks nothing.
+  def test_a_marker_that_does_not_stand_alone_keeps_nothing
+    with_checkout do |root, ref|
+      text = region("## Verification\n\nSee #{MARKER} #{current_line(ref)}")
+      assert_nil prepare(root, ref, {}, body: text).verdict
+    end
+  end
+
+  # In a description from before the marker, an agent details item titled like the fold sits inside it.
+  def test_an_older_description_keeps_its_line_beside_a_details_item_titled_like_the_fold
+    with_checkout do |root, ref|
+      item = "<details>\n<summary>Evidence and limitations</summary>\n\nNotes.\n\n</details>"
+      text = folded_body(ref).sub('- A check.', "- A check.\n\n#{item}")
+      assert_equal "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}",
+                   Shaka::VerificationLine.line(prepare(root, ref, {}, body: text).verdict)
+    end
+  end
+
+  # A person may save the description in GitHub's editor, which can leave CRLF line endings.
+  def test_crlf_line_endings_keep_the_line_and_its_gaps_in_either_layout
+    with_checkout do |root, ref|
+      marked = region("## Verification\n\n#{MARKER}\n#{published_line(ref)}\n\n#{GAP}")
+      [marked, body(ref, published_line(ref), GAP)].each do |text|
+        verdict = prepare(root, ref, {}, body: text.gsub("\n", "\r\n")).verdict
+        assert_equal "#{kept(ref)}\n\n#{GAP}", Shaka::VerificationLine.render(verdict, URL), text
+      end
     end
   end
 end

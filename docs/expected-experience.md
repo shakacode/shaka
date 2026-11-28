@@ -30,9 +30,14 @@ to request revisions, provide missing access, or merge.
 
 ## Interrupted work
 
-Return to the original chat. Use **WIP Details → Chat link** in the PR description
-when a link is available. If you cannot find or continue that chat, make sure the
-previous agent has stopped, then use
+Return to the original chat. Under **Shaka metrics** in the PR description, open
+**🤙 Shaka details** and use the copy button on the **Chat link** when one is
+shown first; otherwise read **WIP Details → Chat link**, which sits inside that fold,
+or below Shaka metrics on PRs published before it.
+GitHub does not link app addresses, so paste it into your browser's address bar on the
+machine that holds the chat. The label names it when the alias is known, such as **Chat link on `laptop`**.
+If you cannot find or continue that chat, make sure the previous agent
+has stopped, then use
 [Resume unfinished work](working-with-shaka.md#resume-unfinished-work).
 On a public PR, WIP Details and other expandable sections are public too.
 

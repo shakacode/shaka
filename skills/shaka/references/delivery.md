@@ -187,7 +187,9 @@ The renderer uses `REDACTED` for Workspace when the setting is explicitly false,
 `wip.include_checkout_path: false`. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
-republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
+republishing when loading failed. When no settings were read and the checkout has no
+settings file, Workspace says the repository has no Shaka settings instead.
+No setting hides Chat link; supply `UNKNOWN`
 with `wip_disclosure.thread` set to `withheld` when the user asks to keep it off the PR. Unfinished publication remains possible without
 validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
@@ -202,8 +204,10 @@ or outdated note after a crash is a reason to inspect live state, not to abandon
 
 **Take over in a new task:** require maintainer confirmation that the previous
 owner stopped or is handing over. An idle task, old timestamp, or missing note
-is insufficient. Then read the live head and publish a complete note with a new
-owner tag before other work. Immediately after it, post a takeover comment with
+is insufficient. Then, in a checkout whose `origin` holds the PR head, check it out under its
+own branch name, run `branch check`, bring the local branch up to the live head, and accept it
+with `branch accept --head SHA`. Then publish a complete note with a new owner tag before other
+work. Immediately after it, post a takeover comment with
 `reply --key takeover-OWNER_TAG` that names the new Owner and Revision and points
 to WIP Details for the rest; leave Chat link out. It grants no authority. A resume
 by the same owner posts none. Recheck checks, review, and merge authority. Inspect
@@ -363,9 +367,10 @@ the summary. Leave the field out when no walkthrough is due.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
-when that API has no live URL, it checks the current head's latest Cloudflare Pages check
+when that lookup finishes with no live URL, it checks the current head's latest Cloudflare Pages check
 from the Cloudflare GitHub App and extracts its immutable `pages.dev` preview when successful.
-When neither source supplies a URL, it renders `Deployment: none found` with the head's short SHA. Supply a URL yourself when
+When both lookups finish without a URL, it renders `Deployment: none found` with the head's
+short SHA; when a lookup is too large to finish without one, `description` refuses. Supply a URL yourself when
 another provider exposes the preview solely in a comment or CI log, or to select among
 several preview projects. The helper links
 it beside the walkthrough. Republish after hosted checks and preview builds settle,

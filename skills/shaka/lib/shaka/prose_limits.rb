@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
-# Refuses a description or walkthrough whose rendered, visible prose is shaped as a wall of text.
+# Refuses a description or walkthrough whose rendered, visible prose is shaped as a wall of text
+# or cites review findings by an ID only the review ledger explains.
 
 require_relative 'defaults'
 require_relative 'error'
+require_relative 'supplied_prose'
 require_relative 'visible_prose'
 
 module Shaka
@@ -13,7 +15,7 @@ module Shaka
     # Room for a short summary however small the change is.
     BASE_WORDS = 150
     QUOTED_WORDS = 8
-    SHOWN = 3
+    FINDING_ID = /(?<![[:alnum:]_.-])N\d{1,3}(?![[:alnum:]_-]|\.\d)/
     ADVICE = 'Split long sentences and paragraphs, move supporting detail into details, ' \
              'and link to the code instead of retelling it. Each labeled field renders on its own line, ' \
              'so after trimming, check that every field still makes sense without its neighbors.'
@@ -50,6 +52,16 @@ module Shaka
 
     def to_h = @limits.dup
 
+    # A description's length then counts only the prose its author supplied, so the helper's own lines,
+    # which grow with the risk rating, do not shrink the author's budget. Other limits still read everything.
+    def with_supplied(content)
+      dup.tap { it.supplied = SuppliedProse.words(content) }
+    end
+
+    def supplied? = !@supplied.nil?
+
+    protected attr_writer :supplied
+
     # Measures GitHub's rendering of body; the pull request supplies the change size.
     def verify_publication!(github, body, kind:, pull:)
       verify!(github.markdown(body), kind:, changed_lines: self.class.changed_lines(pull))
@@ -58,26 +70,35 @@ module Shaka
     # html is GitHub's rendering, so Markdown rules come from GitHub rather than a copy of them.
     def verify!(html, kind:, changed_lines:)
       paragraphs = VisibleProse.new(html).paragraphs
-      problems = long_sentences(paragraphs) + long_paragraphs(paragraphs) +
+      problems = finding_ids(paragraphs) + long_sentences(paragraphs) + long_paragraphs(paragraphs) +
                  [length_problem(paragraphs, kind, changed_lines)].compact
       return if problems.empty?
 
-      raise Error, "#{kind.to_s.capitalize} is hard to read: #{summary(problems)}. #{ADVICE}"
+      raise Error, "#{kind.to_s.capitalize} is hard to read: #{problems.join('; ')}. #{ADVICE}"
     end
 
     private
 
-    def summary(problems)
-      shown = problems.first(SHOWN)
-      shown << "#{problems.size - SHOWN} more" if problems.size > SHOWN
-      shown.join('; ')
+    # Review ledgers usually number findings N1, N2, and so on. A PR reader never sees the ledger, so a
+    # bare ID such as "accepted on N3" tells them nothing (PR #1301). Shorter schemes such as F1
+    # collide with ordinary terms, so only this form is checked. Inline code is not scanned, so an
+    # author writes another term of that shape as code.
+    def finding_ids(paragraphs)
+      ids = paragraphs.flatten.flat_map { |sentence| sentence.scan(FINDING_ID) }.uniq
+      return [] if ids.empty?
+
+      ["it cites review findings by ledger ID (#{ids.join(', ')}), which a reader cannot look up; " \
+       'say what each finding is without its ID, and format a term that is not a finding ID, such as an N2 ' \
+       'machine type, as code']
     end
 
     def long_sentences(paragraphs)
       limit = @limits.fetch('max_sentence_words')
       paragraphs.flatten.filter_map do |sentence|
         count = VisibleProse.words(sentence)
-        "a sentence has #{count} words (limit #{limit}): #{quote(sentence)}" if count > limit
+        next if count <= limit
+
+        "a sentence has #{count} words (limit #{limit}): #{quote(sentence)}, #{overage(count, limit)}"
       end
     end
 
@@ -85,18 +106,31 @@ module Shaka
       limit = @limits.fetch('max_paragraph_words')
       paragraphs.filter_map do |sentences|
         count = VisibleProse.words(sentences.join(' '))
-        "a paragraph has #{count} words (limit #{limit}): #{quote(sentences.first)}" if count > limit
+        next if count <= limit
+
+        "a paragraph has #{count} words (limit #{limit}): #{quote(sentences.first)}, #{overage(count, limit)}"
       end
     end
 
     def length_problem(paragraphs, kind, changed_lines)
       limit = budget(kind, changed_lines)
-      count = VisibleProse.words(paragraphs.flatten.join(' '))
+      measured, count = length(paragraphs, kind)
       return unless limit && count > limit
 
       scaled = kind == :walkthrough || limit != @limits.fetch('max_description_words')
       scope = scaled ? " for #{changed_lines} changed lines" : ''
-      "the visible prose has #{count} words (limit #{limit}#{scope})"
+      "#{measured} has #{count} words (limit #{limit}#{scope}), #{overage(count, limit)}"
+    end
+
+    def length(paragraphs, kind)
+      return ['the prose you supplied', @supplied] if @supplied && kind == :description
+
+      ['the visible prose', VisibleProse.words(paragraphs.flatten.join(' '))]
+    end
+
+    def overage(count, limit)
+      excess = count - limit
+      "#{excess} #{excess == 1 ? 'word' : 'words'} over"
     end
 
     def budget(kind, changed_lines)

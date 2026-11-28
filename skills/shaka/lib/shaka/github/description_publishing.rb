@@ -13,15 +13,22 @@ module Shaka
     # GitHub drops the region markers from its stored rendering, so only a body that is all Shaka text can be measured.
     PROSE_UNCHECKED = "#{CHECKED_AFTER}; prose limits not checked, because text outside Shaka's region " \
                       'cannot be told apart in the stored rendering'.freeze
+    # The supplied prose's length needs no rendering, so it was checked before writing.
+    SHAPE_UNCHECKED = "#{CHECKED_AFTER}; only the supplied prose's length was checked, before writing; other " \
+                      "prose limits not checked, because text outside Shaka's region cannot be told apart in the " \
+                      'stored rendering'.freeze
 
     # A block builds the body from the pull request it replaces, using this same read. With `deferred`, a
     # refused renderer moves the checks to the rendering GitHub stores, and a failing write is undone.
-    def description(body: nil, prose: ProseLimits.new, deferred: false)
+    # `writer`, called after the block, gives the four-field identity line that signs any usage archive comments.
+    # `supplied`, called after the block, gives the author's content, so the length limit counts only its prose.
+    def description(body: nil, prose: ProseLimits.new, deferred: false, writer: nil, supplied: nil)
       current = pull
       archive = UsageArchive.new(self)
       readable = archive_pull(current, archive)
       rendered = publishable(block_given? ? yield(readable) : body)
-      plan = description_plan(archive, current, rendered)
+      prose = measured(prose, supplied)
+      plan = description_plan(archive, current, rendered, writer&.call)
       merged, checked = publish_archive(plan, current, prose, deferred)
       return confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged) if checked
 
@@ -30,9 +37,14 @@ module Shaka
 
     private
 
-    def description_plan(archive, current, rendered)
+    def measured(prose, supplied)
+      content = supplied&.call
+      content.is_a?(Hash) ? prose.with_supplied(content) : prose
+    end
+
+    def description_plan(archive, current, rendered, writer)
       base = MergeWarningRegion.answered_by_merge(current['body'].to_s, @repository, current)
-      archive.prepare(merge(base, rendered))
+      archive.prepare(merge(base, rendered), writer:)
     end
 
     # Returns the body to write and whether GitHub's renderer checked it.
@@ -55,6 +67,8 @@ module Shaka
       raise unless deferred
 
       RenderedProse.source_escapes!(preview)
+      # The supplied prose needs no rendering, so its total is checked before writing, even beside text a person wrote.
+      prose.verify!('', kind: :description, changed_lines: ProseLimits.changed_lines(current))
       false
     end
 
@@ -73,7 +87,7 @@ module Shaka
     end
 
     def stored_prose(prose, merged, html, current)
-      return PROSE_UNCHECKED unless only_region?(merged)
+      return prose.supplied? ? SHAPE_UNCHECKED : PROSE_UNCHECKED unless only_region?(merged)
 
       prose.verify!(html, kind: :description, changed_lines: ProseLimits.changed_lines(current))
       CHECKED_AFTER

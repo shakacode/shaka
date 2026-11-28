@@ -6,8 +6,8 @@ strictly validates and renders its packaged `skills/shaka/config/workflow.yml` b
 an agent follows the procedure.
 It adds no runtime gems and does not install a global agent profile. The source
 prepares `1.0.0`; publication requires the checks and explicit approval in the
-[release process](releasing.md). The published `0.1.0.pre.1` gem only reserves the
-name and lacks the current workflow. Registry publication alone establishes neither
+[release process](releasing.md). Gem versions before `1.0.0` lack the current
+workflow. Registry publication alone establishes neither
 real-use acceptance nor broader host compatibility.
 
 Build from the trusted source directory; RubyGems reads package files relative
@@ -37,13 +37,14 @@ your application's shell or add the pilot to its Gemfile.
 ## Validate a consumer seam in CI
 
 Use the [pinned validation commands](../README.gem.md#validate-team-configuration)
-from the gem README. The name-reservation gem lacks this check. Keep the
-existing pinned source checkout until a tested gem is published.
+from the gem README. Gem versions before `1.0.0` lack this check. Keep an
+existing pinned source checkout until you can pin a published `1.0.0` or later.
 
 That command uses the same `RepositoryConfig` implementation as the installed skill.
 A passing payload includes `"mode": "local/candidate"` with `grants_policy` and
 `grants_merge_authority` both `false`. Treat it as structure evidence: unknown keys,
-duplicate keys, invalid nested values, unsafe paths, missing scripts, and
+duplicate keys, YAML merge keys (`<<`), keys tagged other than `!!str`, invalid nested
+values, unsafe paths, missing scripts, and
 non-executable scripts fail with a non-zero exit. It is not trusted policy and cannot
 authorize a merge. Agents still load merge and review policy with
 `shaka seam check --ref SHA` against an immutable default-branch commit.
@@ -59,7 +60,7 @@ Applications that only need the experimental public-comment screen can load
 
 The package also contains `shaka-install`, which runs `bin/install`. It installs the
 official checkout, cloning it into `~/.local/share/shaka/source` unless `--directory DIR`
-names another place, and links the selected hosts to it. In the next approved gem,
+names another place, and links the selected hosts to it. From gem `1.0.0`,
 new installations select the tag matching that gem's version, rather than newer
 development code. Existing registered installations keep their source selection;
 an explicit repository or branch overrides the default. The

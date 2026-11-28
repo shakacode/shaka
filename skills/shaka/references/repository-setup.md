@@ -36,8 +36,9 @@ required checks because they require a trusted source. The agent must verify
 that `--ref` is the current default-branch commit; Ruby only checks that it is a
 full commit SHA. Private settings do not grant trusted policy,
 public-comment trust, or merge authority. Under Ask, the user's approval of a named
-head still lets `merge` run: it ignores the private settings and applies default limits,
-an independent review, the checkpoint, and GitHub's gates.
+head still lets `merge` run. It takes no policy from the private settings and applies default limits,
+an independent review, the checkpoint, and GitHub's gates. The one exception adds a gate: the private
+`merge.hold_labels` hold the PR as well as the default `hold`.
 
 After setup, run `seam private inspect --root DIR` and
 `seam private check --root DIR --ref DEFAULT_BRANCH_SHA`. The latter reports
@@ -193,8 +194,8 @@ uses `~/.agents/skills`. Replace every example command with the repository's
 actual command. If no CI review job exists, use `--review-policy none` and omit
 `--ci-review-job`. Meaningful
 implementation still gets local review. The initializer refuses to overwrite
-conflicting files. When GitHub enforces no required checks, add
-`--required-check NAME` for each confirmed check.
+conflicting files. Add `--required-check NAME` for each confirmed check GitHub does not
+already require.
 
 
 ## Offer local reviewers
@@ -250,7 +251,7 @@ PR merges, ordinary new tasks use the default-branch settings.
 Supply `--root`, `--setup-command`, `--test-command`, `--validate-command`, and
 `--review-policy`. Unless review policy is `none`, supply `--ci-review-job` for
 an actual job; repeat it for additional jobs. Supply `--required-check` for each
-check the user confirms when GitHub requires none; see
+check the user wants gated beyond what GitHub requires; see
 [`merge.required_checks`](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergerequired_checks). With no
 required checks at all, keep merge preference `ask`.
 

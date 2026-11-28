@@ -163,9 +163,8 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **D4 (R6–R7):** use live native checks, merge state, and approvals.
   Inspect check states, not just a CLI exit code. Require observable checks
   enforced for the acting account; GitHub owns full enforcement, including
-  requirements absent from the reported list. When the base branch has no required
-  checks configured, the trusted seam's `merge.required_checks` stands in and Shaka
-  enforces it (see the merge boundary). COMMENT never substitutes for APPROVE.
+  requirements absent from the reported list. The trusted seam's `merge.required_checks`
+  adds checks to the native ones, and Shaka alone enforces them (see the merge boundary). COMMENT never substitutes for APPROVE.
 - **D5 (R8, R10):** register one dedicated clean checkout at a default or chosen
   directory, with direct host links and independent Ruby. Verify before fast-forward
   updates; refuse dirty or unexpected checkouts. Preserve optional towers and
@@ -195,7 +194,8 @@ It supplies setup, full and optional pre-review validation, focused tests, an op
 hosted-CI trigger, base branch, review, merge authority, branch naming, and recovery policy.
 GitHub supplies live protection, required checks, and allowed merge methods. `AGENTS.md`
 supplies human-only context and boundaries.
-`shaka seam check` rejects unknown fields, duplicate keys, unsafe paths, missing scripts,
+`shaka seam check` rejects unknown fields, duplicate keys, YAML merge keys (`<<`),
+keys tagged other than `!!str`, unsafe paths, missing scripts,
 and invalid values. Read authority from the trusted default-branch copy. Candidate policy
 edits cannot weaken the current task's requirements. Consumer commands stay in their own
 repositories; do not copy Shaka's scripts into them.
@@ -228,10 +228,10 @@ failure blocks submission. Trust maintainers authorized to merge, including acco
 that GitHub permits to bypass protection; no separate account opt-in is required.
 The helper checks readiness before submitting the normal merge or enqueue operation.
 GitHub applies the repository's rules to the account as configured; readiness can
-change after the helper's last snapshot. When GitHub has no required checks configured
-on the base branch, as on a private repository on the GitHub Free plan, the trusted seam's
-`merge.required_checks` stands in for them and Shaka alone enforces it (maintainer decision
-on #235). When neither supplies a check, the helper merges only the exact head a user
+change after the helper's last snapshot. The trusted seam's `merge.required_checks` adds
+checks to those GitHub requires on the base branch, or supplies the whole gate where GitHub
+requires none, as on a private repository on the GitHub Free plan; Shaka alone enforces the
+listed checks (maintainer decisions on #235 and #1373). When neither supplies a check, the helper merges only the exact head a user
 asked it to merge, or approved, under Ask. Ruby checks only that the confirmation names the merged head;
 the agent never confirms one under Auto (#551). Leave repository queue settings and armed
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
@@ -255,9 +255,11 @@ Queue submission retains GitHub’s default message and reports that custom text
 
 - Run `bundle install` for development setup and `bin/validate` locally and in CI.
   When the trusted classifier proves a change contains only regular, non-executable
-  `README.md` or `docs/**/*.md` files, that validation entry point and the hosted
-  Validate workflow run whitespace checks without Ruby tests or RuboCop. Ambiguous
-  changes use the full gate, and always-on security checks still run.
+  documentation files, such as `README.md`, `docs/*.md`, figures under `docs/img/`, and
+  `internal/*.md`, `.agents/shaka/bin/validate` (which `validate-local` calls) and the
+  hosted Validate workflow run whitespace and docs navigation checks and only the Ruby
+  tests that name a changed page, without RuboCop. Ambiguous changes use the full gate,
+  and always-on security checks still run.
 - Test failed/pending/missing checks, API errors, stale heads, unsupported merge state,
   rejected merges, queued submission and replay, and safe argument handling.
 - Install in an isolated skills directory; repeat installation, preserve foreign
@@ -296,8 +298,8 @@ accepted changes; describe its uncertainty before making savings claims.
 
 Public source publication and reviewed, verified implementation PR merges are
 authorized. Runtime prerequisites are Ruby 3.4, Git, authenticated GitHub CLI,
-and GitHub PRs. The source prepares the `1.0.0` candidate; the published
-`0.1.0.pre.1` gem only reserves the project name. Registry publication and broader
+and GitHub PRs. The source prepares `1.0.0`; gem versions
+before `1.0.0` predate the current workflow. Registry publication and broader
 adoption require separate evidence and explicit decisions. Preparing a version
 does not establish the real-use acceptance criteria above.
 [Packaging](../contributing/packaging.md) describes the tested gem.

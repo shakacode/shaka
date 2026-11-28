@@ -88,7 +88,7 @@ class CliDescriptionTimingsTest < Minitest::Test
   end
 
   def assert_metrics_layout(published)
-    before, metrics = published.split("<details>\n<summary>Details</summary>", 2)
+    before, metrics = published.split("<details>\n<summary>🤙 Shaka details</summary>", 2)
     refute_nil metrics, 'one disclosure should group Shaka metadata'
     assert_includes before, '**Estimated token costs:** UNKNOWN'
     assert_includes before, '<summary>Capture limits</summary>'

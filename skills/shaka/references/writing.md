@@ -43,3 +43,29 @@
   four sentences when prose is useful.
 - Revise by deleting first. Ask whether the reader will follow each sentence,
   not whether they could.
+
+## Squash commit messages
+
+- After the outcome, name the failure the change ends.
+- State the outside fact behind a change before the change, such as "Windows
+  ignores shebang lines."
+- When three or more changes touch one area, give the area a short label line
+  and list one change per bullet. List known limits and follow-up issues the
+  same way, each bullet a full sentence with its own verb. Put a blank line
+  before each label line, or the helper joins it to the bullet above.
+- Say what each change does, not what the diff adds. Name another PR or issue
+  only with what it did, since a bare number means nothing in `git log`.
+  - Instead of: “It shows one before-and-after rewrite from #1242.”
+  - Write: “Squash messages now replace internal terms with what each part
+    does.”
+  - `squash-message` and ready checkpoint publication list each standalone
+    `#N` or `owner/repo#N` reference but the PR's own under
+    `squash_message_references`. Keep a number that a closing keyword
+    introduces, such as `Fixes`, `Closes`, `Resolves`, or `Part of`, and
+    ignore one inside a URL. When another number lacks what that PR did, add
+    it or drop the number, then publish again.
+- Replace internal terms with what the part does.
+  - Instead of: “Without a job, only a leader Ruby has not reaped is ended,
+    through Ruby's own handle.”
+  - Write: “When no job is available, a stop ends only the process Shaka
+    started for the check, and only while Ruby still holds its handle.”

@@ -19,6 +19,13 @@ module Shaka
     VERSION_POINTER = 'Shaka skill version under Execution details'
     # Settings from these sources are not readable in the repository, so the block keeps every value.
     UNCOMMITTED = %w[private/local preview/local].freeze
+    MISSING_LINE = '**Shaka settings were missing:** this repository has no Shaka settings file, so this PR was ' \
+                   'prepared without them. [Set up Shaka](https://shaka.shakacode.com/docs/getting-started#' \
+                   '2-choose-individual-or-team-setup) to run its full workflow.'
+
+    # A description adds this after its opening lines, above the summary, when the repository has no settings at
+    # all. It reads the flag directly, so an installed settings object that predates it renders no line.
+    def missing_lines = @missing == true ? [MISSING_LINE] : []
 
     def detail
       status = if @verdict&.key?('kept_line')
@@ -36,6 +43,14 @@ module Shaka
     # Read here, beside the renderers a preview loads from the PR head, so an installed helper
     # that never sets them previews with no shortfall and the usual order instead of failing.
     attr_reader :reviewer_shortfall, :time_zone, :template_headings
+
+    # EarlierReview's sentence when no results were supplied, or nil.
+    attr_reader :earlier_review
+
+    def with_earlier_review(sentence) = tap { @earlier_review = sentence }
+
+    # What the Verification line reads besides the bound results.
+    def verification_context = { shortfall: reviewer_shortfall, earlier: earlier_review }
 
     private
 

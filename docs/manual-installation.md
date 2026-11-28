@@ -19,13 +19,38 @@ stay in the project. See [where Shaka keeps things](settings-guide.md#where-shak
 and the [local timing log](reference/timings.md#local-timing-log).
 
 The installer does not use `sudo`, edit your shell profile or `PATH`, or install
-gems. It refuses installation folders other accounts can write to.
+gems. It refuses installation folders other accounts can write to. On Windows it checks only the
+permissions Ruby reports, not the folder's access control list, so another account's write access
+granted there goes unnoticed.
 
 ## Install
 
 If you prefer the terminal, use Ruby 3.4 or later, Git 2.41 or later, and an
-authenticated [GitHub CLI](https://cli.github.com/). Read the source and the
-[installer](https://github.com/shakacode/shaka/blob/main/bin/install) before running it.
+authenticated [GitHub CLI](https://cli.github.com/).
+
+### Install a published release
+
+For a first installation, use the gem once the version appears in
+[Shaka's RubyGems versions](https://rubygems.org/gems/shaka/versions).
+
+```sh
+gem install shaka --version 1.0.0
+shaka-install _1.0.0_ --agent codex
+```
+
+`_1.0.0_` selects that gem version when several are installed. Replace `codex`
+with your coding agent's identifier from the table below. The
+installer fetches the release tag and links the skill at that commit. Start a new
+chat and run the [health check](getting-started.md#1-install-shaka).
+
+If you already have Shaka installed, [check your project settings](migration.md#check-your-projects-against-10)
+before updating.
+
+### Install from source
+
+Use the source checkout if the release you want is unavailable. Read the source
+and [installer](https://github.com/shakacode/shaka/blob/main/bin/install) before
+running it.
 
 <details>
 <summary>Manual installation commands</summary>
@@ -37,7 +62,21 @@ mkdir -p "$(dirname "$shaka_install_dir")"
 git clone https://github.com/shakacode/shaka.git "$shaka_install_dir"
 ```
 
-After reading the checkout, run its installer:
+On Windows, clone from PowerShell instead, so the checkout keeps the stored line endings the
+installer needs to match the commit:
+
+```powershell
+$shaka_install_dir = "$HOME\.local\share\shaka\source"
+git clone --config core.autocrlf=false --config core.eol=lf https://github.com/shakacode/shaka.git $shaka_install_dir
+```
+
+After reading the checkout, run its installer. On Windows, from PowerShell:
+
+```powershell
+ruby "$shaka_install_dir\bin\install" --directory $shaka_install_dir --agent codex
+```
+
+On macOS or Linux:
 
 ```bash
 "$shaka_install_dir/bin/install" --directory "$shaka_install_dir" --agent codex

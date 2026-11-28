@@ -6,6 +6,7 @@ require_relative 'handoff_helper'
 # https://github.com/shakacode/shaka/pull/543 required only a summary, so its description left the
 # maintainer to infer the goal, and its check table listed commands without saying what went unproven.
 class PublicationIntentVerificationTest < Minitest::Test
+  VERIFIED = "## Verification\n\n#{Shaka::VerificationLine::MARKER}\n".freeze
   def render(**changes)
     Shaka::Publication.description(PublicationRegressionTest.new(name).description_content(**changes))
   end
@@ -17,7 +18,7 @@ class PublicationIntentVerificationTest < Minitest::Test
              "**Safe because:** #{INTENT['safe_because']}\n\n" \
              "**Leaves out:** #{INTENT['leaves_out']}\n\n" \
              "**Scope:** #{INTENT['scope']}"
-    verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
+    verification = "#{VERIFIED}#{Shaka::VerificationLine::UNKNOWN}\n\n" \
                    "<details>\n<summary>Evidence and limitations</summary>"
     assert_includes rendered, intent
     assert_includes rendered, verification
@@ -103,6 +104,10 @@ class PublicationIntentVerificationTest < Minitest::Test
                       'verification' => { 'checks' => [], 'not_verified' => 'Validation has not run yet.' })
 
     assert_includes rendered, '**Not verified:** Validation has not run yet.'
+    # The Validation and review line stays under Verification, so nothing is left to fold.
+    refute_includes render('wip' => HandoffFixtures::WIP, 'table' => nil,
+                           'verification' => { 'checks' => [], 'not_verified' => 'Not run yet.' }),
+                    'Evidence and limitations'
   end
 
   def test_one_to_three_checks_are_allowed

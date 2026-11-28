@@ -8,9 +8,8 @@ module Shaka
   # shown beside the risk rating. Mixed into the checkpoint publication, which supplies @head, @state,
   # @previews, and any @disposition_line.
   module PostImplementationAdequacy
-    # The stored verdict keeps its words so published comments still parse. A reader needs to know whose
-    # judgment the gaps got, because the maintainer has accepted nothing yet.
-    DISPLAYED = { 'adequate with accepted gaps' => 'Adequate, with gaps the reviewer judged acceptable' }.freeze
+    # A reader needs to know whose judgment the gaps got, because the maintainer has accepted nothing yet.
+    DISPLAYED = { 'adequate with named gaps' => 'Adequate, with gaps the reviewer judged acceptable' }.freeze
 
     private
 

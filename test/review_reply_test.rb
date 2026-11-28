@@ -303,7 +303,10 @@ class FakeReviews
     @comments
   end
 
+  # These tests cover how a cited comment is read; a private repository screens no author.
   def api(path, **)
+    return { 'visibility' => 'private' } if path == "repos/#{repository}"
+
     @lookups << :api
     @pulls.find { |item| path.end_with?("/comments/#{item['id']}") } || {}
   end

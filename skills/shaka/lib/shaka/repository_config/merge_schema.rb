@@ -7,7 +7,7 @@ require_relative 'validation'
 module Shaka
   class RepositoryConfig
     # Validates merge authority, size limits, the highest risk Auto merges, hold labels, and the checks that gate
-    # merge when GitHub enforces none.
+    # merge in addition to GitHub's required checks.
     class MergeSchema
       include Validation
 
@@ -53,6 +53,17 @@ module Shaka
       def name_lists!
         { REQUIRED_CHECKS => 'check names', HOLD_LABELS => 'label names' }.each do |key, noun|
           name_list!(@merge[key], "merge.#{key}", noun) if @merge.key?(key)
+        end
+        padded_hold_labels!
+      end
+
+      # A GitHub label name never starts or ends with a space, so a padded entry could never hold a PR.
+      def padded_hold_labels!
+        @merge.fetch(HOLD_LABELS, []).each_with_index do |label, index|
+          next if label == label.strip
+
+          raise Error, "merge.hold_labels[#{index}] has spaces around #{label.inspect}; " \
+                       'remove them, because a GitHub label name never has them and this entry would never match'
         end
       end
     end

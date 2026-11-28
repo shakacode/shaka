@@ -6,9 +6,8 @@ or [Fork Shaka and make it yours](https://github.com/shakacode/shaka/blob/main/d
 for prompts and terminal instructions.
 Use [official installation](official-installation.md) for the agent procedure
 to install, update, and verify the official version.
-Use source installation: the published name-reservation gem
-predates the current workflow. Confirm the requested source, version, and coding
-environment before installation. Preserve existing customizations during updates.
+Confirm the requested source, version, and coding environment before installation.
+Preserve existing customizations during updates.
 Shaka is the successor to `shakacode/agent-workflows`; new installations need only
 this repository.
 
@@ -44,9 +43,11 @@ Confirm which GitHub fork and branch to install. Create the fork if requested.
 If the request needs a new install branch, create and publish a dedicated branch
 such as `mine` so the fork's `main` can follow upstream.
 With no registered installation, clone the fork directly at its install branch
-with `git clone --branch BRANCH URL DIR`. Review that source and installer before
+with `git clone --branch BRANCH URL DIR`; on Windows add `--config core.autocrlf=false --config core.eol=lf`,
+as the installer does, so the files keep their stored line endings. Review that source and installer before
 running `bin/install --directory DIR --repository URL --branch BRANCH --agent HOST`
-with that prepared checkout. Keep the fork as `origin` and add the official
+with that prepared checkout; on Windows start it as `ruby DIR\bin\install`, as
+[official installation](official-installation.md#install) says. Keep the fork as `origin` and add the official
 repository with `git -C DIR remote add upstream https://github.com/shakacode/shaka.git`.
 See [official installation](official-installation.md) for prerequisites.
 
@@ -58,7 +59,8 @@ destination. Explain this before switching. If rollback is required, identify
 a supported directory and verify the saved source and revision are still
 installable there before moving any links.
 Clone the actual destination directly at the selected branch with
-`git clone --branch BRANCH URL DIR`, or prepare it at the selected release.
+`git clone --branch BRANCH URL DIR`, with the same Windows line-ending options, or prepare it at the
+selected release.
 For a fork, add the official repository as `upstream`.
 Inspect that revision before invoking take-over, which runs the incoming
 helper. Pass the prepared checkout as the destination.
@@ -100,7 +102,8 @@ Use `install --update` when the latest branch tip is acceptable. It fetches
 and verifies the tip it receives.
 
 Use take-over when the request is to install the exact tested or inspected commit.
-Clone directly at the install branch in a separate directory. In that clean
+Clone directly at the install branch in a separate directory, with the Windows line-ending options
+above. In that clean
 clone, run `git -C DIR reset --keep TESTED_SHA` to set the branch to the tested
 commit while keeping its `origin/BRANCH` tracking configuration. Before
 take-over, verify the checkout is clean, the branch tracks `origin/BRANCH`,
@@ -123,8 +126,11 @@ source identity without checking a repository. A source records an exact revisio
 only when it is the repository root, its selected file set matches `HEAD`, its
 selected paths have clean Git status, the file bytes and executable modes match
 `HEAD`, each selected directory contains a tracked file, and no selected file is
-world-writable. A Git-clean checkout with converted line endings can therefore
-record a development installation. Development installations record a base
+world-writable. Windows reports no execute bit, so there the execute modes are not compared.
+A Git-clean checkout with converted line endings can therefore record a development
+installation. On Windows the installer's own clones set `core.autocrlf=false` and `core.eol=lf`, which keep
+stored line endings unless an attribute sets eol=crlf or a filter rewrites the files.
+Development installations record a base
 revision when available and a content hash.
 Doctor reports the identity recorded at install time; it does not recheck the
 installed files or compare the recorded revision with Git on each run.

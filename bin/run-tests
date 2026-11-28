@@ -21,13 +21,19 @@ require 'tempfile'
 cores = Etc.nprocessors
 workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [[cores / 2, 4].max, cores, 8].min))
 abort 'SHAKA_TEST_WORKERS must be at least 1' if workers < 1
-# --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick
-# reruns while fixing review findings. Repository validation still runs the whole suite.
+# --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick reruns
+# and validate-local; hosted validate runs the whole suite for code changes and this selection for documentation
+# changes. It runs none when no test reads the change.
 if ARGV.first == '--changed'
   abort 'Usage: bin/run-tests --changed [BASE]' if ARGV.size > 2
   require_relative '../test/support/changed_tests'
   selector = ChangedTests.new(File.expand_path('..', __dir__))
-  selected = selector.tests_for(selector.changes(ARGV[1] || 'origin/main'))
+  base = ARGV[1] || 'origin/main'
+  selected = selector.tests_for(selector.files.changes(base), base: selector.files.merge_base(base))
+  if selected == []
+    puts 'No test reads the changed files'
+    exit
+  end
   puts selected ? "Running #{selected.size} test files the change can reach" : 'Running the whole suite'
   ARGV.replace(selected || [])
   Dir.chdir(File.expand_path('..', __dir__))

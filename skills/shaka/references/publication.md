@@ -54,8 +54,8 @@
   Count each current filename once: Tests, then Docs/instructions, Code, or Other.
   Inspect the expandable paths for ambiguous classifications; buckets describe paths, not effort.
   Supply `leaves_out` only for a deliberately deferred part readers would reasonably expect.
-- Shaka metrics keeps estimated token costs visible, then folds missing values, usage, timings,
-  execution, settings, skills, provenance history, and task history under Details, in that order.
+- Shaka metrics keeps estimated token costs visible and folds everything else, WIP Details
+  included, under 🤙 Shaka details.
 
 - Put the current-head recommendation, main reason, and next action before analysis.
 - Name model settings with their provenance; a configured model is not proof of a served model.
@@ -84,7 +84,8 @@
   for the current PR.
 - `description` and `walkthrough` refuse text past the
   [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits):
-  long sentences, long paragraphs, or more visible words than the change warrants.
+  long sentences, long paragraphs, or more words than the change warrants. A description
+  counts only the words in your own prose fields, as written.
 - Split the text, collapse supporting detail into `details`, or link to the code,
   then publish again.
 - Record each refusal in the description's review history details: what it reported,

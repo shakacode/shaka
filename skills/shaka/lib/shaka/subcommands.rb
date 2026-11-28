@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'branch_head/command'
 require_relative 'checkpoint'
 require_relative 'claim'
 require_relative 'companions/command'
@@ -36,6 +37,7 @@ module Shaka
     def self.entry(operations = [], &run) = Entry.new(operations:, run:)
 
     TABLE = {
+      'branch' => entry(BranchHead::Command::OPERATIONS) { |arguments| BranchHead::Command.run(arguments) },
       'checkpoint' => entry { |arguments| Checkpoint.run(arguments) },
       'claim' => entry { |arguments| Claim.run(arguments) },
       'companions' => entry { |arguments| Companions::Command.run(arguments) },

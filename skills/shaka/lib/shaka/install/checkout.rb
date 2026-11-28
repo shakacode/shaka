@@ -4,6 +4,7 @@ require 'json'
 require_relative 'checkout_development'
 require_relative 'checkout_drift'
 require_relative 'checkout_git'
+require_relative 'checkout_owned_worktree'
 require_relative 'checkout_record'
 require_relative 'checkout_validation'
 require_relative 'directory_safety'
@@ -19,6 +20,7 @@ module Shaka
       include CheckoutGit
       include CheckoutDrift
       include CheckoutDevelopment
+      include CheckoutOwnedWorktree
       include CheckoutRecord
       include CheckoutValidation
       include ReleaseCheckout
@@ -27,14 +29,18 @@ module Shaka
       RECORD = Locations::RECORD
       attr_reader :root, :record, :repository, :release
 
-      # fresh_install is the installer's command for these selections in the default location.
-      def initialize(directory, repository: nil, branch: nil, release: nil, fresh_install: nil)
+      # The installer's run names fresh_install, its command for these selections in the default location, and
+      # skills_dir, the --skills-dir the development step checks for links into worktrees it would remove.
+      def initialize(directory, repository: nil, branch: nil, release: nil, **run)
         @root = File.expand_path(directory)
         @root = File.realpath(@root) if File.directory?(@root)
         @repository = repository
         @branch = branch
         @release = release
-        @fresh_install = fresh_install
+        unknown = run.keys - %i[fresh_install skills_dir]
+        raise ArgumentError, "Unknown checkout options: #{unknown.join(', ')}" unless unknown.empty?
+
+        @fresh_install, @skills_dir = run.values_at(:fresh_install, :skills_dir)
       end
 
       def prepare(action)
@@ -50,7 +56,9 @@ module Shaka
       def update(&)
         return check_release if release?
 
-        git('fetch', '--quiet', 'origin', @branch)
+        reaching('origin') do
+          git('fetch', '--quiet', 'origin', @branch)
+        end
         validate
         candidate = git('rev-parse', "refs/remotes/origin/#{@branch}")
         refuse_rewrite(candidate)
@@ -103,7 +111,9 @@ module Shaka
         return clone_release if release?
 
         @branch ||= 'main'
-        git('clone', '--quiet', '--branch', @branch, '--', @repository, @root)
+        reaching(@repository) do
+          git('clone', *ReleaseCheckout.clone_config, '--quiet', '--branch', @branch, '--', @repository, @root)
+        end
       end
     end
   end

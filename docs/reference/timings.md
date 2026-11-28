@@ -69,7 +69,7 @@ ready time was recorded; it does not establish whether the PR is ready to merge.
 Skipped CI reviews can leave that measurement pending until merge.
 
 Without a task start, the cost line shows no time at all, and **Missing values**
-under Shaka metrics → Details says so. A description published before Shaka
+under Shaka metrics → 🤙 Shaka details (Details on older PRs) says so. A description published before Shaka
 added that note keeps `ready in UNKNOWN` until the agent publishes it again. The
 agent can select the original Codex request, supply its timestamp directly, or
 use a usage report that covers the whole task.
@@ -125,6 +125,12 @@ adds a label when it stops for you and removes it when work resumes.
 - The ready time appears once a description update or a watch sees the gate green,
   so it can be missing until the description next updates. It stays missing when
   the configured CI review did not run, such as a review skipped for a small change.
+  In Shaka's own repository, a workflow runs after each merge into the default
+  branch, including one you click on GitHub. When the description already has
+  Shaka's timings, it records the merge time. It also records the ready time if
+  the required checks and configured CI review passed before the merge. Rerunning
+  one of those checks after the merge leaves the ready time UNKNOWN unless a watch
+  or an earlier description update recorded it first. Other repositories do not run this workflow.
   When GitHub has no ready timestamp, a fork PR can keep the displayed ready
   time for the same head and mark it unverified. The description command reports
   that gap too.

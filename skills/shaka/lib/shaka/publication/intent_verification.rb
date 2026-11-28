@@ -2,8 +2,9 @@
 
 require_relative '../error'
 require_relative 'text'
-require_relative 'verification_gates'
+require_relative 'verification_line'
 require_relative 'diff_buckets'
+require_relative 'task_understanding'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -22,12 +23,13 @@ module Shaka
     # The verdict binds the validation and review results; nil when description received none.
     # The shortfall compares the bound reviews with the trusted reviewer count; nil when none.
     # An intent review_effort, the retired 1-5 rating, is ignored.
-    def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil)
-      gate_line = VerificationGates.render(verdict, content['review'], shortfall)
+    # Without results, earlier is the published review that still covers the head, or nil.
+    def render(content, verdict = nil, pull = nil, task: nil, shortfall: nil, earlier: nil) # rubocop:disable Metrics/ParameterLists
+      verification_line = VerificationLine.render(verdict, content['review'], shortfall, earlier)
       spec = object(content, 'verification')
-      evidence(spec, content['wip'].nil? ? CHECKS : (0..CHECKS.max))
+      checks_for(content)
       [intent(object(content, 'intent'), pull, task),
-       verification(spec, gate_line)]
+       verification(spec, verification_line)]
     end
 
     # User impact follows Why when supplied, then the task names where the work came from.
@@ -35,35 +37,10 @@ module Shaka
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
-      lines.insert(1, *user_impact(spec), *task_with_understanding(task, spec['task_understanding']), *root_cause(spec))
+      understanding = TaskUnderstanding.with_task(task, spec['task_understanding'])
+      lines.insert(1, *user_impact(spec), *understanding, *root_cause(spec))
       lines.concat(exclusions(spec['leaves_out']))
       "## Intent\n\n#{[*lines, *scope(spec, pull)].join("\n\n")}"
-    end
-
-    UNDERSTANDING = { 'goal' => 'Goal', 'done_when' => 'Done when' }.freeze
-
-    # The understanding nests under the Task line, so every paragraph reads as part of the task.
-    def task_with_understanding(task, value)
-      return [*task] if value.nil?
-
-      ["#{task || '**Task as understood:**'}\n#{understanding_items(value).join("\n")}"]
-    end
-
-    # Callers supply the goal and its success criteria; text from older callers keeps its paragraphs.
-    def understanding_items(value)
-      return [legacy_understanding(value)] unless value.is_a?(Hash)
-
-      extra = value.keys - UNDERSTANDING.keys
-      raise Error, "Publication intent task_understanding has unknown keys: #{extra.join(', ')}." if extra.any?
-
-      UNDERSTANDING.map do |field, label|
-        "- **#{label}:** #{PublicationText.single_line(value[field], "intent task_understanding #{field}")}"
-      end
-    end
-
-    def legacy_understanding(value)
-      paragraphs = PublicationText.required(value, 'intent task_understanding').strip.split(/\n\s*\n/)
-      "- **As understood:** #{paragraphs.map { |text| text.strip.gsub("\n", "\n  ") }.join("\n\n  ")}"
     end
 
     def user_impact(spec)
@@ -99,13 +76,18 @@ module Shaka
     end
 
     # An unproven claim stays visible: a maintainer deciding whether to merge must not have to open the fold.
-    def verification(spec, gate_line)
+    def verification(spec, verification_line)
       summary = evidenced(PublicationText.single_line(spec['summary'], 'verification summary')) if spec['summary']
-      ['## Verification', gate_line, summary, *not_verified(spec['not_verified']),
+      marked = "#{VerificationLine::MARKER}\n#{verification_line}"
+      ['## Verification', marked, summary, *not_verified(spec['not_verified']),
        *merge_limitations(spec['merge_limitations'])].compact.join("\n\n")
     end
 
     def evidence(spec, allowed) = checks(spec['checks'], allowed).join("\n\n")
+
+    def checks_for(content)
+      evidence(object(content, 'verification'), content['wip'].nil? ? CHECKS : (0..CHECKS.max))
+    end
 
     # The agent still answers, but a reader learns nothing from being told no claim went unproven.
     PROVED = /\Anothing\.?\z/i
@@ -147,8 +129,7 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :task_with_understanding, :understanding_items, :legacy_understanding,
-                         :user_impact, :scope, :exclusions, :diff_size, :verification,
+    private_class_method :intent, :user_impact, :scope, :exclusions, :diff_size, :verification,
                          :not_verified, :merge_limitations, :checks, :evidenced, :object
   end
 end

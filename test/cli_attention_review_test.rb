@@ -12,7 +12,24 @@ module CliAttentionFixture
     path = ARGV[1].to_s
     pull = { 'number' => 1, 'headRefOid' => 'a' * 40, 'baseRefName' => 'main', 'state' => 'OPEN',
              'isDraft' => ENV['PR_DRAFT'] == 'true' }
-    if ARGV[0, 2] == %w[api graphql]
+    if ENV['GRAPHQL_REFUSED'] && (ARGV[0, 2] == %w[api graphql] || ARGV[0, 2] == %w[pr checks])
+      warn 'gh: GitHub GraphQL is not available from Claude Code sessions; use the REST API. (HTTP 403)'
+      exit 1
+    elsif path == 'repos/owner/repo/pulls/1'
+      puts JSON.generate('number' => 1, 'node_id' => 'PR_1', 'state' => 'open', 'draft' => ENV['PR_DRAFT'] == 'true',
+                         'merged' => false, 'mergeable_state' => 'clean', 'head' => { 'sha' => 'a' * 40 },
+                         'base' => { 'ref' => 'main' })
+    elsif path.start_with?("repos/owner/repo/commits/#{'a' * 40}/check-runs")
+      runs = JSON.parse(ENV.fetch('PR_CHECKS', '[]')).map do |row|
+        { 'name' => row['name'], 'head_sha' => 'a' * 40, 'status' => 'completed', 'conclusion' => row['state'] }
+      end
+      puts JSON.generate('total_count' => runs.size, 'check_runs' => runs)
+    elsif path.start_with?("repos/owner/repo/commits/#{'a' * 40}/status")
+      puts JSON.generate('sha' => 'a' * 40, 'total_count' => 0, 'statuses' => [])
+    elsif path == 'repos/owner/repo/branches/main'
+      puts JSON.generate('protected' => true,
+                         'protection' => { 'required_status_checks' => { 'contexts' => ['validate'] } })
+    elsif ARGV[0, 2] == %w[api graphql]
       request = JSON.parse($stdin.read)
       if request.fetch('query').include?('headRefOid') && (change = ENV['PR_CHANGE'])
         reads = "#{ENV.fetch('LABEL_FILE')}.reads"
@@ -63,10 +80,10 @@ module CliAttentionFixture
 
   CLEAN_OUTCOME = 'No open findings; closed and optional findings are in history.'
 
-  def with_policy(required)
+  def with_policy(required, merge: merge_policy)
     review = review_policy('required' => required)
     review = review.except('ci_review_jobs') if required == 'none'
-    with_repository('merge' => merge_policy, 'review' => review, 'checkpoint' => { 'enabled' => false }) do |root|
+    with_repository('merge' => merge, 'review' => review, 'checkpoint' => { 'enabled' => false }) do |root|
       commit_repository(root)
       FileUtils.mkdir_p(File.join(root, 'fake-bin'))
       File.write(fake = File.join(root, 'fake-bin', 'gh'), FAKE)
@@ -121,6 +138,9 @@ class CliAttentionReviewTest < Minitest::Test
 
       assert_predicate status, :success?, output
       assert_equal 'current_head', JSON.parse(output).dig('review', 'basis')
+      # The fake repository already has merge-approved, so the maintainer's way to choose Auto is there.
+      assert_equal 'present', JSON.parse(output)['merge_approval_label']
+      refute JSON.parse(output).key?('readOver')
       assert_path_exists @label_file
     end
   end
@@ -171,6 +191,20 @@ class CliAttentionGateTest < Minitest::Test
     end
   end
 
+  # GitHub requires only validate here; the seam's windows check still holds the label.
+  def test_merge_handoff_waits_for_a_seam_check_beside_native_ones
+    checks = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' },
+              { 'name' => 'windows', 'state' => 'PENDING', 'bucket' => 'pending' }]
+    with_policy('meaningful_changes', merge: merge_policy.merge('required_checks' => ['windows'])) do |root, ref|
+      _output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)],
+                                                env: { 'PR_CHECKS' => JSON.generate(checks) })
+
+      refute_predicate status, :success?
+      assert_includes error, 'windows'
+      refute_path_exists @label_file
+    end
+  end
+
   def test_merge_handoff_refuses_a_closed_snapshot_even_if_the_pr_reopens
     assert_refused_handoff({ 'PR_CHANGE' => 'reopen' }, 'Pull request is not open.', comments: [])
   end
@@ -200,6 +234,29 @@ class CliAttentionGateTest < Minitest::Test
 
   def test_merge_handoff_refuses_a_moved_head_before_labeling
     assert_refused_handoff({ 'PR_CHANGE' => 'head_labels' }, 'PR head changed')
+  end
+
+  # A Claude Code cloud session refuses GraphQL, so the gate reads the pull and its required checks over REST.
+  def test_merge_handoff_reads_over_rest_when_graphql_is_refused
+    with_policy('meaningful_changes') do |root, ref|
+      env = check_env('SUCCESS', 'pass').merge('GRAPHQL_REFUSED' => '1')
+      output, error, status = label(root, ref, comments: [review_comment(CLEAN_OUTCOME)], env:)
+
+      assert_predicate status, :success?, error
+      result = JSON.parse(output)
+      assert_equal 'rest', result['readOver']
+      assert_includes result['unknownFields'], 'reviewDecision'
+      assert_path_exists @label_file
+    end
+  end
+
+  def test_merge_handoff_over_rest_still_waits_for_required_ci
+    env = check_env('FAILURE', 'fail').merge('GRAPHQL_REFUSED' => '1')
+    assert_refused_handoff(env, 'Required check is not passing')
+  end
+
+  def test_merge_handoff_over_rest_still_refuses_a_draft
+    assert_refused_handoff({ 'GRAPHQL_REFUSED' => '1', 'PR_DRAFT' => 'true' }, 'Mark it ready for review')
   end
 
   private

@@ -7,10 +7,24 @@ want to compare against a CLI default, identify the default model first and
 name it in the corresponding arm. A repository prompt comparison takes two
 criteria commits and the same model on both arms.
 
+## When to rescore
+
+Rescore by hand before merging a change to a local reviewer's model pin or
+repository prompt, and publish the aggregate on that PR. A reviewer with no pin,
+such as the default Codex reviewer, changes when its CLI changes its default
+model, outside Shaka. When you notice that, open a PR that pins the old or the
+new model and rescore the two there, passing that PR's number to `--pr`.
+
+It stays a manual step, not a check on every PR, for three reasons. The runner
+signs in with a personal Claude or ChatGPT subscription, which hosted CI does
+not hold. A rescore costs a few dollars of model usage, and reviewer changes are
+rare. Scoring is a blind human comparison of reports, which a check cannot do.
+
 ## Run the paired review
 
-Use this pilot on macOS. The Codex command isolation check was verified with
-Codex CLI 0.170.0. A full score across the four cases remains follow-up work.
+Use this pilot on macOS. Codex CLI 0.170.0 passed the isolation check, and
+0.172.0 completed subscription-backed control replays. See the
+[Linux qualification results](#linux-qualification) before trying another host.
 
 Sign in to `claude` with your Claude subscription or to `codex` with ChatGPT.
 Supply your trusted installed helper by absolute path. The runner strips
@@ -26,7 +40,9 @@ with the full diff. Results stay local.
 Fetch the public PR refs holding the frozen commits:
 
 ```sh
-git fetch --no-tags origin refs/pull/1024/head refs/pull/708/head refs/pull/710/head
+git fetch --no-tags origin refs/pull/1024/head refs/pull/708/head refs/pull/710/head \
+  refs/pull/577/head refs/pull/757/head refs/pull/947/head refs/pull/592/head \
+  refs/pull/807/head refs/pull/961/head
 ```
 
 Create a mode-0700 state directory outside any checkout. Pass the shared
@@ -50,6 +66,10 @@ Inspect the settings diff and confirm that the changed file supplies the
 effective reviewer prompt. Packaged prompts and CLI-version comparisons need
 a separate replay procedure.
 
+The runner replays the newest bank, v2, by default. Pass `--bank v1` to repeat
+the [four-case run](https://github.com/shakacode/shaka/issues/1283) on its
+original cases.
+
 `--preview` builds every fixture without sign-in or model calls. Drop it after
 checking the fixtures and approving the run. Use `--case r04` for a small
 smoke run. Each isolated fixture holds the reviewed head and its ancestors, no
@@ -65,9 +85,25 @@ equivalent dollars. These are token cost estimates for subscription sessions.
 The ledger checks settled spend before each call. The last call can cross the
 cap, and missing usage leaves an unresolved reservation that stops later calls.
 The CLI exits unsuccessfully for a partial run. Retain completed records and
-include any gaps in the report.
+include any gaps in the report. Each v1 arm cost $0.67 to $2.79 cache-neutral
+in the four-case run. Scaling by case count, a v2 arm would cost about
+$1.70 to $7, so a Codex pair can approach the $15 limit and stop with an
+incomplete case.
+
+## Linux qualification
+
+Linux subscription replay remains unqualified. On ARM64 with Codex CLI 0.172.0,
+Ubuntu 24.04.4 failed to start the sandbox. On Debian 13 with a system-installed
+Codex package, the sandbox read the fixture and hid the dummy login, prior
+transcript, and saved report. Linux reported those private files as absent.
+The replay preflight requires an explicit permission denial and stopped before
+login or budget reservation. These checks used dummy data in VMs with no host
+directory mounts.
 
 ## Score the results
+
+See [#1283](https://github.com/shakacode/shaka/issues/1283) for evidence from
+the four-case run on both subscription paths.
 
 Extract each completed record's `result.report`, label the two reports with
 opaque IDs, and save the ID-to-arm mapping separately. For each case, compare
@@ -84,15 +120,28 @@ fixture that could have supplied the answers, and exclude those runs from scorin
 | r02 | Review signal #34, [PR #708](https://github.com/shakacode/shaka/pull/708#issuecomment-6260128941) | A failed update check counts as fresh and suppresses the daily reminder. |
 | r03 | Hosted prompt study T04, [PR #710](https://github.com/shakacode/shaka/pull/710#discussion_r4331938341) | If removal fails partway through repairing the install, a restore that only runs on install failure leaves previously removed links missing. |
 | r04 | Fix-only control from [PR #1024](https://github.com/shakacode/shaka/commit/6365c3b9d11bafa18a57a1dcb12c7ee7d37da3da) | The r01 failure is gone. Verify any claim it remains against the fix. |
+| r05 | Review signal #10, [PR #577](https://github.com/shakacode/shaka/pull/577#issuecomment-6229495111) | The thread reader sees only the first 100 comments, so a reply past that page reads as missing and handoff keeps owing a reply. |
+| r06 | Review signal #36, [PR #757](https://github.com/shakacode/shaka/pull/757#issuecomment-6310097710) | A review-effort floor word written with capitals never matches, so its floor is not applied. |
+| r07 | Review signal #29, [PR #947](https://github.com/shakacode/shaka/pull/947#issuecomment-6487735655) | A task URL with userinfo before an empty host, such as `https://a@:443/task`, passes as valid. |
+| r08 | Review signal #18, [PR #592](https://github.com/shakacode/shaka/pull/592#issuecomment-6230622190) | The guide says the Next line is optional for any recommendation, but validation requires `next_action` for every disposition except Merge. |
+| r09 | Review signal #7, [PR #807](https://github.com/shakacode/shaka/pull/807#issuecomment-6314019812) | A parseable call-log line for the PR's commit that lacks a field yields a nil timeline step and crashes publication. |
+| r10 | Review signal #22, [PR #961](https://github.com/shakacode/shaka/pull/961#issuecomment-6491745232) | A bracket inside a comment ends a wrapped call early, so the seam upgrade check loses that call's working-directory dependency. |
+
+Cases r01 to r04 form v1. v2 keeps them unchanged and adds r05 to r10, chosen
+across code and documentation defects. Every new reviewed head is reachable from
+its public PR ref. For five new cases, the source study ran the fix's regression
+test and saw it fail at the reviewed head. r08 rests on reading the guide against
+the validation code. v2 leaves out the largest verified diffs to keep one pair of
+arms under the per-PR budget limit; that cost is an estimate until a v2 run.
 
 Reveal the arm labels and report, for each arm, the known findings found and
 missed, confirmed new findings, unsupported claims, incomplete cases, and both
-cost totals. A single pass on these four cases can expose a regression. It
+cost totals. A single pass on these cases can expose a regression. It
 cannot estimate the overall reviewer's recall or establish hosted parity. Use
 the [hosted replay study](../reports/hosted-review-prompt.md) for the hosted
 reviewer's GitHub-tool and workflow context.
 
-Keep v1 frozen. Append verified later misses in a new version with the reviewed
+Keep v1 and v2 frozen. Append verified later misses in a new version with the reviewed
 head, base, confirmation and scoring criterion. Draw cases across defect types
 and from both [source studies](../README.md). Keep raw reports and per-run usage
 in private state. Publish aggregate results on the reviewer-change PR.

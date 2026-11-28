@@ -1,13 +1,17 @@
 # frozen_string_literal: true
 
+require_relative 'checkout_held_work'
 require_relative 'locations'
 require_relative 'refusal'
 require_relative 'settings_location'
+require_relative 'worktree_links'
 
 module Shaka
   module Install
     # Finds linked worktrees and extra local branches, which mean the source checkout is used for development.
     module CheckoutDevelopment
+      include CheckoutHeldWork
+
       # Installation refuses development use; maintenance only warns, so an existing install keeps working.
       def check_development_use(action)
         uses = development_uses
@@ -20,19 +24,6 @@ module Shaka
         warn "Warning: #{detail} Pulls, branches, and commits there stop updates. #{step}"
       end
 
-      # A worktree disappears when its branch merges, taking every host link with it, so no action proceeds.
-      def refuse_linked_worktree
-        return unless File.file?(File.join(@root, '.git'))
-
-        git_directory, common = git('rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir').split("\n")
-        return if git_directory == common
-
-        raise ArgumentError, "Installation checkout #{@root} is a linked worktree of #{File.dirname(common)}. " \
-                             "Install from a separate clone. Next: #{fresh_install}"
-      end
-
-      private
-
       # The installer and status give the same step. The default location cannot hand its hosts to a fresh
       # checkout there, so it clears the development itself; anywhere else the hosts move to a fresh checkout.
       def development_step
@@ -44,6 +35,10 @@ module Shaka
         command ? { command: } : { decision: SettingsLocation.decision(home) }
       end
 
+      def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
+
+      private
+
       # The installer passes the same selections into the default location; status always has a record.
       def fresh_install
         @fresh_install ||
@@ -51,16 +46,65 @@ module Shaka
       end
 
       # Removes only what Git's own checks allow: clean, unlocked worktrees and merged branches. Work that
-      # nothing else holds is named for a person, with the step that discards it.
+      # nothing else holds is named for a person, with the step that discards it. A skill link into a worktree
+      # would be left pointing at nothing, and a failed Git read proves nothing, so neither gets a command.
       def clear_development
         worktrees = worktree_entries
+        linked = linked_step(worktrees)
+        return linked if linked
+
         branches = extra_branches
-        held = held_work(worktrees, branches)
+        held, unread = held_work(worktrees, branches)
+        return { decision: unread_decision(unread, held) } unless unread.empty?
         return { command: removal(worktrees, branches, discard: false) } if held.empty?
 
         { decision: Refusal.decide("whether to keep #{Refusal.paths(held)}", 'to discard that work and clear ' \
                                                                              'this checkout',
                                    removal(worktrees, branches, discard: true)) }
+      end
+
+      # The host folders, every folder the installation records, and a folder this run names.
+      def link_folders
+        hosts = Locations::HOSTS.values.map { |folder| File.join(Dir.home, folder) }
+        recorded = @record ? @record.fetch('targets', []).map { |target| target['directory'] } : []
+        hosts + recorded + [@skills_dir]
+      end
+
+      # Every link is named, since each one left out would need another run to find. A link's name is any file
+      # name, so control characters are shown escaped and cannot start a line that reads as another step.
+      def linked_step(worktrees)
+        links = WorktreeLinks.into(worktrees.map { |entry| entry[:path] }, link_folders)
+        return if links.empty?
+
+        { decision: "a person must decide where #{links.map { printable(it) }.join(', ')} should point, because " \
+                    'they lead into ' \
+                    'the linked worktrees this step would remove, or could not be read to rule that out; repoint ' \
+                    'them, then run this command again' }
+      end
+
+      def printable(text) = text.chars.map { |character| escaped(character) }.join
+
+      # Control characters, line and paragraph separators, and bytes that are not valid text are shown as \xNN
+      # or \uNNNN. A backslash is doubled, so an escaped character cannot be confused with a name that spells one.
+      def escaped(character)
+        return character.bytes.map { |byte| format('\\x%02X', byte) }.join if raw_bytes?(character)
+        return '\\\\' if character == '\\'
+        return character unless character.match?(/[[:cntrl:]\p{Zl}\p{Zp}]/)
+
+        format(character.ord > 0xFF ? '\\u%04X' : '\\x%02X', character.ord)
+      end
+
+      # Under a non-UTF-8 locale, Ruby reads non-ASCII names as binary or legacy-encoded text, which a Unicode
+      # pattern refuses, so those characters are shown as their bytes.
+      def raw_bytes?(character)
+        !character.valid_encoding? || (character.encoding != Encoding::UTF_8 && !character.ascii_only?)
+      end
+
+      # Worktree paths can hold any file name, so they are shown escaped like link names.
+      def unread_decision(unread, held)
+        also = held.empty? ? '' : ", and whether to keep #{Refusal.paths(held)}"
+        printable('a person must decide how to clear this checkout, because Shaka could not verify ' \
+                  "#{Refusal.paths(unread)}#{also}; check that work, then run this command again")
       end
 
       # A second --force removes a locked worktree too. A worktree whose folder was deleted still holds
@@ -72,51 +116,6 @@ module Shaka
         end
         steps << development_git('branch', discard ? '-D' : '-d', *branches) unless branches.empty?
         steps.join(' && ')
-      end
-
-      def held_work(worktrees, branches)
-        branches.reject { |name| merged?(name) }.map { |name| "the unmerged commits on branch #{name}" } +
-          worktrees.flat_map { |entry| worktree_holds(entry) }
-      end
-
-      # Git reads a worktree's config and attributes, which can name commands, so a folder the directory
-      # check refuses, or one that is gone, gets no Git read and goes to a person.
-      def worktree_holds(entry)
-        path = entry[:path]
-        verify_safe_directory(path, 'Linked worktree')
-        { "locked worktree #{path}" => entry[:locked], "the uncommitted files in #{path}" => changed?(path),
-          "the commits only detached worktree #{path} holds" => stranded?(entry),
-          "the submodules in #{path}" => submodules?(path) }.select { |_held, found| found }.keys
-      rescue ArgumentError
-        ["worktree #{path}, which Shaka cannot read safely"]
-      end
-
-      # git branch -d accepts a branch merged into the remote branch it tracks, or into HEAD when it has none.
-      def merged?(name) = ancestor?("refs/heads/#{name}", tracked(name) || 'HEAD')
-
-      def tracked(name)
-        git('rev-parse', '--verify', '--quiet', "#{name}@{upstream}")
-      rescue ArgumentError
-        nil
-      end
-
-      # No fsmonitor hook: a status read must not start a program the checkout's config names. Ignored files
-      # count, because git worktree remove deletes them without asking.
-      def changed?(path)
-        !git('-c', 'core.fsmonitor=false', '-C', path, '--no-optional-locks', 'status', '--porcelain',
-             '--untracked-files=all', '--ignored').empty?
-      rescue ArgumentError
-        true
-      end
-
-      # git worktree remove refuses a worktree whose index holds a submodule.
-      def submodules?(path)
-        git('-c', 'core.fsmonitor=false', '-C', path, 'ls-files', '--stage').match?(/^160000 /)
-      end
-
-      def stranded?(entry)
-        entry[:detached] &&
-          git('for-each-ref', '--contains', entry[:head], '--count=1', 'refs/heads', 'refs/remotes').empty?
       end
 
       def development_git(*) = Refusal.command('git', '-C', @root, *)
@@ -133,8 +132,6 @@ module Shaka
       def extra_branches
         git('for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads/').lines.map(&:strip) - [@branch]
       end
-
-      def linked_worktrees = worktree_entries.map { |entry| entry[:path] }
 
       # Prunable entries no longer exist on disk. A staging worktree a killed update left is not development;
       # status reports it as B7.

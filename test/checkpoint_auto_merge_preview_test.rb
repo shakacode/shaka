@@ -80,7 +80,7 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   def test_a_verdict_that_stops_auto_hands_the_pr_back
     assert_includes body_for(%w[lib/fix.rb], report: { verdict: 'cannot judge' }),
                     "would hand this PR back: the checkpoint's verdict on its verification is cannot judge."
-    refute_includes body_for(%w[lib/fix.rb], report: { verdict: 'adequate with accepted gaps' }), 'hand this PR back'
+    refute_includes body_for(%w[lib/fix.rb], report: { verdict: 'adequate with named gaps' }), 'hand this PR back'
   end
 
   # With no merge.auto_merge_max_risk in the settings, the default low applies.

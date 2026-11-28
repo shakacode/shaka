@@ -1,10 +1,19 @@
 # frozen_string_literal: true
 
+require_relative '../executable_file'
+
 module Shaka
   module Install
     # A release stays at its first resolved commit; changing versions requires another checkout.
     module ReleaseCheckout
       VERSION = /\A[0-9]+\.[0-9]+\.[0-9]+(?:[.-][A-Za-z0-9]+)*\z/
+      # Git for Windows converts line endings on checkout by default, which leaves files that match
+      # no revision and an sh launcher with carriage returns. There the checkout keeps the stored
+      # bytes, also when a global attributes file marks files as text; an attribute that sets
+      # eol=crlf still converts. Elsewhere a clone keeps the user's own Git settings.
+      WINDOWS_CLONE_CONFIG = %w[--config core.autocrlf=false --config core.eol=lf].freeze
+
+      def self.clone_config(windows: ExecutableFile.windows?) = windows ? WINDOWS_CLONE_CONFIG : []
 
       def self.reference(record)
         record['release'] ? "refs/tags/v#{record['release']}" : record.fetch('branch')
@@ -48,7 +57,8 @@ module Shaka
       end
 
       def clone_release
-        git('clone', '--quiet', '--no-checkout', '--branch', "v#{@release}", '--', @repository, @root)
+        git('clone', *ReleaseCheckout.clone_config, '--quiet', '--no-checkout', '--branch', "v#{@release}", '--',
+            @repository, @root)
         # A branch named vVERSION must never stand in for the release tag.
         git('checkout', '--quiet', '--detach', release_ref)
       end

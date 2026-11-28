@@ -44,14 +44,14 @@ security/trust violations introduced by the task, or an unresolved review decisi
 Run the normal evidence verification and retain its nonzero `not_ready` result.
 Failed validation stays failed; binding or copying it cannot establish readiness.
 A verified base failure permits the push despite that validation blocker only.
-Create the PR with `gh pr create --draft --body ''`, or mark the adopted PR draft
-before pushing. Publish the description without `--validation-result` or
+Mark an adopted PR draft before pushing. Then push with `branch push --root DIR`; without an
+adopted PR, create one with `gh pr create --draft --body ''`. Publish the description without `--validation-result` or
 `--review-result`: the existing renderer requires ready evidence when those flags
 are supplied. Its UNKNOWN settings columns remain UNKNOWN. Publish the completed
 review separately through the normal review publication command.
 
 Lead the description with the blocked status and reason. Record the failed check
-in its verification and put the comparison evidence in details. Keep WIP Details
+in `verification.merge_limitations` and put the comparison evidence in details. Keep WIP Details
 current, naming the repair dependency and next action. Report the PR as a blocked
 draft, not merge-ready. At a stopping point, arrange the normal monitor or
 `awaiting-resume` handoff; a requested maintainer decision uses `decisions` instead.

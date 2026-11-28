@@ -6,13 +6,12 @@ permission to change a consumer repository.
 
 ## Versions
 
-Three different identifiers appear in this work. They are not interchangeable:
+Two different identifiers appear in this work. They are not interchangeable:
 
 | Name | Current value | Meaning |
 | --- | --- | --- |
-| Product stage | `1.0.x` | Source candidate line; the version does not establish pilot acceptance. |
-| Gem / skill version | Source: `1.0.0`; published: `0.1.0.pre.1` | The source candidate is unpublished. The existing gem only reserves the name and lacks the current workflow. Consumer rows below retain their recorded target until separately upgraded. |
-| Seam contract | `version: 1` | Integer field in `.agents/shaka/config.yml`. It identifies the typed contract, not the product stage or gem. |
+| Gem / skill version | Source: `1.0.0` | Check RubyGems for published versions; a version does not establish pilot acceptance. Gem versions before `1.0.0` lack the current workflow. Consumer rows below retain their recorded target until separately upgraded. |
+| Seam contract | `version: 1` | Integer field in `.agents/shaka/config.yml`. It identifies the typed contract, not the gem version. |
 
 Predecessor seams have no schema version and use a different set of keys.
 
@@ -194,11 +193,11 @@ For each selected repository:
 4. Before upgrading Shaka, use the previous trusted installation to check the candidate
    worktree with `shaka seam check --root ROOT --ref OLD_DEFAULT_SHA`. The old trusted
    mapping remains authoritative for this first PR, which is why its paths must remain
-   usable. Separately use the target Shaka version with `--local` to parse the candidate's
-   mapping-free YAML and validate its fixed scripts; this local check grants no authority.
-   Run focused checks and full validation, then merge through normal gates.
-5. Upgrade the trusted Shaka installation only after the default branch has the new seam.
-   Check a clean worktree with `shaka seam check --root ROOT --ref NEW_DEFAULT_SHA`, then
+   usable. Then run the target Shaka version's pre-merge and post-merge checks in the
+   agent guide's [migration procedure](../skills/shaka/references/migration.md#migrate-an-older-contract):
+   the exact PR commit before merge, and the new default-branch SHA before switching
+   installations. Run focused checks and full validation, then merge through normal gates.
+5. Upgrade the trusted Shaka installation only after that post-merge check passes, then
    remove obsolete compatibility adapters in a follow-up PR.
 6. Open each repository PR pinned to its tested head. Update this fleet table only from
    verified PR or merge evidence.

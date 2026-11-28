@@ -34,7 +34,10 @@ module Shaka
 
     # A skill copied without the installer has no installer to rerun, and its launcher used PATH.
     def self.remedy
-      return "Rerun bin/install with Ruby #{MINIMUM}, or set SHAKA_RUBY to a Ruby #{MINIMUM} interpreter." if installed?
+      if installed?
+        return "Install Ruby #{MINIMUM} with a version manager such as mise or rbenv, then rerun bin/install " \
+               "with it, or set SHAKA_RUBY to a Ruby #{MINIMUM} interpreter."
+      end
 
       'This copy of Shaka was not set up by its installer, so it ran the first ruby on PATH, which the ' \
         "current project or system selects. Install Shaka with the official installer (#{GUIDE}), " \

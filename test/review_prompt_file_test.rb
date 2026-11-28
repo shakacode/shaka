@@ -24,10 +24,14 @@ module ReviewPromptFileFixture
     JSON.parse(File.read(File.join(root, 'trace.json'))).fetch('prompt').split('SUPPORTING SOURCE DATA').first
   end
 
+  # The run fills a model or effort from the machine reviewer list under HOME, so a real list would change it.
   def run_review(root, base, head, bin, *options)
-    Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json') },
-                   *COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
-                   '--reviewer', 'openai/codex', '--criteria-ref', base, *options)
+    Dir.mktmpdir('shaka-home') do |home|
+      Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json'),
+                       'HOME' => home },
+                     *COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+                     '--reviewer', 'openai/codex', '--criteria-ref', base, *options)
+    end
   end
 
   # Delegates to the real Git but stalls on the tree lookup that resolves a prompt file path.

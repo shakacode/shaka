@@ -9,6 +9,12 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 
 ## Install
 
+For a request for the latest stable release, check the official GitHub releases
+for the latest published version at or above 1.0.0, excluding drafts and
+prereleases. If one exists, follow [Install a published release](#install-a-published-release).
+If the lookup succeeds with no suitable version, use source when the user allowed
+that fallback. Report a failed lookup as unverified.
+
 Review the source and installer, then clone into a directory outside the
 project repositories the user works in:
 
@@ -19,6 +25,10 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/sourc
 "$HOME/.local/share/shaka/source/bin/install" --agent codex
 ```
 
+On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the `git clone`, or the
+installer refuses the checkout because Git converted its line endings. From PowerShell or cmd,
+start the installer as `ruby PATH\bin\install`, since Windows cannot run the extensionless script.
+
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install
 registered there refuses every action. Follow [Before take-over](#before-take-over), run the
@@ -27,7 +37,8 @@ the old checkout can be deleted. Never delete it for them. When the message name
 to the user; never move the default location's contents yourself.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
-Every action refuses a checkout that is itself a linked worktree; reinstall from a separate clone as its message says.
+Every action refuses a checkout that is itself a linked worktree. Show the user the step that refusal ends with,
+and run neither that step nor the registered helper's status for it.
 Installation refuses a checkout with linked worktrees or extra local branches; verify and update warn.
 To move links off such a development clone, follow [Before take-over](#before-take-over)
 and run the take-over its message names. When it names commands that
@@ -75,7 +86,9 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-For an approved published version, use `bin/install --release VERSION --directory NEW`.
+Clone and inspect the official release tag in a dedicated checkout. For a first
+installation, run its `bin/install --release VERSION --directory DIR --agent HOST`.
+Use the requested host or pass `--skills-dir DIR` for a custom skills directory.
 The installer selects `refs/tags/vVERSION`, checks the declared version, and records
 its commit in a detached checkout. `--branch` and `--release` are mutually exclusive.
 Tags missing the release-installation module are refused before host links change.
@@ -114,11 +127,11 @@ Use the registered helper at the installation's actual path:
 ```
 
 Verification checks checkout identity, cleanliness, links, and Ruby without changes.
-When verification or update refuses, or the user asks which install is in use, run the
-registered helper's `install --status` (`--json` for tools) and relay its state, location,
-and next step. When the helper stops because its recorded Ruby is unavailable, run
-`ruby DIR/bin/install --status` with Ruby 3.4 or later instead. Status is read-only and
-offline; run the next command it names only with the user's approval.
+When verification or update refuses, except for a linked-worktree refusal (show its step instead),
+or the user asks which install is in use, run the registered helper's `install --status`
+(`--json` for tools) and relay its state, location, and next step. When the helper stops because
+its recorded Ruby is unavailable, run `ruby DIR/bin/install --status` with Ruby 3.4 or later instead.
+Status is read-only and offline; run the next command it names only with the user's approval.
 `install --repair` runs the next commands status names that repair can run, until a decision
 remains. Check status first. If repair will run take-over to reunite a split
 installation, follow [Before take-over](#before-take-over). Run repair only with

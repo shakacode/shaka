@@ -7,6 +7,8 @@ prompts you can give your agent. This reference covers each option and its limit
 
 Settings live in `.agents/shaka/config.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
+See [what stays compatible in 1.x](migration.md#what-stays-compatible-in-1x)
+before updating Shaka or moving older settings.
 
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
@@ -47,7 +49,9 @@ An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging.
+disable required merge gates or authorize merging. `shaka merge` uses Shaka's defaults
+for the merge settings in your file, except that your [hold labels](#mergehold_labels) add to the
+default `hold`.
 
 A settings PR becomes the team's default after it merges into the default branch.
 You can also select it for one task before adoption. Local settings do not override
@@ -157,11 +161,28 @@ approvals still apply. `Go` starts work; it is not merge consent. Ruby checks
 readiness; the agent establishes your task-scoped authority. See
 [merge policy](working-with-shaka.md#choose-a-merge-policy).
 
+To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub,
+then resume the agent that owns the PR; the label alone does not wake it. The agent merges
+once every Auto gate passes, and later pushes keep your choice.
+
+- **Take it back:** remove the label. The agent checks it just before merging, so a removal in
+  the last moment may come too late, and a PR already in a merge queue stays queued.
+- **Who counts:** the label counts only when the last account to add it has write access. It
+  trusts the account, not who clicked, so an agent working under your account could add it;
+  only you should.
+- **Where it applies:** not to a first-setup preview, a task you told to use Ask, or a PR whose
+  base is neither the [`base_branch`](#base_branch) nor the default branch; those stay Ask.
+
+When the agent asks you to approve a merge in a repository without the label, it tries to
+create `merge-approved` with a description. If the label is still missing afterward, create it
+yourself.
+
 ## `merge.required_checks`
 
-**Optional.** CI checks that must pass before Shaka treats a PR as ready. Use it
-when GitHub cannot require checks, such as on a private repository on the GitHub
-Free plan.
+**Optional.** CI checks that must pass before Shaka treats a PR as ready, in
+addition to any GitHub requires. Use it when GitHub cannot require checks, such as
+on a private repository on the GitHub Free plan, or when you want the agent to wait
+for a check you have not made a GitHub requirement.
 
 ```yaml
 merge:
@@ -170,10 +191,8 @@ merge:
     - test
 ```
 
-GitHub's required checks come first. If the base branch requires any, Shaka uses
-those and ignores this list.
-
-Otherwise, each listed check must appear on the PR and pass. Neutral and skipped
+Shaka adds this list to the checks GitHub requires on the base branch; a name on
+both counts once. Each listed check must appear on the PR and pass. Neutral and skipped
 results count as passing, as they do on GitHub. If a listed check never appears,
 the PR is blocked, so a renamed job cannot quietly drop out of the gate. Use the
 names `gh pr checks` shows: CircleCI, for example, reports one check per workflow,
@@ -227,8 +246,9 @@ Shaka rejects the former `merge.auto_max_review_floor` and
 into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
 
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
-your approval. Each level includes the ones below it. Under `preference: ask` you approve every
-merge anyway, so this setting matters under `preference: auto`.
+your approval. Each level includes the ones below it. It applies whenever the agent merges under
+Auto, including a PR you labeled `merge-approved` under `preference: ask`; otherwise you approve
+every merge under Ask anyway.
 
 - `low` lets the agent merge only a PR whose checkpoint rates it low risk.
 - `medium` lets the agent merge a PR rated low or medium.
@@ -268,6 +288,10 @@ merge:
 label added while the agent checks the PR still stops it. The agent then names the label and
 hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
 may merge. Label names match without regard to case.
+
+With individual setup, your labels add to the default instead of replacing it, because local
+settings can add merge gates but never remove one. If your file lists `[do-not-merge]`, both
+`hold` and `do-not-merge` stop a merge.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
@@ -344,6 +368,18 @@ A review of an earlier commit still counts in two cases:
   `gemini`, or `skill` (such as `AGENTS.override.md` or `CLAUDE.local.md`), and
   files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or `skills/` need a
   new review.
+
+The PR description uses the same two cases. When the agent publishes without
+validation and review results, and the description holds no verified line that
+Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
+marks the line it writes with a hidden comment and keeps only that line, so a
+verification summary or check worded like it does not count. A description
+published before that marker existed keeps the line at the top of its Evidence and
+limitations section, where older versions of Shaka wrote it. It then names
+a local review published for this commit, or an earlier review that still covers
+it and why, for example: "The local review of `e33df55` covers this revision,
+which only updates it from `main`." The review's findings stay in its comment,
+and the line never says validation passed. When no review applies, it says UNKNOWN alone.
 
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
@@ -1049,6 +1085,9 @@ not a check of the whole text's accuracy.
 It flags a first sentence led by an internal tool, such as a command or helper, and
 one that gives a thing something only a person does, such as "A repository can now
 see when a reviewer could not run."
+It also flags a first sentence whose main verb only states a condition, such as "keeps"
+in "A pull request keeps its open decisions," when it mentions actions in other words
+instead of saying what changed.
 On a description, it also reads the Intent and Verification text you see without
 opening anything. For each term it flags, it suggests plainer words: "that commit"
 for "that head", for example. The agent decides whether a term needs changing.
@@ -1120,10 +1159,8 @@ same.
 
 ## `prose_limits`
 
-**Optional.** Limit the length of PR descriptions and code walkthroughs. These
-limits are checked in code before publication. Recommendations and review
-replies follow the agent's writing instructions but are not checked against
-these limits.
+**Optional.** Limit the length of PR descriptions and code walkthroughs.
+Recommendations and review replies follow the agent's writing instructions.
 
 ```yaml
 prose_limits:
@@ -1134,10 +1171,10 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. Each limit counts selected prose.
-Code blocks, tables, headings, quotes, link addresses, and the body of a
-collapsed details block do not count. A collapsed block's summary label counts,
-and an inline code span counts as one word.
+it; omitted keys keep their default. Shaka measures sentences, paragraphs, and a
+walkthrough's length in the prose a reader sees. It skips code blocks, tables,
+headings, quotes, link addresses, and the body of a collapsed details block. A
+collapsed block's summary label is measured, and an inline code span is one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
 
@@ -1147,9 +1184,36 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
-When text breaks a limit, nothing reaches GitHub. The command exits with an
-error identifying the long passage or total word count. The agent shortens the
-explanation before publishing.
+In a description, the two length limits count only the words the agent writes
+in its summary, decisions, checkpoint next action, intent fields (including
+review focus reasons and the task understanding), verification summary and gaps,
+risk record summary, section headings and bodies, and any reason for leaving out
+the task link. The lines Shaka adds, such as the links line,
+metrics, field labels, publisher note, and the risk text that grows with the risk
+rating, do not count, so the same text fits the length limits at every rating.
+
+Shaka counts those words exactly as the agent wrote them, without reading the
+Markdown, so the count is predictable and the same when GitHub declines to render.
+Tables, headings, quotes, code, and collapsed details inside those fields count.
+Shaka counts each space-separated piece that holds a letter or digit as one word.
+A link written as `[guide](URL)` is one piece, and a bare URL is one word. Put supporting material in the
+description's `details` or `table`, or in verification checks, which do not count.
+Sentence and paragraph limits still apply to the prose a reader sees, as described
+above.
+
+`shaka description` reports identity, task source, verification check and
+skill metadata errors together before it reads the PR. Shaka reports each
+sentence, paragraph and total overage it finds. A description's total names the
+words the agent wrote, which are the ones it can change. The overall
+limit uses the PR's diff size. When GitHub omits either line count, descriptions
+use `max_description_words` and walkthroughs use the sentence and paragraph
+limits.
+
+If GitHub declines to render a description before publication, Shaka checks the
+saved version when the body contains only Shaka's section, whitespace and HTML
+comments. If the body contains other content outside that section, Shaka still
+checks the length of the agent's prose before writing, and reports its other prose
+limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
@@ -1174,7 +1238,7 @@ Connect your existing tools at these fixed paths:
 | --- | --- | --- |
 | `.agents/shaka/bin/setup` | Yes | Install dependencies |
 | `.agents/shaka/bin/test` | Yes | Run tests; accept focused arguments |
-| `.agents/shaka/bin/validate` | Yes | Complete checks before publishing |
+| `.agents/shaka/bin/validate` | Yes | Complete checks |
 | `.agents/shaka/bin/validate-local` | No | Faster checks before local review; a pass [counts as evidence](#count-a-faster-check-as-validation) |
 | `.agents/shaka/bin/trigger-hosted-ci` | No | Start deferred CI after local fixes; requires `validate-local` |
 
@@ -1233,6 +1297,14 @@ arguments can skip checks your settings never approved.
 
 The evidence check accepts either script's result; it does not require a full
 `validate` run.
+
+After review repairs, your agent lets a required hosted check that runs your full
+`validate`, defined by a workflow on your default branch, stand in for the deferred
+local full run, so a slow machine does not repeat it. The agent still runs
+`validate` locally when the pull request adds, removes, or changes any workflow or
+the script it runs, or when the hosted run skipped steps your local `validate`
+would run. The tradeoff: a failure only the full suite catches appears on the hosted
+check after the push instead of before it.
 
 ### Run the scripts in a CI container
 
@@ -1461,7 +1533,10 @@ the schema default.
 - **Workspace** is the checkout path. It can reveal local directory names. With
   `false`, the description shows `REDACTED` in its place.
 - **Chat link** is the chat locator. It stays in WIP Details whatever this
-  setting says, and reads `UNKNOWN` when the host has no supported locator.
+  setting says, and reads `UNKNOWN` when the host has no supported locator. A Claude Code
+  session link (`claude://claude.ai/epitaxy/local_` and a UUID) or Codex thread
+  link (`codex://threads/` and a lowercase UUID) also leads the Shaka details fold
+  as a copyable block; anything else appears only in WIP Details.
 
 Owner, revision, state, and next action also stay visible. When settings were
 not read or could not load, the description withholds the checkout path, says

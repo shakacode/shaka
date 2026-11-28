@@ -51,8 +51,8 @@ class ReviewNotRequiredEvidenceTest < Minitest::Test
         settings = prepare(root, ref, validation)
         assert_nil settings.reviewer_shortfall
         assert_includes settings.detail.fetch('body'), 'This repository’s settings do not require review.'
-        assert_includes Shaka::VerificationGates.render(settings.verdict),
-                        "`validate` passed; #{Shaka::VerificationGates::NOT_REQUIRED} at `#{ref[0, 7]}`."
+        assert_includes Shaka::VerificationLine.render(settings.verdict),
+                        "`validate` passed; #{Shaka::VerificationLine::NOT_REQUIRED} at `#{ref[0, 7]}`."
       end
     end
   end

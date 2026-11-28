@@ -7,6 +7,13 @@ cover part of a session, omit tools, or lack attribution to individual commits.
 The model line at the top of the description ends with that USD total. This
 section keeps the full table and does not repeat the total in its title. A missing total says `UNKNOWN`, which is not zero.
 
+That line names the agent, then the provider, model, and effort. When Shaka could not
+find a provider, model, or effort, the line leaves it out; a missing agent still shows
+`UNKNOWN` so the first name is always the agent. **Missing values** under Shaka
+metrics then lists all four, with `UNKNOWN` in each missing place and the reason
+when Shaka recorded one.
+Comments and reviews always show all four.
+
 ## What the columns mean
 
 | Column | Meaning |
@@ -109,7 +116,13 @@ Usage saved as comments on the PR survives a change of model or coding tool. A n
 reads those comments instead of the earlier machine's records, and each response counts
 once even if two agents saved it. Comments from accounts without write access are ignored.
 
-Ask the agent:
+Before the agent stops, `handoff` lists usage as owed work until a snapshot with a
+measured response for the PR's current commit is on the PR. A snapshot an earlier owner
+published for that commit also counts. When the coding tool records no per-response usage
+to publish, the agent passes `handoff --usage-gap REASON`, and the reason stays visible as
+a note instead.
+A usage comment that cannot be read stays owed until someone repairs or deletes it.
+To save usage at another point, ask the agent:
 
 > Save this task's usage on the PR before handing it over.
 

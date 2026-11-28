@@ -19,7 +19,8 @@ Tests support the behavior they exercised. A review with no findings still has
 coverage limits. The agent reports these limits; Shaka does not prove the reports
 are complete. See [what is enforced](../workflow.md#what-is-enforced).
 
-Under **Shaka metrics → Details**, **Shaka settings used** shows how long each
+Under **Shaka metrics → 🤙 Shaka details** (**Details** on PRs published before
+that fold), **Shaka settings used** shows how long each
 check ran and on what kind of machine, such as
 `27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`.
 The hardware and the load at start and end help you tell a busy machine from slower
@@ -120,7 +121,7 @@ Comments that only run a command, such as `+deploy`, can be
 
 ## Skills used
 
-Under **Shaka metrics**, expand **Details**, then **Skills used**, to see the
+Under **Shaka metrics**, expand **🤙 Shaka details** (**Details** on older PRs), then **Skills used**, to see the
 skills the agent reported during planning,
 implementation, review, and integration, with their sources and revisions when
 available. **Agent-reported** means the agent says it applied the skill. The agent
@@ -128,6 +129,14 @@ selects **Corroborated** when a record confirms the skill was invoked or loaded.
 Shaka checks the shape of these entries, not that record or whether the agent
 followed the skill, and the list may be incomplete. Shaka itself is not listed;
 **Execution details** names the Shaka version that ran.
+
+Some skills come from a skill pack, a set of skills published together, such as
+[pstack](../pstack.md). When the agent knows a skill's pack, the table adds a **Pack**
+column naming where the pack is published, such as `cursor/plugins/pstack`. The agent
+names the original pack even when you installed a fork or a copy that renamed its
+skills, so `pstack-tdd` from a fork still shows `cursor/plugins/pstack`. To see how
+often a pack was used, search your PRs for that one value. You don't need to do anything;
+the agent fills it in.
 
 ## Before and after merge
 
@@ -189,6 +198,11 @@ top of the description for the prepared title and body, and copy them into
 GitHub's fields. If the checkpoint was explicitly skipped, the agent publishes a
 separate message comment. Use the message for the commit you reviewed.
 The agent supplies the message when it merges for you.
+Git history does not link PR or issue numbers. When the agent publishes the
+message, Shaka's result lists each standalone `#N` or `owner/repo#N`
+reference, other than the PR's own, as a reminder.
+The agent keeps closing references and URLs. It explains or drops a bare
+number that says nothing about what that PR or issue did.
 
 A **merge queue** provides no message fields. Add the PR to the queue instead.
 Its repository settings control the message. Shaka's own merge refuses a queue
@@ -206,7 +220,10 @@ PR title and an empty body.
 When reviewers need to compare before and after, one annotated image puts both
 views side by side. The original captures can go in collapsed details.
 Recordings can show a flow and animations. The explanation names what was tested
-and what remains unverified. Captures and tests provide different evidence:
+and what remains unverified. When the agent posted a UI check, the **Screenshots** link
+beside **Checkpoint** at the top of the description opens the latest one. The link appears
+when the same GitHub account publishes both. The check's heading names the commit it shows.
+Captures and tests provide different evidence:
 
 | Change | Useful evidence |
 | --- | --- |

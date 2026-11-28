@@ -42,7 +42,8 @@ how each held up. For how Shaka works with those sources today, read
   the checkpoint's low, medium, or high **Risk** rating then replaced
   ([#1081](https://github.com/shakacode/shaka/pull/1081)). Adequate with accepted gaps
   became **Adequate, with gaps the reviewer judged acceptable**
-  ([#1021](https://github.com/shakacode/shaka/pull/1021)).
+  ([#1021](https://github.com/shakacode/shaka/pull/1021)), and the verdict itself became
+  adequate with named gaps, because a reviewer model judged those gaps, not a person.
 - **Restated checks:** "11 of 12" is #740's own count of the PRs merged after #553.
   "32 of 101" comes from the window above, where 101 descriptions list check bullets
   under Verification. A description counts when one of those bullets matches this
@@ -202,15 +203,16 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   has the agent say what it thinks the goal and problem are before it starts.
   Osmani's Agentic Verification recommends the same habit.
 - **In Shaka:** #742 left out this plan-time restatement.
-  [#1044](https://github.com/shakacode/shaka/pull/1044) added it on 2026-11-04. Before
-  coding, the agent [reads back](../working-with-shaka.md#give-it-an-outcome) the outcome,
-  scope, success criteria, and assumptions. Since
+  [#1044](https://github.com/shakacode/shaka/pull/1044) added it on 2026-11-04. Unless the
+  task is small or fully specified, the agent
+  [reads back](../working-with-shaka.md#give-it-an-outcome) the outcome, scope, success
+  criteria, and assumptions before coding. Since
   [#1065](https://github.com/shakacode/shaka/pull/1065), the PR description shows that
   readback as Goal and Done when under the Task line.
-- **Limit:** clear tasks go ahead without waiting for an answer, so the readback
-  catches a misread goal only when someone reads it in time.
-  [#1017](https://github.com/shakacode/shaka/issues/1017) proposed waiting up to five
-  minutes.
+- **Limit:** a readback nobody reads catches nothing. Since
+  [#1017](https://github.com/shakacode/shaka/issues/1017), the agent may wait briefly
+  for a correction and records whether a person confirmed the readback; the
+  [guide](../working-with-shaka.md#give-it-an-outcome) says when.
 
 ## Addy Osmani: what proof a human receives
 
