@@ -10,8 +10,8 @@ module Shaka
   # Reuses only successful verdicts for the same rules, opening, model, and prompt, which holds any description
   # prose.
   class OpeningVerdictCache
-    def initialize(opening:, model:, prompt:, directory:, rules: OpeningVerdict::RULES_VERSION)
-      key = Digest::SHA256.hexdigest([rules, model, prompt, opening].join("\0"))
+    def initialize(opening:, model:, prompt:, directory:)
+      key = Digest::SHA256.hexdigest([OpeningVerdict::RULES_VERSION, model, prompt, opening].join("\0"))
       @path = File.join(directory, key)
       @directory = directory
       @prompt = prompt
