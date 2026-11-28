@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'pathname'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
 require_relative '../local_review/path_guard'
@@ -19,14 +20,20 @@ module Shaka
 
       # A PATH without the checkout's directories and an absolute git from it, so a git, ssh, or credential
       # helper committed in the checkout never runs; this check runs at every turn, often in a candidate's checkout.
-      # The checkout's real path, since the guard compares real paths and the checkout may sit under a symlink.
+      # The guard covers the whole worktree, found without running git, at its real path, since the guard compares
+      # real paths and --root may name a subdirectory or sit under a symlink.
       def self.runtime(root)
-        checkout = File.realpath(root)
+        checkout = worktree_root(File.realpath(root))
         path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: checkout, drop_candidate: true)
         git = LocalReviewPathGuard.safe_executable(path, 'git', checkout)
         raise Error, 'git is not on PATH outside the checkout' unless git
 
         [ENVIRONMENT.merge('PATH' => path), git]
+      end
+
+      def self.worktree_root(directory)
+        Pathname(directory).ascend { |candidate| return candidate.to_s if File.exist?(File.join(candidate, '.git')) }
+        raise Error, "#{directory} is not inside a Git worktree."
       end
 
       def initialize(root:, branch:, runtime: self.class.runtime(root))

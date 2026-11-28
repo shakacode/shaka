@@ -19,7 +19,37 @@ class BranchHeadPathTest < Minitest::Test
     refute_path_exists marker
   end
 
+  # Naming a subdirectory or a symlink to the checkout still guards the whole worktree.
+  def test_planted_git_is_skipped_from_a_subdirectory_or_symlinked_root
+    link = File.join(@dir, 'link')
+    File.symlink(@task, link)
+    FileUtils.mkdir_p(File.join(@task, 'sub'))
+    marker = plant_git
+    [File.join(@task, 'sub'), link].each do |root|
+      with_path("#{File.join(@task, 'bin')}#{File::PATH_SEPARATOR}#{ENV.fetch('PATH')}") do
+        assert_equal 'not_pushed', Shaka::BranchHead.new(root:).check['state'], root
+      end
+    end
+
+    refute_path_exists marker
+  end
+
+  def test_no_git_outside_the_checkout_is_an_error
+    plant_git
+    error = assert_raises(Shaka::Error) { with_path(File.join(@task, 'bin')) { check } }
+
+    assert_includes error.message, 'git is not on PATH outside the checkout'
+  end
+
   private
+
+  def plant_git
+    marker = File.join(@dir, 'planted-ran')
+    FileUtils.mkdir_p(File.join(@task, 'bin'))
+    File.write(File.join(@task, 'bin', 'git'), "#!/bin/sh\ntouch '#{marker}'\nexit 1\n")
+    File.chmod(0o755, File.join(@task, 'bin', 'git'))
+    marker
+  end
 
   def with_path(path)
     saved = ENV.fetch('PATH')
