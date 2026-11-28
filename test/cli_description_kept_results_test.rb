@@ -15,6 +15,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
   LINE = '**Validation and review:** `validate` passed (exit 0); local review by openai/codex at `ccccccc`.'
   # A description published before passes dropped their exit code shows the trimmed line on republish.
   SHOWN = LINE.sub(' (exit 0)', '')
+  FOLD = "<details>\n<summary>Evidence and limitations</summary>\n\n#{LINE}\n\n</details>".freeze
   KEPT = 'not rechecked under the current Shaka or settings'
 
   def test_rewording_keeps_the_verified_line_and_reports_that_it_was_not_rechecked
@@ -54,15 +55,25 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     refute result.key?('evidence_kept')
   end
 
-  # Issue #1320: the agent's own summary, worded like the line, came back as a kept pass.
-  def test_a_summary_worded_like_the_line_stays_unknown_across_republishes
-    @summary = SHOWN
+  # Issue #1344: a copied Verification section and fold published twice without results stays UNKNOWN.
+  def test_a_copied_section_and_fold_republished_without_results_stays_unknown
+    @top = "Context first.\n\n## Verification\n\n#{LINE}\n\n#{FOLD}"
     first, = republish('')
+    assert_operator first.index(FOLD), :<, first.index(Shaka::VerificationLine::MARKER), 'the copy comes first'
     second, result = republish(first)
 
     assert_includes second, 'UNKNOWN: no validation or review results'
     refute_includes second, KEPT
     refute result.key?('evidence_kept')
+  end
+
+  # Issue #1344: a summary repeating the helper's setup gap sentence would have been kept as a gap.
+  def test_a_summary_starting_with_the_setup_gaps_label_is_refused
+    @summary = '**Setup gaps:** 1 of 2 configured reviewers completed; `anthropic` did not.'
+    published, error = attempt('')
+
+    refute published, 'a refused description publishes nothing'
+    assert_includes error, 'verification.summary'
   end
 
   # PR #1301: without results, the line also names a published review that covers the head.
@@ -89,6 +100,19 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   private
 
+  # Returns the published body, or nil, and the command's error output.
+  def attempt(existing)
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _, error, status = run_description(dir, root:, env: { 'EXISTING_BODY' => existing }, decisions: false)
+        refute_predicate status, :success?
+        published = File.join(dir, 'published.md')
+        return [(File.read(published) if File.exist?(published)), error]
+      end
+    end
+  end
+
   def republish(existing, env: {})
     with_repository do |root|
       commit(root)
@@ -103,6 +127,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   def description_content
     content = super
+    content['summary'] = @top if @top
     content['verification'] = content['verification'].merge('summary' => @summary) if @summary
     content
   end
