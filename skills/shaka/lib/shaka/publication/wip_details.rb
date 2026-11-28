@@ -63,10 +63,11 @@ module Shaka
       value if id&.match?(CodexWake::THREAD)
     end
 
-    # The owner's machine alias, or nil when the owner is UNKNOWN. Validated with the note.
+    # The owner's machine alias with Markdown punctuation escaped, or nil when it is UNKNOWN. Validated with the note.
     def machine
-      alias_name = validated.fetch('owner').split('·').first.strip
-      alias_name unless alias_name == 'UNKNOWN'
+      detail
+      name = @spec['owner'].split('·').first.strip
+      name.gsub(/[!-\/:-@\[-`{-~]/) { |character| "\\#{character}" } unless name == 'UNKNOWN'
     end
 
     private
@@ -77,13 +78,11 @@ module Shaka
     end
 
     def validated
-      @validated ||= begin
-        raise Error, 'Publication wip must be an object.' unless @spec.is_a?(Hash)
+      raise Error, 'Publication wip must be an object.' unless @spec.is_a?(Hash)
 
-        refuse_keys(@spec.keys - FIELDS.keys, 'has unknown fields')
-        refuse_keys(FIELDS.keys - @spec.keys, 'is missing fields', '; use UNKNOWN')
-        checked_owner(FIELDS.keys.to_h { |key| [key, cell(key)] })
-      end
+      refuse_keys(@spec.keys - FIELDS.keys, 'has unknown fields')
+      refuse_keys(FIELDS.keys - @spec.keys, 'is missing fields', '; use UNKNOWN')
+      checked_owner(FIELDS.keys.to_h { |key| [key, cell(key)] })
     end
 
     def checked_owner(cells)

@@ -83,12 +83,14 @@ class PublicationShakaDetailsTest < Minitest::Test
     assert_includes rendered, "| Chat link | #{link} |"
   end
 
-  # A chat opens only on the machine that holds it, so the label names the owner's machine when it is known.
-  def test_the_chat_link_label_omits_an_unknown_machine
+  # The label omits an unknown machine, and shows a known one literally, so punctuation cannot become emphasis.
+  def test_the_chat_link_label_names_only_a_known_machine_literally
     link = 'codex://threads/1b4e28ba-2fa1-11d2-883f-0016d3cca427'
     [WIP.merge('owner' => 'UNKNOWN'), WIP.merge('owner' => 'UNKNOWN · Codex · k7q2')].each do |wip|
       assert_includes render(wip.merge('thread' => link)), "**Chat link:**\n\n```text\n#{link}\n```"
     end
+    rendered = render(WIP.merge('owner' => 'qa-__blue__ · Codex · k7q2', 'thread' => link))
+    assert_includes rendered, '**Chat link on qa\\-\\_\\_blue\\_\\_:**'
   end
 
   # URI schemes are case-insensitive, so an uppercase one still gets the copy block.
