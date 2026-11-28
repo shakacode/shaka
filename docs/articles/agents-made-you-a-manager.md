@@ -40,7 +40,7 @@ reports, GitHub refuses, or only the agent follows it.
 | Habit, in this article's words | What Shaka does | Backed by |
 | --- | --- | --- |
 | Checks the agent can run | Runs the repository's checks, reviews the final commit, and links the results on the PR | Command, for a review line covering the merged commit |
-| Context the agent cannot find | Restates outcome, scope, and success criteria before coding | Agent |
+| Context the agent cannot find | Restates outcome, scope, and success criteria before coding, unless the task is small or fully specified | Agent |
 | Lessons that last | Points to retrospectives and `AGENTS.md` | Agent |
 | Hard rules only where needed | Lists each rule and what enforces it | Command, for 8 of 100 rules |
 | Planning first | Plans, then offers to agree on a design when choices are open | Agent |
