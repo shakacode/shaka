@@ -29,6 +29,14 @@ class SuppliedProseTest < Minitest::Test
     assert_equal 9, Shaka::SuppliedProse.words(content)
   end
 
+  # A fenced block's lines count; only an inline span shrinks to one word. Angle brackets are not taken for tags.
+  def test_fenced_code_and_angle_brackets_count_as_written
+    body = "Run `bin/validate --fast` first.\n\n```ruby\nputs one two\n```\n\nA List<String> and <https://x.test>."
+
+    # Run, code span, first; ```ruby, puts, one, two; A, List<String>, and, the address.
+    assert_equal 11, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
+  end
+
   # Shaka's publisher attribution writes the note, so it is helper text.
   def test_the_publisher_note_does_not_count
     assert_equal 1, Shaka::SuppliedProse.words('summary' => 'One.', 'publisher_note' => 'Two more words.')

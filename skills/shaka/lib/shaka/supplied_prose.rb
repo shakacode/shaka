@@ -36,10 +36,11 @@ module Shaka
 
     def object(value) = value.is_a?(Hash) ? value : {}
 
-    # VisibleProse then drops collapsed details and HTML tags.
+    # VisibleProse then drops collapsed details. Other angle brackets stay text, so `<words>` still count. A code
+    # span never crosses a line, so a fenced block's lines count as written.
     def written(text)
-      text.gsub(/!\[[^\]]*\]\([^)]*\)/, '').gsub(/(`+).+?\1/m, ' Code ')
-          .gsub(/\]\([^)]*\)/, ']').gsub(/\]\[[^\]]*\]/, ']')
+      text.gsub(%r{<(?!/?(?:details|summary)\b)}i, '&lt;').gsub(/!\[[^\]]*\]\([^)]*\)/, '')
+          .gsub(/(`+)[^`\n]+?\1/, ' Code ').gsub(/\]\([^)]*\)/, ']').gsub(/\]\[[^\]]*\]/, ']')
     end
   end
 end
