@@ -12,11 +12,27 @@ class RequiredChecksTest < Minitest::Test
 
   PASS = { 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }.freeze
 
-  def test_native_required_checks_win_over_the_seam_list
+  def test_the_seam_list_adds_to_native_required_checks
     native = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
     result = Shaka::RequiredChecks.new(Client.new(native, [PASS]), seam_names: ['checks']).call
 
-    assert_equal({ 'source' => 'github', 'checks' => native }, result)
+    assert_equal({ 'source' => 'github+seam', 'checks' => native + [PASS] }, result)
+  end
+
+  # A name GitHub already requires, reported or not, gates once.
+  def test_a_seam_name_github_also_requires_is_not_repeated
+    native = [PASS]
+    missing = { 'name' => 'validate', 'state' => 'MISSING', 'bucket' => 'missing' }
+    result = Shaka::RequiredChecks.new(Client.new(native, [PASS], %w[checks validate]),
+                                       seam_names: %w[checks validate]).call
+
+    assert_equal({ 'source' => 'github', 'checks' => [PASS, missing] }, result)
+  end
+
+  def test_an_unreadable_native_set_stays_unreadable_beside_a_seam_list
+    result = Shaka::RequiredChecks.new(Client.new(nil, [PASS]), seam_names: ['checks']).call
+
+    assert_equal({ 'source' => 'github', 'checks' => nil }, result)
   end
 
   def test_seam_list_applies_when_github_enforces_no_checks
@@ -29,11 +45,12 @@ class RequiredChecksTest < Minitest::Test
   # An unreported native requirement leaves `gh pr checks --required` empty; it must block, not vanish.
   def test_configured_native_requirements_that_have_not_reported_are_missing
     missing = { 'name' => 'validate', 'state' => 'MISSING', 'bucket' => 'missing' }
-    [['checks'], nil].each do |seam_names|
-      result = Shaka::RequiredChecks.new(Client.new([], [PASS], ['validate']), seam_names:).call
+    result = Shaka::RequiredChecks.new(Client.new([], [PASS], ['validate'])).call
 
-      assert_equal({ 'source' => 'github', 'checks' => [missing] }, result)
-    end
+    assert_equal({ 'source' => 'github', 'checks' => [missing] }, result)
+    result = Shaka::RequiredChecks.new(Client.new([], [PASS], ['validate']), seam_names: ['checks']).call
+
+    assert_equal({ 'source' => 'github+seam', 'checks' => [missing, PASS] }, result)
   end
 
   # A renamed job leaves its configured name unreported beside checks that did report.
@@ -47,7 +64,7 @@ class RequiredChecksTest < Minitest::Test
   def test_configured_native_requirements_use_reported_head_results
     %w[SUCCESS FAILURE IN_PROGRESS].zip(%w[pass fail pending]).each do |state, bucket|
       check = PASS.merge('state' => state, 'bucket' => bucket)
-      result = Shaka::RequiredChecks.new(Client.new([], [check], ['checks']), seam_names: ['other']).call
+      result = Shaka::RequiredChecks.new(Client.new([], [check], ['checks'])).call
 
       assert_equal({ 'source' => 'github', 'checks' => [check] }, result)
     end

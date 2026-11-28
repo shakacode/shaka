@@ -7,7 +7,7 @@ require_relative 'validation'
 module Shaka
   class RepositoryConfig
     # Validates merge authority, size limits, the highest risk Auto merges, hold labels, and the checks that gate
-    # merge when GitHub enforces none.
+    # merge in addition to GitHub's required checks.
     class MergeSchema
       include Validation
 

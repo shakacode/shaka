@@ -14,7 +14,7 @@ module Shaka
         flags.on('--merge-preference MODE', %w[ask auto], 'ask or auto (default: ask)') do |value|
           @options[:merge_preference] = value
         end
-        flags.on('--required-check NAME', 'Check gating merge when GitHub requires none; repeatable') do |value|
+        flags.on('--required-check NAME', 'Check gating merge beside any GitHub requires; repeatable') do |value|
           (@options[:required_checks] ||= []) << value
         end
       end

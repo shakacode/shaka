@@ -4,7 +4,7 @@ require_relative 'error'
 require_relative 'required_checks'
 
 module Shaka
-  # Refuses a merge unless every gating check (native, or seam-declared as a fallback) is passing.
+  # Refuses a merge unless every gating check, native or seam-declared, is passing.
   module MergeRequiredChecks
     EMPTY_REQUIRED_CHECKS = 'GitHub reported no required checks on this branch. Merge refuses that empty set. ' \
                             'If the branch is unprotected, enable branch protection or list merge.required_checks; ' \
@@ -52,7 +52,7 @@ module Shaka
     end
 
     # Drops the failures MergeBaseFailures finds on the base branch too. A check merge.required_checks
-    # names counts as required even where GitHub's own required checks take that list's place.
+    # names counts as required.
     def unexcused(checks, waiting, required)
       return waiting unless @base_failures
 

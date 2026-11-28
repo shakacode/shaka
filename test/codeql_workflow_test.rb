@@ -52,6 +52,21 @@ class CodeqlWorkflowTest < Minitest::Test
     assert_equal "${{ github.event_name == 'pull_request' }}", concurrency.fetch('cancel-in-progress')
   end
 
+  def test_reports_on_every_pull_request_and_merge_group_so_main_can_require_it
+    on = @workflow['on'] || @workflow[true]
+
+    assert on.key?('merge_group')
+    refute on['pull_request'].to_h.key?('paths-ignore')
+    refute on['push'].to_h.key?('paths-ignore')
+  end
+
+  def test_analyzes_every_change_including_documentation
+    steps = @workflow.dig('jobs', 'analyze', 'steps')
+
+    refute(steps.any? { |step| step['id'] == 'changes' })
+    assert(steps.none? { |step| step.key?('if') })
+  end
+
   private
 
   def matrix

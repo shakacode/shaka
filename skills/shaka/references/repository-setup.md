@@ -194,8 +194,8 @@ uses `~/.agents/skills`. Replace every example command with the repository's
 actual command. If no CI review job exists, use `--review-policy none` and omit
 `--ci-review-job`. Meaningful
 implementation still gets local review. The initializer refuses to overwrite
-conflicting files. When GitHub enforces no required checks, add
-`--required-check NAME` for each confirmed check.
+conflicting files. Add `--required-check NAME` for each confirmed check GitHub does not
+already require.
 
 
 ## Offer local reviewers
@@ -251,7 +251,7 @@ PR merges, ordinary new tasks use the default-branch settings.
 Supply `--root`, `--setup-command`, `--test-command`, `--validate-command`, and
 `--review-policy`. Unless review policy is `none`, supply `--ci-review-job` for
 an actual job; repeat it for additional jobs. Supply `--required-check` for each
-check the user confirms when GitHub requires none; see
+check the user wants gated beyond what GitHub requires; see
 [`merge.required_checks`](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergerequired_checks). With no
 required checks at all, keep merge preference `ask`.
 

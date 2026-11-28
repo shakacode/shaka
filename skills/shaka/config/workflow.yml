@@ -675,8 +675,9 @@ phases:
         ```
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
-        Its `requiredChecksSource` is `github`, or `seam` when GitHub enforces no required checks
-        and the trusted `merge.required_checks` gates the PR instead. Where GitHub refuses
+        Its `requiredChecksSource` is `github`, `seam` when GitHub enforces no required checks
+        and the trusted `merge.required_checks` gates the PR instead, or `github+seam` when that
+        list adds checks to GitHub's. Where GitHub refuses
         GraphQL, `pr` and `attention --state merge` read over REST, set `readOver` to `rest`, and list
         the fields they could not read in `unknownFields`; report each of those as unknown in the handoff.
         `post-implementation publish --squash-message`, `squash-message`, and
@@ -964,8 +965,8 @@ phases:
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
         instruction as authorization to run `merge`. If they later ask you to merge this head, run
         `merge` only for that SHA or a rebased head the Ask approval item allows. When
-        `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
-        check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
+        `requiredChecksSource` is `seam` or `github+seam`, GitHub will not stop that click, so name
+        each seam-declared check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge --auto` with the current head, any due walkthrough's ID, and
         `--squash-message` content. It labels the PR `auto-merged` once GitHub confirms the merge;
