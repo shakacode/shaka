@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
+require_relative 'provenance'
 require_relative 'wip_metadata'
 require_relative '../hosts/codex_wake'
 
@@ -63,11 +64,14 @@ module Shaka
       value if id&.match?(CodexWake::THREAD)
     end
 
-    # The owner's machine alias with Markdown punctuation escaped, or nil when it is UNKNOWN. Validated with the note.
+    # The owner's machine alias for the chat link label, or nil when it is UNKNOWN or not a plain alias token, so
+    # free text cannot reach the bold label. Its punctuation is escaped so `_` cannot become emphasis.
     def machine
       detail
       name = @spec['owner'].split('·').first.strip
-      name.gsub(/[!-\/:-@\[-`{-~]/) { |character| "\\#{character}" } unless name == 'UNKNOWN'
+      return if name == 'UNKNOWN' || !name.match?(ExecutionProvenance::SAFE_VALUE)
+
+      name.gsub(/[._:-]/) { |character| "\\#{character}" }
     end
 
     private

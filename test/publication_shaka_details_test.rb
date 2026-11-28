@@ -91,6 +91,7 @@ class PublicationShakaDetailsTest < Minitest::Test
     end
     rendered = render(WIP.merge('owner' => 'qa-__blue__ · Codex · k7q2', 'thread' => link))
     assert_includes rendered, '**Chat link on qa\\-\\_\\_blue\\_\\_:**'
+    assert_includes render(WIP.merge('owner' => '``qa\\temp`` · Codex · k7q2', 'thread' => link)), '**Chat link:**'
   end
 
   # URI schemes are case-insensitive, so an uppercase one still gets the copy block.
