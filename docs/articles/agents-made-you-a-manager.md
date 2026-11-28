@@ -18,7 +18,7 @@ an instruction the agent follows.
 
 ## Main results
 
-- Shaka covers ten of the twelve habits for each task. The two it skips are about
+- Shaka covers ten of the twelve habits. The two it skips are about
   where the analogy breaks and not needing a manager title.
 - The habits that protect the merge decision have code behind them when the agent
   merges. The merge helper refuses a PR over the size limits until you confirm that

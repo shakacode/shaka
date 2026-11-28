@@ -36,7 +36,8 @@ start without anyone naming them.
 - Shaka binds a test suite run to its commit. A harness that drives the real app proves
   what tests can't, yet run outside `validate` it is recorded only as a sentence.
 - Both packs have the agent restate the goal before it starts. Shaka added that step on
-  2026-11-04 ([#1044](https://github.com/shakacode/shaka/pull/1044)).
+  2026-11-04 ([#1044](https://github.com/shakacode/shaka/pull/1044)) and skips it for a
+  small or fully specified task.
 - Shaka loads its whole 11,780-word workflow on every task. That is more than the five Addy
   skills that match ordinary code changes put together.
 
