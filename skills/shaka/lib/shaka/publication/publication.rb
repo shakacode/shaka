@@ -111,12 +111,13 @@ module Shaka
       [intent, *RiskReview.render(@content, @pull), verification]
     end
 
+    # The Validation and review line stays under Verification only. An unfinished draft with no
+    # checks, table, or details has nothing to fold.
     def evidence
-      body = [VerificationLine.line(@settings.verdict, @content['review'], @settings.earlier_review),
-              IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
-              *table, *details]
-      evidence = { 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") }
-      [evidence, *CompanionResults.for(@content, @pull)].map { details_block(it) }
+      body = [IntentVerification.evidence(@content.fetch('verification'), @content['wip'].nil? ? (1..3) : (0..3)),
+              *table, *details].reject(&:empty?)
+      evidence = ({ 'summary' => 'Evidence and limitations', 'body' => body.join("\n\n") } unless body.empty?)
+      [evidence, *CompanionResults.for(@content, @pull)].compact.map { details_block(it) }
     end
 
     # Verification carries the proof, so a table only adds facts that fit no check.

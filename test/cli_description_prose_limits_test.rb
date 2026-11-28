@@ -6,6 +6,7 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require 'json'
+require 'shaka/visible_prose'
 
 class CliDescriptionProseLimitsTest < Minitest::Test
   include RepositoryConfigTestHelpers
@@ -36,6 +37,20 @@ class CliDescriptionProseLimitsTest < Minitest::Test
         _output, error, status = run_description(dir, root:, ref: true)
 
         assert_refused_before_publication(dir, status, error)
+      end
+    end
+  end
+
+  # The helper's own lines push the visible total past 300 words; only the 275 the agent wrote count.
+  def test_the_length_limit_counts_only_the_prose_the_agent_supplied
+    @summary = Array.new(5) { "#{sentence(25)} #{sentence(25)}" }.join("\n\n")
+    with_repository({}) do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, ref: true)
+
+        assert_predicate status, :success?, error
+        assert_operator Shaka::VisibleProse.words(File.read(File.join(dir, 'published.md'))), :>, 300
       end
     end
   end
