@@ -5,6 +5,8 @@ root=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_PREFIX -u GIT_CE
 base=${SHAKA_BASE_REF:-origin/main}
 comparison=$(git -C "$root" merge-base "$base" HEAD 2>/dev/null || true)
 classifier=$(mktemp)
+unset RUBYOPT RUBYLIB
+export BUNDLE_GEMFILE="$root/Gemfile"
 trap 'rm -f "$classifier"' EXIT
 if git -C "$root" show "${base}:bin/docs-only-change" >"$classifier" 2>/dev/null &&
    chmod +x "$classifier" && (cd "$root" && "$classifier" "$base"); then
@@ -31,9 +33,10 @@ if git -C "$root" show "${base}:bin/docs-only-change" >"$classifier" 2>/dev/null
     fi
   done <"$inventory"
   ruby "$root/bin/check-docs-navigation"
+  # The classifier admitted only documentation, so this runner and its selector are as they were
+  # at the merge base.
+  bundle exec ruby "$root/bin/run-tests" --changed "$base"
   exit 0
 fi
 
-unset RUBYOPT RUBYLIB
-export BUNDLE_GEMFILE="$root/Gemfile"
 exec "$root/bin/validate" "$@"
