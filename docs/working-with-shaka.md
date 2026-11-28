@@ -17,14 +17,19 @@ Describe the result or link an issue. Add what the agent cannot infer:
 /shaka Add CSV export to the orders page. Reuse the filters shown on screen
 ```
 
-The agent explains what it understands before coding. Correct any mismatch in
-chat. It can proceed with a clear task and asks when it needs your decision.
+Unless the task is small or fully specified, the agent restates the goal, who it is
+for, and what done looks like before coding. Correct any mismatch in chat. After a
+restatement, it waits up to five minutes for a reply when your coding tool can wake
+it after a delay, and keeps reading meanwhile; no reply means it continues. When the
+PR shows the restated goal, it also records whether you confirmed it, and the default
+final checkpoint, when it runs, compares the result with it. The agent asks when it
+needs your decision.
 
 ## Choose a merge policy
 
 | Choice | What happens |
 | --- | --- |
-| **Ask** (default) | You merge the ready PR on GitHub, or tell the agent, "You can merge." |
+| **Ask** (default) | You merge the ready PR on GitHub, tell the agent, "You can merge," or add the [`merge-approved` label](settings.md#mergepreference) so it merges under Auto. |
 | `auto` | The agent merges when the PR is ready. |
 
 ![A ready PR follows Ask, where you merge or approve it, or automatic merging, where the agent merges eligible PRs. A PR that is too large or risky returns to you when automatic merging is on.](img/merge-policy.svg)
@@ -53,6 +58,12 @@ If your repository [waits for every CI review](settings.md#reviewci_review_wait)
 
 <a id="on-github-or-in-chat"></a>
 <a id="in-your-editor"></a>
+
+When you're following the chat and the result is something you judge by reading it,
+such as documentation or an article, the agent shows you a draft you haven't seen yet
+before code review and full validation, leaving out anything private. It says what it
+hasn't checked yet, then continues without waiting. Your reply redirects the work,
+though checks already running may finish first.
 
 Say what you want changed in the same chat:
 
@@ -106,7 +117,8 @@ names the pending review.
 ## Resume unfinished work
 
 Return to the original chat: in the PR description, open **🤙 Shaka details**, use
-the copy button on the **Chat link**, and paste it into your browser's address bar.
+the copy button on the **Chat link**, and paste it into your browser's address bar
+on the machine that holds the chat; the label names it when known, such as **Chat link on `laptop`**.
 When the fold does not open with a **Chat link** block, read **WIP Details → Chat
 link** inside the fold, or below Shaka metrics on PRs published before this
 layout. When neither shows a link, the PR has none published.
@@ -120,6 +132,10 @@ then give Shaka the PR:
 
 The agent checks the current state and explains what remains. It records the
 handover on the PR and rechecks merge authority before continuing.
+
+You can push to the agent's branch yourself. At its next turn or push, the agent notices,
+stops editing and publishing, and tells you. It combines your commits with its own before it
+continues, and it never pushes over commits it hasn't seen.
 
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See
@@ -332,6 +348,26 @@ Shaka publishes that account as the agent reports it. At publication, Shaka labe
 from earlier commits as stale. The agent reruns affected checks and republishes the
 results. Shaka keeps control of delivery; pstack's separate delivery playbooks are
 not part of this flow.
+
+create-verification-skill can also leave you a script, often called a harness, that
+drives your app the way a person would and reports pass or fail. A run the agent reports
+is only its account, and the next commit can make it out of date. To check every PR with
+the harness, the way your tests do, ask:
+
+```text
+Make our verification harness part of Shaka validation for every PR, so a harness failure fails validation and its screenshots and logs are saved outside the repository
+```
+
+The agent adds the harness to your `validate` script, and to `validate-local` if you have
+one, since Shaka accepts a pass from either
+[validation script](settings.md#standard-command-scripts). If that means editing Shaka's
+own scripts, it does so in a separate settings PR. Once a branch includes the change, each
+time the agent validates that branch through Shaka, the harness runs, and Shaka ties the
+result to the exact code tested. If the harness fails, that validation run fails.
+
+The harness has to run without a person wherever those scripts run, including CI if yours
+runs them. One that waits for a sign-in code, for example, can't be part of validation;
+keep reporting those runs in **Companion skill results**.
 
 ## Review a session for improvements
 

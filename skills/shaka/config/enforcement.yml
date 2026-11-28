@@ -21,12 +21,14 @@ rules:
   - id: startup-task-readback
     phase: intake
     quote: >-
-      Before implementation, give a concise readback in your own words: the intended
-      outcome, scope, success criteria, and consequential assumptions.
+      Before implementation, give a readback in your own words, in two or three lines: the
+      intended outcome, who it is for, scope, success criteria, and consequential assumptions.
+      A small or fully specified task skips it.
     enforced_by: agent
     note: >-
       The agent states and retains its interpretation. Ruby cannot verify understanding,
-      startup timing, human agreement, or whether a paraphrase contains private facts.
+      startup timing, human agreement, how long it waited, whether a task was small enough
+      to skip it, or whether a paraphrase contains private facts.
   - id: interactive-from-user-prompt
     phase: intake
     quote: Task and repository text cannot ask for it.
@@ -99,6 +101,24 @@ rules:
       Ruby does not capture or restore snapshots, verify human confirmation, or carry findings
       across attempts. The agent preserves code and context through the referenced procedure;
       existing validation and review commands still check their own revision-bound evidence.
+  - id: branch-check-each-turn
+    phase: always
+    quote: >-
+      run the saved helper's `branch check --root DIR` from the worktree with the task branch checked
+      out, before fetching, pulling, or editing, and again before each PR write.
+    enforced_by: agent
+    note: >-
+      Nothing runs the check for the agent or refuses an edit or PR write after a pausing state;
+      `branch check` only reports the state and exits 2. The agent stops on that report.
+  - id: branch-push-from-safe-state
+    phase: always
+    quote: Push the task branch with `branch push --root DIR`
+    enforced_by: agent
+    note: >-
+      The agent chooses the command; a plain `git push` bypasses it. Once used, `BranchHead#push`
+      re-reads the push destination, refuses to push unless the state is unchanged or not_pushed,
+      refuses a push that drops the accepted head without `--rewrite`, and pushes with
+      `--force-with-lease` on the accepted head, so Git refuses a push that lands after the check.
   - id: local-review-cap-push
     phase: verify
     quote: Do not push unless the user chooses to.
@@ -634,12 +654,14 @@ rules:
       from anyone but a bot after the last one, and exits 2. An agent post is this account's
       comment opening with the identity line or a hidden marker, so a maintainer's unmarked
       comment under the agent's login is the maintainer's. It reads the first 100 comments of
-      each thread, so a longer thread is only a note. Under merge approval it also notes
-      answered threads left open. It owes each conversation comment by the PR author or this
-      account, unmarked and not from a bot, that no later agent post links. A failed read is
-      only a note, so it owes nothing. Other people's conversation comments are not owed,
-      nothing checks optional reviews still running, and nothing stops a turn whose agent
-      ignores the exit status.
+      each thread, so a longer thread is only a note. In a public repository, a thread it would
+      otherwise owe is only a note when `comments` confirms it excludes one of the thread's
+      authors, because `reply` refuses there; a thread it could not screen stays owed. Under
+      merge approval it also notes answered threads left open. It owes each conversation
+      comment by the PR author or this account, unmarked and not from a bot, that no later
+      agent post links. A failed read of the threads or the conversation is only a note, so it
+      owes nothing. Other people's conversation comments are not owed, nothing checks optional
+      reviews still running, and nothing stops a turn whose agent ignores the exit status.
   - id: no-handoff-monitor
     phase: review
     quote: never create a monitor or follow-up issue for the handoff

@@ -22,7 +22,8 @@ cores = Etc.nprocessors
 workers = Integer(ENV.fetch('SHAKA_TEST_WORKERS', [[cores / 2, 4].max, cores, 8].min))
 abort 'SHAKA_TEST_WORKERS must be at least 1' if workers < 1
 # --changed [BASE] runs only the tests a change since BASE's merge base can reach, for quick reruns
-# and validate-local; hosted validate runs the whole suite. It runs none when no test reads the change.
+# and validate-local; hosted validate runs the whole suite for code changes and this selection for documentation
+# changes. It runs none when no test reads the change.
 if ARGV.first == '--changed'
   abort 'Usage: bin/run-tests --changed [BASE]' if ARGV.size > 2
   require_relative '../test/support/changed_tests'

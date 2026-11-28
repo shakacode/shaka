@@ -4,6 +4,7 @@
 require 'optparse'
 require 'pathname'
 require_relative '../lib/shaka/evaluation/review_replay'
+require_relative '../lib/shaka/evaluation/risk_replay'
 
 def parse_options
   options = { source: File.realpath('../..', __dir__) }
@@ -11,6 +12,7 @@ def parse_options
     flags.banner = 'Usage: eval/bin/review-replay --helper PATH --reviewer ID --criteria SHA --state DIR [options]'
     register_arguments(flags, options)
     flags.on('--preview') { options[:preview] = true }
+    register_risk_flags(flags, options)
   end
   parser.parse!
   raise ArgumentError, parser.to_s unless ARGV.empty?
@@ -18,9 +20,15 @@ def parse_options
   options
 end
 
+# Replays the checkpoint's risk rating on eval/risk-replay cases instead of the code review.
+def register_risk_flags(flags, options)
+  flags.on('--checkpoint-risk') { options[:checkpoint_risk] = true }
+  flags.on('--repeat N', Integer) { |value| options[:repeat] = value }
+end
+
 def register_arguments(flags, options)
   arguments = %w[helper:PATH reviewer:ID criteria:SHA candidate-criteria:SHA baseline-model:MODEL candidate-model:MODEL
-                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID]
+                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID bank:VERSION]
   arguments.each do |argument|
     name, value_name = argument.split(':')
     flags.on("--#{name} #{value_name}") { |value| options[name.tr('-', '_').to_sym] = value }
@@ -35,6 +43,13 @@ def validate_options(options)
   validate_arms(options.values_at(:baseline, :candidate))
   validate_effort(options)
   validate_budget(options) unless options[:preview]
+  raise ArgumentError, 'Use --repeat from 1 to 5 with --checkpoint-risk' unless valid_repeat?(options)
+end
+
+def valid_repeat?(options)
+  return !options.key?(:repeat) unless options[:checkpoint_risk]
+
+  options.fetch(:repeat, 1).between?(1, 5)
 end
 
 def validate_effort(options)
@@ -98,9 +113,24 @@ def repository_marker?(directory)
     (directory.join('HEAD').file? && directory.join('objects').directory? && directory.join('refs').directory?)
 end
 
-def rows(case_id)
-  rows = File.foreach(File.join(__dir__, '../review-replay/v1.jsonl')).map { |line| JSON.parse(line) }
-  rows.select! { |row| row['id'] == case_id } if case_id
+def review_bank(bank)
+  path = File.join(__dir__, "../review-replay/#{bank}.jsonl")
+  raise ArgumentError, 'Unknown replay bank' unless bank.match?(/\Av\d+\z/) && File.file?(path)
+
+  path
+end
+
+# The risk replay reads its own case file; --bank picks a code review replay's frozen cases.
+def case_file(options)
+  return review_bank(options.fetch(:bank, 'v2')) unless options[:checkpoint_risk]
+  raise ArgumentError, 'Use --bank only for a code review replay' if options[:bank]
+
+  Shaka::Evaluation::RiskReplay::CASE_FILE
+end
+
+def rows(options)
+  rows = File.foreach(case_file(options)).map { |line| JSON.parse(line) }
+  rows.select! { |row| row['id'] == options[:case] } if options[:case]
   raise ArgumentError, 'Unknown replay case' if rows.empty?
 
   rows
@@ -109,7 +139,8 @@ end
 begin
   options = parse_options
   validate_options(options)
-  Shaka::Evaluation::ReviewReplay.new(options).run(rows(options[:case]))
+  replay = options[:checkpoint_risk] ? Shaka::Evaluation::RiskReplay : Shaka::Evaluation::ReviewReplay
+  replay.new(options).run(rows(options))
 rescue ArgumentError, IOError, SystemCallError, JSON::ParserError, Shaka::Evaluation::Budget::Stopped,
        Shaka::Evaluation::BudgetError, OptionParser::ParseError => e
   warn "Replay incomplete: #{e.message}"

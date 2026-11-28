@@ -3,6 +3,8 @@ is technically correct. Re-read the original problem, intended users, desired
 outcome, and project constraints. Evaluate the finished change as a whole.
 
 - Does the observed result improve the intended outcome for those users?
+- Does the result match the task as understood in Intent, when Intent states it?
+  Say so when Intent does not record that a person confirmed it.
 - Did building it reveal an unnecessary, misguided, or poorly framed request?
 - Has scope drifted? Compare actual files, commits, review rounds, and repairs
   with what the plan expected. Mark missing impact or frequency evidence unknown.

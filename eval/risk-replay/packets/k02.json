@@ -1,0 +1,20 @@
+{
+  "summary": "Reviewers see one cost line and one expandable section, 🤙 Shaka details, under Shaka metrics. Maintainers resuming a chat copy its link with one click at the top of that section.",
+  "intent": {
+    "why": "A reviewer read the section as clutter, and GitHub shows claude:// and codex:// chat links as plain text.",
+    "user_impact": "Readers see one line under Shaka metrics and copy the chat link with one click.",
+    "safe_because": "The heading and WIP table are unchanged, so handoff and pr watch read both layouts; tests cover each.",
+    "scope": "Nests WIP Details in the 🤙 Shaka details fold, adds the copy block, and updates the chat link guides."
+  },
+  "verification": {
+    "checks": [
+      "Validation passed with `validate` on the reviewed head.",
+      "`test/publication_shaka_details_test.rb` covers the fold, the copy block, and both layouts that `handoff` reads."
+    ],
+    "not_verified": "Nothing."
+  },
+  "checkpoint": {
+    "audience": "Maintainers and reviewers reading Shaka PR descriptions.",
+    "repair_history": "Not recorded in the frozen case."
+  }
+}

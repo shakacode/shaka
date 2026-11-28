@@ -11,6 +11,7 @@ require_relative 'merge_required_checks'
 require_relative 'merge_limits'
 require_relative 'auto_merged_label'
 require_relative 'merge_walkthrough'
+require_relative 'merge_approval_label'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
@@ -24,6 +25,8 @@ module Shaka
     attr_writer :empty_checks_confirmed_head, :risk_gate, :hold, :auto, :base_failures
     # The WalkthroughDue that says whether this PR owes a walkthrough when none is named.
     attr_writer :walkthrough_due
+    # The MergeApprovalLabel that stands for the Auto choice under Ask, or nil when the user chose.
+    attr_writer :label_approval
 
     # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
@@ -37,17 +40,31 @@ module Shaka
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough: nil, limits: MergeLimits.new, squash_message: nil)
       @target = MergeTarget.required!(head, base, limits, @risk_gate, @hold)
+      initial = approved_snapshot
       @submission.message = squash_message
       @head = head
-      initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      merged = submit(initial, @github.snapshot, head)
+      merged = submit(initial, approved_snapshot(initial), head)
       AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private
+
+    # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply. It is
+    # read before them and again for submission; the PR is then read afresh, so every later gate, the hold
+    # included, sees what changed during those reads. GitHub cannot tie the merge to the label, so a change
+    # after that read is not seen. A PR queued at the first read passed the label when it was enqueued.
+    def approved_snapshot(initial = nil)
+      pull = @github.snapshot
+      return pull if @label_approval.nil? || (initial || pull)['isInMergeQueue']
+
+      @approval = @label_approval.verify!(pull)
+      @github.snapshot.tap { |fresh| @label_approval.present!(fresh) }
+    end
+
+    def approval_evidence = @approval ? { 'merge_approval' => @approval } : {}
 
     def submit(initial, current, head)
       return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
@@ -58,9 +75,9 @@ module Shaka
       # Under Auto no person looked at the findings, so open ones stop it however late they were published.
       MergeWaitReview.new(@github).refuse_open_findings! if @auto
       # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
-      # first read, so every check is read again last.
-      verify_gate if @auto && @base_failures
-      @submission.call(current, head)
+      # first read, and the label lookup takes time, so in either case every check is read again last.
+      verify_gate if @auto && (@base_failures || @label_approval)
+      @submission.call(current, head).merge(approval_evidence)
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.

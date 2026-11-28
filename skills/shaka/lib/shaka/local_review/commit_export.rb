@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'tmpdir'
 require_relative '../error'
+require_relative '../executable_file'
 
 module Shaka
   # Gives restricted Claude the reviewed commit's files without untracked files, Git history, or links out.
@@ -12,6 +13,8 @@ module Shaka
     ENTRY = /\A100(?:644|755) blob (\h+)\t(.+)\z/m
     # Bounds how many blobs one Git call holds in memory at a time.
     BATCH = 200
+    # Names Windows opens as a device whatever the extension, once trailing dots and spaces go.
+    WINDOWS_DEVICE = /\A(?:con|prn|aux|nul|conin\$|conout\$|com[0-9¹²³]|lpt[0-9¹²³])\z/i
 
     private
 
@@ -77,10 +80,29 @@ module Shaka
                           'another committed path or uses a name the filesystem refuses'
     end
 
-    def check_path!(path)
-      return unless path.start_with?('/') || path.split('/').intersect?(['', '.', '..'])
+    def check_path!(path, windows: ExecutableFile.windows?)
+      return unless path.start_with?('/') || path.split('/').any? { |part| unsafe_part?(part, windows) }
 
       raise Shaka::Error, "Commit export path leaves the export: #{path.inspect}"
+    end
+
+    # Windows also splits on a backslash, reads a colon as a drive or stream, drops trailing dots
+    # and spaces, so there "..." names the parent, and opens a device for names such as NUL or
+    # com1.txt, so the reviewer would silently miss that file. Checked before anything is written.
+    def unsafe_part?(part, windows)
+      return true if ['', '.', '..'].include?(part)
+
+      windows && (part.match?(/[\\:]/) || part.sub(/[. ]+\z/, '').empty? || windows_device?(part))
+    end
+
+    # Compared the way Windows reads the name: trailing dots and spaces dropped, then the text
+    # before the first dot. Paths arrive as raw bytes; one that is not UTF-8 cannot be written
+    # faithfully on Windows or checked, so it is refused.
+    def windows_device?(part)
+      name = part.dup.force_encoding(Encoding::UTF_8)
+      return true unless name.valid_encoding?
+
+      name.sub(/[. ]+\z/, '').split('.', 2).first.to_s.sub(/ +\z/, '').match?(WINDOWS_DEVICE)
     end
   end
 end

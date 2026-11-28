@@ -47,7 +47,8 @@ class PrivateTrialCommandTest < Minitest::Test
     File.write(script, "#!#{RbConfig.ruby}\n#{PrivateTrialGitHub::SCRIPT}")
     File.chmod(0o755, script)
     body = HandoffFixtures.description(HandoffFixtures::WIP.merge('revision' => "feature @ #{ref}"))
-    File.write(File.join(directory, 'fixture.json'), JSON.generate('body' => body, 'head' => ref))
+    fixture = { 'body' => body, 'head' => ref, 'comments' => [HandoffFixtures.usage_snapshot(ref)] }
+    File.write(File.join(directory, 'fixture.json'), JSON.generate(fixture))
     File.write(File.join(directory, 'walkthrough.md'), walkthrough(ref))
   end
 

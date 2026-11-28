@@ -23,10 +23,14 @@ module Shaka
     end
 
     # GitHub drops links to app addresses such as claude:// and codex://, so the address goes in a
-    # code block, whose copy button takes it in one click.
+    # code block, whose copy button takes it in one click. A chat opens only on the machine that holds it,
+    # so the label names that machine in a code span when the owner's alias is known.
     def chat_link
       address = wip_note&.chat_link
-      address ? ["**Chat link:**\n\n```text\n#{address}\n```"] : []
+      return [] unless address
+
+      machine = wip_note.machine
+      ["**Chat link#{" on `#{machine}`" if machine}:**\n\n```text\n#{address}\n```"]
     end
 
     # The note is optional because it disappears once GitHub confirms the outcome.

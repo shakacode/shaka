@@ -150,12 +150,13 @@ module Shaka
       # child its own group leader, so the group id is that pid — and asking the system for it
       # at expiry would fail exactly when it matters, because the leader can exit and be reaped
       # while a descendant holds the pipes open and keeps running. On Windows the job assigned
-      # at spawn still contains that descendant, so ending the job does too.
+      # at spawn still contains that descendant, so ending the job does too. Without a job that
+      # ended it, taskkill names the leader by pid, which is safe only while Ruby has not reaped
+      # the leader: after that, Windows may give its pid to an unrelated process.
       def terminate(child)
         if self.class.process_groups?
           Process.kill('KILL', -child.process.pid)
-        else
-          child.job&.terminate
+        elsif !child.job&.terminate && child.process.alive?
           kill_tree(child.process.pid)
         end
       rescue Errno::ESRCH, Errno::EPERM
@@ -163,9 +164,11 @@ module Shaka
       end
 
       # A missing taskkill falls back to the leader alone. A failed taskkill (the leader is
-      # already gone) tries the same and lets ESRCH through to the caller.
+      # already gone) tries the same and lets ESRCH through to the caller. By full path, so a
+      # taskkill.exe in the current directory, which can be a candidate checkout, cannot answer.
       def kill_tree(pid)
-        return if system('taskkill.exe', '/F', '/T', '/PID', pid.to_s, out: File::NULL, err: File::NULL)
+        taskkill = File.join(ENV.fetch('SystemRoot', 'C:/Windows'), 'System32', 'taskkill.exe')
+        return if system(taskkill, '/F', '/T', '/PID', pid.to_s, out: File::NULL, err: File::NULL)
 
         Process.kill('KILL', pid)
       end

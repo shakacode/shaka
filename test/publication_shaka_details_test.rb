@@ -79,8 +79,19 @@ class PublicationShakaDetailsTest < Minitest::Test
     link = 'claude://claude.ai/epitaxy/local_5922e8bb-d78e-4daa-843d-fd8087cebde8'
     rendered = render(WIP.merge('thread' => link))
     fold = "<details>\n<summary>🤙 Shaka details</summary>\n\n"
-    assert_includes rendered, "#{fold}**Chat link:**\n\n```text\n#{link}\n```\n\n"
+    assert_includes rendered, "#{fold}**Chat link on `m5`:**\n\n```text\n#{link}\n```\n\n"
     assert_includes rendered, "| Chat link | #{link} |"
+  end
+
+  # The label omits an unknown machine and shows a known one as code, so punctuation cannot become emphasis.
+  def test_the_chat_link_label_names_only_a_known_machine_literally
+    link = 'codex://threads/1b4e28ba-2fa1-11d2-883f-0016d3cca427'
+    [WIP.merge('owner' => 'UNKNOWN'), WIP.merge('owner' => 'UNKNOWN · Codex · k7q2')].each do |wip|
+      assert_includes render(wip.merge('thread' => link)), "**Chat link:**\n\n```text\n#{link}\n```"
+    end
+    rendered = render(WIP.merge('owner' => 'qa-__blue__ · Codex · k7q2', 'thread' => link))
+    assert_includes rendered, '**Chat link on `qa-__blue__`:**'
+    assert_includes render(WIP.merge('owner' => '``qa\\temp`` · Codex · k7q2', 'thread' => link)), '**Chat link:**'
   end
 
   # URI schemes are case-insensitive, so an uppercase one still gets the copy block.
@@ -114,7 +125,7 @@ class PublicationShakaDetailsTest < Minitest::Test
      WIP.merge('thread' => 'claude://claude.ai/epitaxy/local_5922e8bb-d78e-4daa-843d-fd8087cebde8?x=a\b'),
      WIP.merge('thread' => 'codex://threads/1B4E28BA-2FA1-11D2-883F-0016D3CCA427'),
      WIP.merge('thread' => 'https://example.com/chat'), WIP.merge('thread' => 'vscode://file/x'), nil].each do |wip|
-      refute_includes render(wip), '**Chat link:**'
+      refute_includes render(wip), '**Chat link'
     end
   end
 end

@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
+require_relative 'provenance'
 require_relative 'wip_metadata'
 require_relative '../hosts/codex_wake'
 
@@ -61,6 +62,14 @@ module Shaka
 
       id = value[CODEX_LINK, :id]
       value if id&.match?(CodexWake::THREAD)
+    end
+
+    # The owner's machine alias for the chat link label, or nil when it is UNKNOWN or not a plain alias token, so
+    # free text cannot reach the bold label. The token has no backtick, so a code span shows it literally.
+    def machine
+      detail
+      name = @spec['owner'].split('·').first.strip
+      name if name != 'UNKNOWN' && name.match?(ExecutionProvenance::SAFE_VALUE)
     end
 
     private

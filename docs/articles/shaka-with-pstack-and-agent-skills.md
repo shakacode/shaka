@@ -36,7 +36,8 @@ start without anyone naming them.
 - Shaka binds a test suite run to its commit. A harness that drives the real app proves
   what tests can't, yet run outside `validate` it is recorded only as a sentence.
 - Both packs have the agent restate the goal before it starts. Shaka added that step on
-  2026-11-04 ([#1044](https://github.com/shakacode/shaka/pull/1044)).
+  2026-11-04 ([#1044](https://github.com/shakacode/shaka/pull/1044)) and skips it for a
+  small or fully specified task.
 - Shaka loads its whole 11,780-word workflow on every task. That is more than the five Addy
   skills that match ordinary code changes put together.
 
@@ -138,8 +139,8 @@ rest are instructions the agent follows. No test or enforcement entry covers the
   proceed." Tan's `/in-your-own-words` restates the goal. Since
   [#1044](https://github.com/shakacode/shaka/pull/1044), Shaka's agent
   [reads back](../working-with-shaka.md#give-it-an-outcome) the outcome, scope, success
-  criteria, and assumptions before coding. The PR description shows that readback as
-  Goal and Done when under the Task line.
+  criteria, and assumptions before coding, unless the task is small or fully specified.
+  The PR description shows that readback as Goal and Done when under the Task line.
 - pstack's principles are short enough to use inside any phase. Two of them,
   `principle-prove-it-works` and `principle-fix-root-causes`, run 209 and 324 words.
 

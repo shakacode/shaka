@@ -69,6 +69,10 @@ selection on every publication. After a failure, rerun it. Collection ignores co
 accounts without write access, so `publish` fails for one. A comment `collect` names as unreadable
 stops every read until its owner repairs or deletes it.
 
+`handoff` owes a snapshot with a measured response for the current head. When no measured
+response can be published, as for a host without a reader or an aggregate-only source, pass
+it `--usage-gap REASON`.
+
 Only the task owner puts `collect` output in the description `usage` object. Other contributors
 publish and leave the description alone. On a conflict `collect` names the response: inspect
 the comments holding it rather than choosing a total. Keep a legacy report until its source
@@ -446,6 +450,7 @@ The Task line in Intent shows where the work came from:
 
 The optional `intent.task_understanding` is an object with one-line `goal` and
 `done_when` strings, rendered as **Goal** and **Done when** under the Task line.
+An optional boolean `confirmed` renders as **Confirmed by a person**.
 Plain text from older callers renders there as **As understood**. Callers can omit
 it; this prose belongs to Intent, not the provenance metadata allowlist.
 

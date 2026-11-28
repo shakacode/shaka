@@ -1,0 +1,22 @@
+{
+  "summary": "The snapshot deadline test no longer fails with Errno::ENOENT when a busy machine delays its fixture. It now records the child process ids Open3 starts instead of reading a pid file the child writes after it starts.",
+  "intent": {
+    "why": "`test_snapshot_deadline_reaps_the_active_native_child` read a `pid` file its Ruby fixture writes only after it starts, under a 2 s deadline.",
+    "user_impact": "None for Shaka users; the change only affects this repository's tests.",
+    "root_cause": "On a loaded machine the deadline killed the fixture before it wrote the file, so the test read a missing file.",
+    "safe_because": "Only tests change; the test also fails if the deadline waits for the child instead of killing it.",
+    "scope": "The test now records the pids `Open3` spawns through a shared `test/support/open3_spawns.rb` helper, which the transport deadline test from #1209 also uses. The first read now hangs, so exactly one child starts. The fixture no longer writes the file."
+  },
+  "verification": {
+    "checks": [
+      "The old assertions with a 0.1 s deadline raised `Errno::ENOENT`; the new test passes with the same deadline.",
+      "`ruby -Itest ... -n /deadline/` passed 30 of 30 runs under 120 busy shell loops at load average about 370.",
+      "With `DeliveryGitHub#terminate` stubbed out, the test fails: `Expected 60.19 to be < 30`."
+    ],
+    "not_verified": "The unchanged test passed 20 of 20 runs under 120 busy loops, so the race was reproduced only with a shortened deadline."
+  },
+  "checkpoint": {
+    "audience": "Shaka maintainers running the test suite on busy machines.",
+    "repair_history": "Not recorded in the frozen case."
+  }
+}

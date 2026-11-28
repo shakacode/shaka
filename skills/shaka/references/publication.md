@@ -84,7 +84,8 @@
   for the current PR.
 - `description` and `walkthrough` refuse text past the
   [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits):
-  long sentences, long paragraphs, or more visible words than the change warrants.
+  long sentences, long paragraphs, or more words than the change warrants. A description
+  counts only the words in your own prose fields, as written.
 - Split the text, collapse supporting detail into `details`, or link to the code,
   then publish again.
 - Record each refusal in the description's review history details: what it reported,

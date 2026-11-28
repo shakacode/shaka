@@ -109,7 +109,7 @@ below point into the video.
   ([visual evidence](../reference/pr-record.md#visual-evidence)). The agent is also asked
   to compare speed for a speed claim
   ([performance](../reference/pr-record.md#performance-and-blocked-work)). The checkpoint
-  grades verification as adequate, adequate with accepted gaps, inadequate, or cannot
+  grades verification as adequate, adequate with named gaps, inadequate, or cannot
   judge
   ([checkpoint](../reference/pr-record.md#checkpoint)). Under `auto`, an inadequate or
   cannot-judge grade stops the merge until the maintainer approves that commit.

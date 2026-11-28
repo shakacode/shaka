@@ -13,8 +13,8 @@ module Shaka
     # approves it, so it is marked blocked rather than left looking like a check that will finish.
     WAITING = 'WAITING'
 
-    # rest_fallback reads over REST when GitHub refuses GraphQL, and base_checks adds BaseChecks's
-    # report; only `shaka pr` asks for them.
+    # rest_fallback reads over REST when GitHub refuses GraphQL; `shaka pr` and the merge-approval label
+    # ask for it. base_checks adds BaseChecks's report, which only `shaka pr` asks for.
     def initialize(github, seam_required_checks: nil, rest_fallback: false, base_checks: false)
       @github = github
       @seam_required_checks = seam_required_checks

@@ -195,7 +195,8 @@ It supplies setup, full and optional pre-review validation, focused tests, an op
 hosted-CI trigger, base branch, review, merge authority, branch naming, and recovery policy.
 GitHub supplies live protection, required checks, and allowed merge methods. `AGENTS.md`
 supplies human-only context and boundaries.
-`shaka seam check` rejects unknown fields, duplicate keys, unsafe paths, missing scripts,
+`shaka seam check` rejects unknown fields, duplicate keys, YAML merge keys (`<<`),
+keys tagged other than `!!str`, unsafe paths, missing scripts,
 and invalid values. Read authority from the trusted default-branch copy. Candidate policy
 edits cannot weaken the current task's requirements. Consumer commands stay in their own
 repositories; do not copy Shaka's scripts into them.
@@ -255,9 +256,11 @@ Queue submission retains GitHub’s default message and reports that custom text
 
 - Run `bundle install` for development setup and `bin/validate` locally and in CI.
   When the trusted classifier proves a change contains only regular, non-executable
-  `README.md` or `docs/**/*.md` files, that validation entry point and the hosted
-  Validate workflow run whitespace checks without Ruby tests or RuboCop. Ambiguous
-  changes use the full gate, and always-on security checks still run.
+  documentation files, such as `README.md`, `docs/*.md`, figures under `docs/img/`, and
+  `internal/*.md`, `.agents/shaka/bin/validate` (which `validate-local` calls) and the
+  hosted Validate workflow run whitespace and docs navigation checks and only the Ruby
+  tests that name a changed page, without RuboCop. Ambiguous changes use the full gate,
+  and always-on security checks still run.
 - Test failed/pending/missing checks, API errors, stale heads, unsupported merge state,
   rejected merges, queued submission and replay, and safe argument handling.
 - Install in an isolated skills directory; repeat installation, preserve foreign
