@@ -118,10 +118,6 @@ class MergeApprovalLabelTest < Minitest::Test
     @client.snapshots = [approved]
     @client.events = [labeled('maintainer', name: 'bug')]
     assert_blocked(/GitHub lists no event adding it/)
-
-    # An unreadable newer change cannot leave an older writer's approval standing.
-    @client.events = [labeled('maintainer'), { 'event' => 'labeled', 'label' => NAME }]
-    assert_blocked(/Auto: GitHub listed a label change it did not name. Hand/)
   end
 
   def test_a_label_re_added_without_write_access_before_submission_stops_the_merge
@@ -230,6 +226,17 @@ class MergeApprovalLabelTimingTest < Minitest::Test
   end
 
   # The label passed when the PR was enqueued; removing it later leaves the entry queued, as the guide says.
+  # An unreadable newer change cannot leave an older writer's approval standing, and the time is required.
+  def test_label_events_github_returns_incomplete_refuse
+    [MergeApprovalLabelTest::NAME, { 'name' => '' }].each do |label|
+      @client.events = [labeled('maintainer'), { 'event' => 'labeled', 'label' => label }]
+      assert_blocked(/Auto: GitHub listed a label change it did not name. Hand/)
+    end
+
+    @client.events = [labeled('maintainer').except('created_at')]
+    assert_blocked(/GitHub did not say when it was added/)
+  end
+
   def test_a_queued_pr_reconciles_after_the_label_is_removed
     queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
                             'mergeQueueEntry' => queue_entry, 'mergeStateStatus' => 'UNKNOWN')

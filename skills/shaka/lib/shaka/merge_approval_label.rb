@@ -33,7 +33,7 @@ module Shaka
       raise refusal('GitHub lists its removal after it was added') if event['event'] == 'unlabeled'
 
       actor = writer!(Hash.try_convert(event['actor'])&.fetch('login', nil))
-      { 'label' => NAME, 'labeled_by' => actor, 'labeled_at' => event['created_at'] }
+      { 'label' => NAME, 'labeled_by' => actor, 'labeled_at' => added_at!(event) }
     end
 
     # Gives the repository the label beside the merge wait, so a maintainer finds it with its meaning.
@@ -78,9 +78,16 @@ module Shaka
       return false unless LABEL_CHANGES.include?(event['event'])
 
       name = Hash.try_convert(event['label'])&.fetch('name', nil)
-      raise refusal('GitHub listed a label change it did not name') unless name.is_a?(String)
+      raise refusal('GitHub listed a label change it did not name') unless name.is_a?(String) && !name.strip.empty?
 
       name.casecmp?(NAME)
+    end
+
+    def added_at!(event)
+      time = event['created_at']
+      return time if time.is_a?(String) && !time.empty?
+
+      raise refusal('GitHub did not say when it was added')
     end
 
     def writer!(actor)

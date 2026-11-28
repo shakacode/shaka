@@ -170,8 +170,8 @@ once every Auto gate passes, and later pushes keep your choice.
 - **Who counts:** the label counts only when the last account to add it has write access. It
   trusts the account, not who clicked, so an agent working under your account could add it;
   only you should.
-- **Where it applies:** not to a first-setup preview, or to a PR whose base is neither the
-  [`base_branch`](#base_branch) nor the default branch; both stay Ask.
+- **Where it applies:** not to a first-setup preview, a task you told to use Ask, or a PR whose
+  base is neither the [`base_branch`](#base_branch) nor the default branch; those stay Ask.
 
 When the agent first asks you to approve a merge in a repository without the label, it
 creates `merge-approved` with a description. If its account cannot create labels, it says so;
