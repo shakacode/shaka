@@ -52,6 +52,23 @@ class PublicationTaskUnderstandingTest < Minitest::Test
     end
   end
 
+  def test_the_record_says_whether_a_person_confirmed_the_understanding
+    { true => 'Yes', false => 'No' }.each do |confirmed, shown|
+      rendered = render('intent' => INTENT.merge('task_understanding' => UNDERSTANDING.merge('confirmed' => confirmed)))
+
+      assert_includes rendered, "#{SHOWN}\n- **Confirmed by a person:** #{shown}\n\n**Safe because:**"
+    end
+    refute_includes render, 'Confirmed by a person'
+  end
+
+  def test_confirmation_is_a_boolean
+    ['yes', 1, nil].each do |value|
+      understanding = UNDERSTANDING.merge('confirmed' => value)
+      error = assert_raises(Shaka::Error) { render('intent' => INTENT.merge('task_understanding' => understanding)) }
+      assert_includes error.message, 'intent task_understanding confirmed'
+    end
+  end
+
   def test_unknown_structured_fields_are_refused
     value = UNDERSTANDING.merge('original' => 'The raw prompt.')
 
