@@ -18,12 +18,18 @@ independent review for substantial changes, and any gaps you still need to asses
 Use [Ask or Auto](https://shaka.shakacode.com/docs/working-with-shaka#choose-a-merge-policy) to choose how
 Shaka handles merging. Repository checks and approvals still apply.
 
-Native Windows support is not in 1.0. The
-[release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
+The [release behavioral gate](https://github.com/shakacode/shaka/blob/main/eval/release-behavior.md)
 did not run for 1.0.0; it applies again to later releases.
 
 ### Added
 
+- Install Shaka and run `shaka review run` from a native Windows shell.
+  `shaka evidence run` also works there with full Git for Windows, which
+  provides `sh.exe`.
+  Stopping a check on Windows is best effort, and a stopped check never counts
+  as passing. Windows CI checks do not yet block merges. See
+  [manual installation](https://shaka.shakacode.com/docs/manual-installation)
+  for the PowerShell steps.
 - For a fresh install on Ruby 3.4 or later, run `gem install shaka --version 1.0.0`
   and `shaka-install _1.0.0_ --agent codex`. The installer links the skill to the matching
   GitHub release. Existing installations keep their registered branch or release.
@@ -43,7 +49,11 @@ did not run for 1.0.0; it applies again to later releases.
   found. Ask for a code walkthrough, use interactive mode to steer a draft PR,
   and use timing and token estimates to review your delivery process. Usage
   reports cover Antigravity and price GPT-6.2 and Gemini models. When the agent has
-  published a UI check, the description links it as **Screenshots**.
+  published a UI check, the description links it as **Screenshots**. Shaka's
+  own records sit under **Shaka metrics** in one 🤙 Shaka details fold, led by
+  a copyable Claude or Codex chat link when one is available. Shaka asks the
+  agent for squash messages that lead with the outcome, draw on the whole PR
+  description, and list changes, limits, and follow-ups as bullets.
 - With team settings, list your team's skills in `.agents/shaka/packs/` on the
   default branch so Shaka offers each one at the step where it helps. PRs show
   the results of those companion skills, including whether their findings were
@@ -60,7 +70,14 @@ did not run for 1.0.0; it applies again to later releases.
 - A PR description for a task other than a prompt or a numbered GitHub issue
   or PR in the same repository needs exactly one of a safe https task link or a
   visible omission reason. Common description input errors are reported
-  together, with each exact overage.
+  together, with each exact overage. When a description has no validation or
+  review results of its own and Shaka finds a review the same GitHub account
+  published that still covers its commit, it links that review and says why
+  it still applies. Descriptions and walkthroughs refuse a
+  bare finding ID in the `N3` form in visible prose; describe the finding in
+  words.
+  When an identity field is unknown, the first line keeps the agent and drops
+  the other unknown fields; the full identity appears under **Missing values**.
 - Local Codex reviews run without connected ChatGPT apps, web search, or image
   viewing. Read-only shell inspection remains available. With file-backed
   sign-in, they also skip your global `AGENTS.md`.
@@ -102,7 +119,12 @@ did not run for 1.0.0; it applies again to later releases.
   need to make. `shaka doctor --brief` and `shaka install --status` show the main
   issue and its next step; `shaka install --status --json` lists every finding.
   On an older Ruby, the installer suggests mise or rbenv. Interrupted branch
-  updates can clean up their temporary worktree.
+  updates can clean up their temporary worktree. `bin/install --directory`
+  aimed at a worktree of the default install gives a next step that works for
+  that worktree's state.
+- In a public repository, `shaka reply` links a cited comment whose author
+  `shaka comments` would withhold instead of quoting it. Your own comments
+  are still quoted.
 - Validation keeps evidence tied to the tested tree and settings. Fixes to a base
   branch are tracked separately when that branch already fails a check.
 - Claude Code cloud sessions can read PR status and publish PR descriptions when

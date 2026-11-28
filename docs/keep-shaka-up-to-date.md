@@ -208,8 +208,8 @@ and [WSL command reference](https://learn.microsoft.com/en-us/windows/wsl/basic-
 depends on your profile's `PATH`, put the Linux command in a wrapper that sets
 `PATH` and use that wrapper as the `--exec` target.
 
-Shaka 1.0 does not support installing directly on Windows; install it inside WSL.
-The WSL task checks the Shaka installation inside that distribution.
+These steps cover a Shaka installation inside WSL. The task checks the Shaka
+installation inside that distribution.
 
 ## Stop a scheduled check
 
