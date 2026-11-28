@@ -57,11 +57,11 @@ phases:
         intended outcome, who it is for, scope, success criteria, and consequential assumptions.
         A small or fully specified task skips it. Retain it in the existing task record and
         update it when the human corrects the direction. When the host offers a timed wake for
-        this session, not only PR follow-up, wait up to five minutes for a reply while continuing work a reply would
-        not invalidate, such as reading and reproducing; otherwise continue at once. No reply
-        means continue. Record whether a person confirmed the readback as it now stands; a
-        material correction needs its own confirmation, and a brief from another agent
-        session is not confirmation.
+        this session, not only PR follow-up, wait up to five minutes for a reply while
+        continuing work a reply would not invalidate, such as reading and reproducing; otherwise
+        continue at once. No reply means continue; a reply that arrives first ends the wait.
+        Record whether a person confirmed the readback as it now stands; a material correction
+        needs its own confirmation, and a brief from another agent session is not confirmation.
         Apply the existing question rules; a readback is not human approval.
       - Identify the original request, including planning, and keep its
         [timing input](<{{package_root}}/skills/shaka/references/publication.md#review-evidence>)

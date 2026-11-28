@@ -202,9 +202,9 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   has the agent say what it thinks the goal and problem are before it starts.
   Osmani's Agentic Verification recommends the same habit.
 - **In Shaka:** #742 left out this plan-time restatement.
-  [#1044](https://github.com/shakacode/shaka/pull/1044) added it on 2026-11-04. Before
-  coding, the agent [reads back](../working-with-shaka.md#give-it-an-outcome) the outcome,
-  scope, success criteria, and assumptions. Since
+  [#1044](https://github.com/shakacode/shaka/pull/1044) added it on 2026-11-04. Unless the
+  task is small or fully specified, the agent [reads back](../working-with-shaka.md#give-it-an-outcome) the outcome,
+  scope, success criteria, and assumptions before coding. Since
   [#1065](https://github.com/shakacode/shaka/pull/1065), the PR description shows that
   readback as Goal and Done when under the Task line.
 - **Limit:** a readback nobody reads catches nothing. Since

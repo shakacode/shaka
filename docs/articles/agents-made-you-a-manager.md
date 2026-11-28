@@ -70,8 +70,8 @@ reports, GitHub refuses, or only the agent follows it.
 - **Idea:** brief the agent on what it cannot learn from the code: why, constraints,
   what is out of scope, and what done means.
 - **In Shaka:** [give it an outcome](../working-with-shaka.md#give-it-an-outcome) asks
-  for only what the agent can't infer. Before coding, the agent restates the outcome,
-  scope, success criteria, and risky assumptions.
+  for only what the agent can't infer. Before coding on a task that isn't small or fully
+  specified, the agent restates the outcome, scope, success criteria, and risky assumptions.
 - **Backed by:** the agent. The audit says Ruby cannot verify understanding.
 - **Limit:** nothing checks that the restatement matches what you meant.
 
