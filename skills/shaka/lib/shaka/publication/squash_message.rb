@@ -13,6 +13,8 @@ module Shaka
     COMMIT_PAGES = 3
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
+    REFERENCE = %r{(?<![\p{Word}#])(?:\w[\w-]*/[\w.-]+#\d+|(?<!&)#\d+)\b}
+    REFERENCE_GUIDANCE = 'Check each number against the squash message rules in references/writing.md.'
 
     attr_reader :headline, :body
 
@@ -24,14 +26,26 @@ module Shaka
         raise Error, 'GitHub listed only some of the PR commits, so co-author trailers would be incomplete.'
       end
 
-      new(content, number: github.number, commit_messages: commits.map { |commit| commit.dig('commit', 'message') })
+      new(content, number: github.number, repository: github.repository,
+                   commit_messages: commits.map { |commit| commit.dig('commit', 'message') })
     end
 
-    def initialize(content, number:, commit_messages: [])
+    def initialize(content, number:, repository: nil, commit_messages: [])
       raise Error, 'Squash message content must be a JSON object.' unless content.is_a?(Hash)
 
-      @headline = headline_for(PublicationText.single_line(content['title'], 'squash title'), number)
-      @body = [wrap(plain(content['body'])), trailers(commit_messages)].reject(&:empty?).join("\n\n")
+      title = PublicationText.single_line(content['title'], 'squash title')
+      @headline = headline_for(title, number)
+      text = plain(content['body'])
+      @references = references([title, text], number, repository)
+      @body = [wrap(text), trailers(commit_messages)].reject(&:empty?).join("\n\n")
+    end
+
+    # Ruby cannot tell whether the sentence around a number closes it or says what that PR
+    # did, so the result lists every standalone number but the PR's own for the agent to judge.
+    def reference_check
+      return {} if @references.empty?
+
+      { 'squash_message_references' => { 'references' => @references, 'guidance' => REFERENCE_GUIDANCE } }
     end
 
     private
@@ -39,6 +53,11 @@ module Shaka
     def headline_for(title, number)
       suffix = "(##{number})"
       title.strip.end_with?(suffix) ? title.strip : "#{title.strip} #{suffix}"
+    end
+
+    def references(texts, number, repository)
+      own = ["##{number}", "#{repository}##{number}".downcase]
+      texts.flat_map { |text| text.scan(REFERENCE) }.uniq.reject { |reference| own.include?(reference.downcase) }
     end
 
     def plain(body)

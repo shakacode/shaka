@@ -49,9 +49,9 @@ An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging. `shaka merge` also ignores the merge
-settings in your file and uses Shaka's defaults, including the default
-[hold label](#mergehold_labels).
+disable required merge gates or authorize merging. `shaka merge` uses Shaka's defaults
+for the merge settings in your file, except that your [hold labels](#mergehold_labels) add to the
+default `hold`.
 
 A settings PR becomes the team's default after it merges into the default branch.
 You can also select it for one task before adoption. Local settings do not override
@@ -273,9 +273,9 @@ label added while the agent checks the PR still stops it. The agent then names t
 hands the PR back to you. No confirmation in chat gets past a hold; remove the label when the PR
 may merge. Label names match without regard to case.
 
-With individual setup, `shaka merge` checks the default `hold` label instead of your local
-`merge.hold_labels`. If your file lists `[hold, do-not-merge]`, `hold` still stops a merge and
-`do-not-merge` does not, even though the agent's handoff reports `do-not-merge` as a hold.
+With individual setup, your labels add to the default instead of replacing it, because local
+settings can add merge gates but never remove one. If your file lists `[do-not-merge]`, both
+`hold` and `do-not-merge` stop a merge.
 
 The hold governs only Shaka. GitHub does not know about it, so it does not stop anyone from
 clicking merge, and it does not take a PR out of a merge queue it has already joined. While
@@ -354,8 +354,12 @@ A review of an earlier commit still counts in two cases:
   new review.
 
 The PR description uses the same two cases. When the agent publishes without
-validation and review results, and the description holds no verified line for
-this commit to keep, the Validation and review line says UNKNOWN. It then names
+validation and review results, and the description holds no verified line that
+Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
+marks the line it writes with a hidden comment and keeps only that line, so a
+verification summary or check worded like it does not count. A description
+published before that marker existed keeps the line at the top of its Evidence and
+limitations section, where older versions of Shaka wrote it. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,
@@ -1148,10 +1152,10 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. Each limit counts selected prose.
-Code blocks, tables, headings, quotes, link addresses, and the body of a
-collapsed details block do not count. A collapsed block's summary label counts,
-and an inline code span counts as one word.
+it; omitted keys keep their default. Shaka measures sentences, paragraphs, and a
+walkthrough's length in the prose a reader sees. It skips code blocks, tables,
+headings, quotes, link addresses, and the body of a collapsed details block. A
+collapsed block's summary label is measured, and an inline code span is one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
 
@@ -1161,17 +1165,36 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
+In a description, the two length limits count only the words the agent writes
+in its summary, decisions, checkpoint next action, intent fields (including
+review focus reasons and the task understanding), verification summary and gaps,
+risk record summary, section headings and bodies, and any reason for leaving out
+the task link. The lines Shaka adds, such as the links line,
+metrics, field labels, publisher note, and the risk text that grows with the risk
+rating, do not count, so the same text fits the length limits at every rating.
+
+Shaka counts those words exactly as the agent wrote them, without reading the
+Markdown, so the count is predictable and the same when GitHub declines to render.
+Tables, headings, quotes, code, and collapsed details inside those fields count.
+Shaka counts each space-separated piece that holds a letter or digit as one word.
+A link written as `[guide](URL)` is one piece, and a bare URL is one word. Put supporting material in the
+description's `details` or `table`, or in verification checks, which do not count.
+Sentence and paragraph limits still apply to the prose a reader sees, as described
+above.
+
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
-sentence, paragraph and total overage it finds in rendered prose. The overall
+sentence, paragraph and total overage it finds. A description's total names the
+words the agent wrote, which are the ones it can change. The overall
 limit uses the PR's diff size. When GitHub omits either line count, descriptions
 use `max_description_words` and walkthroughs use the sentence and paragraph
 limits.
 
 If GitHub declines to render a description before publication, Shaka checks the
 saved version when the body contains only Shaka's section, whitespace and HTML
-comments. If the body contains other content outside that section, Shaka reports
-the prose limits as unchecked.
+comments. If the body contains other content outside that section, Shaka still
+checks the length of the agent's prose before writing, and reports its other prose
+limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and

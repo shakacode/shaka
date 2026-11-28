@@ -365,9 +365,10 @@ the summary. Leave the field out when no walkthrough is due.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
-when that API has no live URL, it checks the current head's latest Cloudflare Pages check
+when that lookup finishes with no live URL, it checks the current head's latest Cloudflare Pages check
 from the Cloudflare GitHub App and extracts its immutable `pages.dev` preview when successful.
-When neither source supplies a URL, it renders `Deployment: none found` with the head's short SHA. Supply a URL yourself when
+When both lookups finish without a URL, it renders `Deployment: none found` with the head's
+short SHA; when a lookup is too large to finish without one, `description` refuses. Supply a URL yourself when
 another provider exposes the preview solely in a comment or CI log, or to select among
 several preview projects. The helper links
 it beside the walkthrough. Republish after hosted checks and preview builds settle,

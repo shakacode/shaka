@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'cli_description_decisions_test'
+require 'shaka/publication/verification_line'
 
 # PR #998: a wording-only rewrite after an install update had nowhere to go but UNKNOWN.
 class CliDescriptionKeptResultsTest < Minitest::Test
@@ -17,7 +18,8 @@ class CliDescriptionKeptResultsTest < Minitest::Test
   KEPT = 'not rechecked under the current Shaka or settings'
 
   def test_rewording_keeps_the_verified_line_and_reports_that_it_was_not_rechecked
-    published, result = republish("<!-- shaka:begin -->\n#{LINE}\n<!-- shaka:end -->")
+    fold = "<details>\n<summary>Evidence and limitations</summary>\n\n#{LINE}\n\n</details>"
+    published, result = republish("<!-- shaka:begin -->\n## Verification\n\n#{LINE}\n\n#{fold}\n<!-- shaka:end -->")
 
     assert_includes published, "#{SHOWN} Kept from this commit’s earlier description"
     refute_includes published, '(exit 0)'
@@ -25,11 +27,41 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     assert_includes result.fetch('evidence_kept'), KEPT
   end
 
+  # The helper marks the line it writes, and the command reads that line back.
+  def test_rewording_keeps_the_marked_line
+    marker = Shaka::VerificationLine::MARKER
+    marked = "## Verification\n\n#{marker}\n#{SHOWN}"
+    published, result = republish("<!-- shaka:begin -->\n#{marked}\n<!-- shaka:end -->")
+
+    assert_includes published, "#{marker}\n#{SHOWN} Kept from this commit’s earlier description"
+    assert_includes result.fetch('evidence_kept'), KEPT
+  end
+
+  # https://github.com/shakacode/shaka/issues/1320: a summary worded like the line was kept as verified.
+  def test_a_summary_worded_like_the_line_is_not_kept
+    unknown = '**Validation and review:** UNKNOWN: no validation or review results were supplied for this revision.'
+    published, result = republish("<!-- shaka:begin -->\n## Verification\n\n#{unknown}\n\n#{SHOWN}\n<!-- shaka:end -->")
+
+    assert_includes published, unknown
+    assert_nil result['evidence_kept']
+  end
+
   def test_a_description_without_a_verified_line_still_shows_unknown
     published, result = republish('<!-- shaka:begin -->nothing verified<!-- shaka:end -->')
 
     assert_includes published, 'UNKNOWN: no validation or review results'
     refute_includes published, KEPT
+    refute result.key?('evidence_kept')
+  end
+
+  # Issue #1320: the agent's own summary, worded like the line, came back as a kept pass.
+  def test_a_summary_worded_like_the_line_stays_unknown_across_republishes
+    @summary = SHOWN
+    first, = republish('')
+    second, result = republish(first)
+
+    assert_includes second, 'UNKNOWN: no validation or review results'
+    refute_includes second, KEPT
     refute result.key?('evidence_kept')
   end
 
@@ -67,6 +99,12 @@ class CliDescriptionKeptResultsTest < Minitest::Test
         return [File.read(File.join(dir, 'published.md')), JSON.parse(output)]
       end
     end
+  end
+
+  def description_content
+    content = super
+    content['verification'] = content['verification'].merge('summary' => @summary) if @summary
+    content
   end
 
   def fake_gh = DESCRIPTION_GH
