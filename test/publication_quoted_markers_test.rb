@@ -74,6 +74,17 @@ class PublicationQuotedMarkersTest < Minitest::Test
     end
   end
 
+  # Reviewers of #1344: a CRLF ending, closing hashes, or a section named Verification slipped past.
+  def test_heading_variants_and_a_verification_section_are_refused
+    ["## Verification\r\nBody.", '## Verification ##'].each do |text|
+      error = assert_raises(Shaka::Error, text.inspect) { Shaka::Publication.description(content('summary' => text)) }
+      assert_includes error.message, 'summary'
+    end
+    sections = [{ 'heading' => ' verification ', 'body' => 'Copied.' }]
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(content('sections' => sections)) }
+    assert_includes error.message, 'sections[0].heading'
+  end
+
   def test_anchor_words_inside_a_sentence_still_render
     summary = 'Refuses a line starting with `**Setup gaps:**` or `## Verification`.'
     assert_includes Shaka::Publication.description(content('summary' => summary)), summary

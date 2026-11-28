@@ -10,7 +10,7 @@ module Shaka
   # It reads the Verification line back the same way (issue #1344), from these lines.
   module QuotedMarkers
     MARKER = %r{<!--\s*/?shaka:[\w:.-]*}
-    ANCHOR = %r{^(?:## Verification[ \t]*$|<summary>Evidence and limitations</summary>|#{
+    ANCHOR = %r{^(?:## Verification[ \t#]*\r?$|<summary>Evidence and limitations</summary>|#{
       Regexp.escape(VerificationLine::LABEL)}|#{Regexp.escape(VerificationLine::GAPS)})}
 
     module_function
@@ -40,8 +40,11 @@ module Shaka
                    "marker back from the pull request body. Name it without `<!--`, such as `#{name}`."
     end
 
+    # A section heading renders after `## `, so the heading text alone would supply the first anchor.
     def refuse_anchor(text, path)
-      anchor = text[ANCHOR] or return
+      anchor = text[ANCHOR]
+      anchor ||= "## #{text.strip}" if path.end_with?('.heading') && text.strip.casecmp?('Verification')
+      return unless anchor
 
       raise Error, "#{path.delete_prefix('content.')} starts a line with `#{anchor}`; Shaka reads its " \
                    'Verification line back from that text. Reword the line so it starts differently.'
