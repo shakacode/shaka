@@ -71,7 +71,7 @@ prose_limits: # Visible PR description and walkthrough prose.
   max_sentence_words: 35
   max_paragraph_words: 100
   max_description_words: 300
-  words_per_changed_line: 4 # Proportional budget: 150 words plus this many per changed line.
+  words_per_changed_line: 4 # 150 words plus this many per changed line; a description counts only agent prose.
 
 project_guidance: {} # None: no repository guides for PR evidence, merge readiness, or walkthroughs.
 
