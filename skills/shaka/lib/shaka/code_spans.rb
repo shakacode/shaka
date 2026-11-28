@@ -27,9 +27,9 @@ module Shaka
       raise Error, "GitHub renders #{lost.first} as inline code and drops its backticks; #{ADVICE}." if lost
     end
 
-    # A removed comment keeps its line breaks, so the lines around it cannot join into a candidate.
+    # A removed comment becomes a line break, so the text around it cannot join into a candidate.
     def candidates(source)
-      source.gsub(/<!--.*?-->/m) { |comment| "\n" * comment.count("\n") }
+      source.gsub(/<!--.*?-->/m, "\n")
             .to_enum(:scan, CANDIDATE).map { Regexp.last_match[0] }
     end
 

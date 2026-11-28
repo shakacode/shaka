@@ -23,7 +23,8 @@ class CodeSpansTest < Minitest::Test
     "- ~~~text\n  ```js```\n  ~~~" => "<ul><li><pre><code>```js```\n</code></pre></li></ul>",
     'Use `code` and ``a`b``.' => '<p>Use <code>code</code> and <code>a`b</code>.</p>',
     "Summary.\n\n<!-- note ```js``` -->" => '<p>Summary.</p>',
-    "Show ```` ```a<!-- note\n-->b``` ````." => '<p>Show <code>```a&lt;!-- note --&gt;b```</code>.</p>'
+    "Show ```` ```a<!-- note\n-->b``` ````." => '<p>Show <code>```a&lt;!-- note --&gt;b```</code>.</p>',
+    'Show ```` ```a<!-- note -->b``` ````.' => '<p>Show <code>```a&lt;!-- note --&gt;b```</code>.</p>'
   }.freeze
 
   def test_an_example_whose_backticks_github_drops_is_refused
