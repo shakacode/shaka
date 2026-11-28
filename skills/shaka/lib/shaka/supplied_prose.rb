@@ -7,8 +7,8 @@ require_relative 'visible_prose'
 
 module Shaka
   # Counts the words in a description's prose fields exactly as the agent wrote them, without interpreting Markdown,
-  # so the count is predictable and the same when GitHub refuses its renderer. A link's address joins its last word,
-  # so it adds none. The publisher note is left out: Shaka's publisher attribution writes it.
+  # so the count is predictable and the same when GitHub refuses its renderer. Each space-separated piece holding a
+  # letter or digit is one word. The publisher note is left out: Shaka's publisher attribution writes it.
   module SuppliedProse
     module_function
 
