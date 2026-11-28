@@ -99,6 +99,28 @@ class DescriptionDeferredRenderingTest < Minitest::Test
     assert_equal REGION, github.body
   end
 
+  # A cloud session gets the same budget: the stored rendering's helper text does not count, the supplied prose does.
+  def test_the_stored_check_counts_only_the_supplied_prose
+    prose = Shaka::ProseLimits.new('max_description_words' => 10)
+    fits = -> { { 'summary' => 'Five words the agent wrote.' } }
+
+    assert_equal Shaka::DescriptionPublishing::CHECKED_AFTER, publish(helper_heavy, prose:, supplied: fits)['rendering']
+  end
+
+  # The supplied total needs no rendering, so it is refused before writing, even beside a person's text.
+  def test_an_over_limit_supplied_total_is_refused_before_writing
+    prose = Shaka::ProseLimits.new('max_description_words' => 10)
+    [helper_heavy, RefusedRendererGitHub.new("A person wrote this.\n\n#{REGION}")].each do |github|
+      error = assert_raises(Shaka::Error) { publish(github, prose:, supplied: -> { { 'summary' => 'One ' * 11 } }) }
+      assert_includes error.message, 'the prose you supplied has 11 words (limit 10)'
+      assert_empty github.patches
+    end
+  end
+
+  def helper_heavy
+    RefusedRendererGitHub.new(REGION).tap { it.html = Array.new(20) { '<p>Helper words fill this line.</p>' }.join }
+  end
+
   def test_text_outside_the_region_leaves_prose_limits_unchecked_and_says_so
     github = RefusedRendererGitHub.new("A person wrote this.\n\n#{REGION}")
     github.html = '<p>One two three four five six.</p>'
@@ -106,6 +128,15 @@ class DescriptionDeferredRenderingTest < Minitest::Test
 
     assert_equal Shaka::DescriptionPublishing::PROSE_UNCHECKED, written['rendering']
     assert_includes github.body, 'A person wrote this.'
+  end
+
+  # With supplied prose, only the sentence and paragraph limits went unchecked: the length was checked before writing.
+  def test_beside_a_persons_text_the_status_names_only_the_unchecked_limits
+    github = RefusedRendererGitHub.new("A person wrote this.\n\n#{REGION}")
+    written = publish(github, supplied: -> { { 'summary' => 'Fits.' } })
+
+    assert_equal Shaka::DescriptionPublishing::SHAPE_UNCHECKED, written['rendering']
+    refute_equal Shaka::DescriptionPublishing::PROSE_UNCHECKED, written['rendering']
   end
 
   # Comments render as nothing, so they leave the body all Shaka text. An unclosed comment, or text

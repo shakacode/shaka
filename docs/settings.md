@@ -356,8 +356,10 @@ A review of an earlier commit still counts in two cases:
 The PR description uses the same two cases. When the agent publishes without
 validation and review results, and the description holds no verified line that
 Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
-reads that line from the top of the Evidence and limitations fold, so a verification
-summary or check worded like it does not count. It then names
+marks the line it writes with a hidden comment and keeps only that line, so a
+verification summary or check worded like it does not count. A description
+published before that marker existed keeps the line at the top of its Evidence and
+limitations section, where older versions of Shaka wrote it. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,
@@ -1150,10 +1152,10 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. Each limit counts selected prose.
-Code blocks, tables, headings, quotes, link addresses, and the body of a
-collapsed details block do not count. A collapsed block's summary label counts,
-and an inline code span counts as one word.
+it; omitted keys keep their default. Shaka measures sentences, paragraphs, and a
+walkthrough's length in the prose a reader sees. It skips code blocks, tables,
+headings, quotes, link addresses, and the body of a collapsed details block. A
+collapsed block's summary label is measured, and an inline code span is one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
 
@@ -1163,17 +1165,36 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
+In a description, the two length limits count only the words the agent writes
+in its summary, decisions, checkpoint next action, intent fields (including
+review focus reasons and the task understanding), verification summary and gaps,
+risk record summary, section headings and bodies, and any reason for leaving out
+the task link. The lines Shaka adds, such as the links line,
+metrics, field labels, publisher note, and the risk text that grows with the risk
+rating, do not count, so the same text fits the length limits at every rating.
+
+Shaka counts those words exactly as the agent wrote them, without reading the
+Markdown, so the count is predictable and the same when GitHub declines to render.
+Tables, headings, quotes, code, and collapsed details inside those fields count.
+Shaka counts each space-separated piece that holds a letter or digit as one word.
+A link written as `[guide](URL)` is one piece, and a bare URL is one word. Put supporting material in the
+description's `details` or `table`, or in verification checks, which do not count.
+Sentence and paragraph limits still apply to the prose a reader sees, as described
+above.
+
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
-sentence, paragraph and total overage it finds in rendered prose. The overall
+sentence, paragraph and total overage it finds. A description's total names the
+words the agent wrote, which are the ones it can change. The overall
 limit uses the PR's diff size. When GitHub omits either line count, descriptions
 use `max_description_words` and walkthroughs use the sentence and paragraph
 limits.
 
 If GitHub declines to render a description before publication, Shaka checks the
 saved version when the body contains only Shaka's section, whitespace and HTML
-comments. If the body contains other content outside that section, Shaka reports
-the prose limits as unchecked.
+comments. If the body contains other content outside that section, Shaka still
+checks the length of the agent's prose before writing, and reports its other prose
+limits as unchecked.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
