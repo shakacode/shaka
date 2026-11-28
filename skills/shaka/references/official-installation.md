@@ -129,8 +129,8 @@ another POSIX shell), and add `--config core.autocrlf=false --config core.eol=lf
 to the `git clone`, as in the source-install path above, or the installer
 refuses the checkout because Git converted its line endings. From PowerShell or
 cmd, start the installer as
-`RUBY DIR\bin\install` with the absolute path to Ruby 3.4 or later, since
-Windows cannot run the extensionless script.
+`RUBY --disable-gems --disable-rubyopt DIR\bin\install` with the absolute path
+to Ruby 3.4 or later, since Windows cannot run the extensionless script.
 
 Confirm `git -C DIR branch --show-current` prints nothing and
 `git -C DIR for-each-ref --format='%(refname)' refs/heads/` is empty. Do not
@@ -160,9 +160,9 @@ preview checkout). Before take-over, confirm from outside `DIR` that
 installation's recorded URL). Prefer the currently registered installer's
 `bin/install` when that checkout already accepts `--release`. When it predates
 `--release` (typical pilot cutover), use the destination's `DIR/bin/install`
-after the outside cleanliness check above. On native Windows, start whichever
-installer you selected as `RUBY …\bin\install` with the absolute path to Ruby
-3.4 or later.
+after the outside cleanliness check above. On native Windows, start whichever installer you selected as
+`RUBY --disable-gems --disable-rubyopt …\bin\install` with the absolute path to
+Ruby 3.4 or later.
 
 A first installation (no take-over) still runs
 `DIR/bin/install --release VERSION --directory DIR --agent HOST` from that
