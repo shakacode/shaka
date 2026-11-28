@@ -45,14 +45,8 @@ module MergeApprovalLabelApi
   end
 end
 
-# A merge-approved label from a write-access maintainer chooses Auto for the PR, later pushes included.
-class MergeApprovalLabelTest < Minitest::Test
-  include MergeFixtures
-
-  EVENTS = 'repos/owner/repo/issues/42/events?per_page=100&page=1'
-  PERMISSION = 'repos/owner/repo/collaborators/%s/permission'
-  REPO_LABEL = 'repos/owner/repo/labels/merge-approved'
-
+# Setup and helpers the merge-approved label tests share.
+module MergeApprovalLabelCases
   def setup
     super
     @client.extend(MergeApprovalLabelApi)
@@ -73,6 +67,20 @@ class MergeApprovalLabelTest < Minitest::Test
     names = ['merge-approved', *names]
     snapshot.merge('labels' => { 'totalCount' => names.length, 'nodes' => names.map { |name| { 'name' => name } } })
   end
+
+  def passing(name) = { 'name' => name, 'state' => 'SUCCESS', 'bucket' => 'pass' }
+  def merge = @merge.call(head: MergeFixtures::HEAD, base: MergeFixtures::BASE, walkthrough: 17)
+end
+
+# A merge-approved label from a write-access maintainer chooses Auto for the PR, later pushes included.
+class MergeApprovalLabelTest < Minitest::Test
+  include MergeFixtures
+  include MergeApprovalLabelCases
+
+  EVENTS = 'repos/owner/repo/issues/42/events?per_page=100&page=1'
+  PERMISSION = 'repos/owner/repo/collaborators/%s/permission'
+  NAME = 'merge-approved'
+  REPO_LABEL = 'repos/owner/repo/labels/merge-approved'
 
   def test_a_maintainers_label_merges_under_auto_and_names_who_chose_it
     result = merge
@@ -95,8 +103,12 @@ class MergeApprovalLabelTest < Minitest::Test
 
     assert_blocked(/merge-approved does not choose Auto: "helper" added it without write access \(read\)/)
 
-    @client.events = [labeled('stranger')]
-    assert_blocked(/"stranger" added it without write access \(unavailable\)/)
+    { labeled('stranger') => /"stranger" added it without write access \(unavailable\)/,
+      labeled('maintainer').merge('actor' => 'maintainer') => /nil added it without write access \(unknown\)/ }
+      .each do |event, error|
+        @client.events = [event]
+        assert_blocked(error)
+      end
   end
 
   def test_refuses_without_the_label_or_an_event_adding_it
@@ -104,8 +116,10 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/merge-approved does not choose Auto: the PR does not carry it. Hand the PR back under Ask/)
 
     @client.snapshots = [approved]
-    @client.events = [labeled('maintainer', name: 'bug')]
-    assert_blocked(/GitHub lists no event adding it/)
+    [labeled('maintainer', name: 'bug'), { 'event' => 'labeled', 'label' => NAME }].each do |event|
+      @client.events = [event]
+      assert_blocked(/GitHub lists no event adding it/)
+    end
   end
 
   def test_a_label_re_added_without_write_access_before_submission_stops_the_merge
@@ -135,44 +149,10 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/did not list who added it \(HTTP 403\). Hand the PR back under Ask/)
   end
 
-  # A PR that a person queues between the reads still has to carry the label at the last one.
-  def test_a_label_removed_before_submission_stops_the_merge_even_once_queued
-    @client.snapshots = [approved, snapshot]
-    assert_blocked(/the PR does not carry it/)
-
-    @client.snapshots = [approved, approved, snapshot.merge('isInMergeQueue' => true, 'isMergeQueueEnabled' => true)]
-
-    assert_blocked(/the PR does not carry it/)
-  end
-
   def test_the_label_exempts_no_auto_gate
     @client.head_checks = [passing('Validate'), { 'name' => 'windows', 'state' => 'FAILURE', 'bucket' => 'fail' }]
 
     assert_blocked(/not passing: windows/)
-  end
-
-  # The second lookup is the last label read, before the PR is read afresh for every other gate.
-  def test_a_hold_or_retarget_while_the_labeler_is_looked_up_stops_the_merge
-    { approved('hold') => /hold label "hold"/,
-      approved.merge('baseRefName' => 'release') => /base/i }.each do |pull, error|
-      client = @client
-      reads = 0
-      client.define_singleton_method(:permission_read) { client.snapshots = [pull] if (reads += 1) == 2 }
-      @client.snapshots = [approved]
-
-      assert_blocked(error)
-    end
-  end
-
-  # The label passed when the PR was enqueued; removing it later leaves the entry queued, as the guide says.
-  def test_a_queued_pr_reconciles_after_the_label_is_removed
-    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
-                            'mergeQueueEntry' => queue_entry, 'mergeStateStatus' => 'UNKNOWN')
-    @client.snapshots = [queued, queued.merge('state' => 'MERGED', 'merged' => true, 'isInMergeQueue' => false,
-                                              'mergeCommit' => { 'oid' => 'e' * 40 }, 'mergeQueueEntry' => nil)]
-
-    assert_equal 'MERGED', merge.fetch('state')
-    assert(@client.api_calls.none? { |_, path| path == EVENTS })
   end
 
   def test_a_hold_label_still_wins
@@ -180,11 +160,6 @@ class MergeApprovalLabelTest < Minitest::Test
 
     assert_blocked(/hold label "hold"/)
   end
-
-  private
-
-  def passing(name) = { 'name' => name, 'state' => 'SUCCESS', 'bucket' => 'pass' }
-  def merge = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
 end
 
 # Labeling a PR awaiting-merge-approval also gives the repository merge-approved with its meaning.
@@ -221,5 +196,45 @@ class MergeApprovalRepositoryLabelTest < Minitest::Test
     @client.create_status = 403
     @client.label_status = 404
     assert_match(/\Anot_created: .*a maintainer creates merge-approved/, label.ensure_repository_label)
+  end
+end
+
+# The label reads around a merge queue and around the final permission lookup.
+class MergeApprovalLabelTimingTest < Minitest::Test
+  include MergeFixtures
+  include MergeApprovalLabelCases
+
+  # The second lookup is the last label read, before the PR is read afresh for every other gate.
+  # A PR that a person queues between the reads still has to carry the label at the last one.
+  def test_a_label_removed_before_submission_stops_the_merge_even_once_queued
+    @client.snapshots = [approved, snapshot]
+    assert_blocked(/the PR does not carry it/)
+
+    @client.snapshots = [approved, approved, snapshot.merge('isInMergeQueue' => true, 'isMergeQueueEnabled' => true)]
+
+    assert_blocked(/the PR does not carry it/)
+  end
+
+  def test_a_hold_or_retarget_while_the_labeler_is_looked_up_stops_the_merge
+    { approved('hold') => /hold label "hold"/,
+      approved.merge('baseRefName' => 'release') => /base/i }.each do |pull, error|
+      client = @client
+      reads = 0
+      client.define_singleton_method(:permission_read) { client.snapshots = [pull] if (reads += 1) == 2 }
+      @client.snapshots = [approved]
+
+      assert_blocked(error)
+    end
+  end
+
+  # The label passed when the PR was enqueued; removing it later leaves the entry queued, as the guide says.
+  def test_a_queued_pr_reconciles_after_the_label_is_removed
+    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                            'mergeQueueEntry' => queue_entry, 'mergeStateStatus' => 'UNKNOWN')
+    @client.snapshots = [queued, queued.merge('state' => 'MERGED', 'merged' => true, 'isInMergeQueue' => false,
+                                              'mergeCommit' => { 'oid' => 'e' * 40 }, 'mergeQueueEntry' => nil)]
+
+    assert_equal 'MERGED', merge.fetch('state')
+    assert(@client.api_calls.none? { |_, path| path == MergeApprovalLabelTest::EVENTS })
   end
 end

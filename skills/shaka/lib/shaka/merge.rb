@@ -75,8 +75,8 @@ module Shaka
       # Under Auto no person looked at the findings, so open ones stop it however late they were published.
       MergeWaitReview.new(@github).refuse_open_findings! if @auto
       # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
-      # first read, so every check is read again last.
-      verify_gate if @auto && @base_failures
+      # first read, and the label lookup takes time, so in either case every check is read again last.
+      verify_gate if @auto && (@base_failures || @label_approval)
       @submission.call(current, head).merge(approval_evidence)
     end
 

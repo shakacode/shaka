@@ -32,7 +32,7 @@ module Shaka
       raise refusal('GitHub lists no event adding it') unless event
       raise refusal('GitHub lists its removal after it was added') if event['event'] == 'unlabeled'
 
-      actor = writer!(event.dig('actor', 'login'))
+      actor = writer!(Hash.try_convert(event['actor'])&.fetch('login', nil))
       { 'label' => NAME, 'labeled_by' => actor, 'labeled_at' => event['created_at'] }
     end
 
@@ -64,13 +64,16 @@ module Shaka
     def latest_label_change
       events = PublicComments::BoundedList.new(@github, max_pages: 10, label: 'PR event list')
                                           .call("repos/#{@github.repository}/issues/#{@github.number}/events")
-      events.reverse.find do |event|
-        LABEL_CHANGES.include?(event['event']) && event.dig('label', 'name').to_s.casecmp?(NAME)
-      end
+      events.reverse.find { |event| change?(event) }
     rescue PublicComments::BoundedList::LimitError
       raise refusal('the PR has too many events to find who added it')
     rescue Error => e
       raise refusal("GitHub did not list who added it (#{e.message})")
+    end
+
+    # Events GitHub returns in an unexpected shape count as no change, so they never approve.
+    def change?(event)
+      LABEL_CHANGES.include?(event['event']) && Hash.try_convert(event['label'])&.fetch('name', nil).to_s.casecmp?(NAME)
     end
 
     def writer!(actor)

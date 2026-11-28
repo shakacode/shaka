@@ -174,7 +174,8 @@ once every Auto gate passes, and later pushes keep your choice.
   [`base_branch`](#base_branch) nor the default branch; both stay Ask.
 
 When the agent first asks you to approve a merge in a repository without the label, it
-creates `merge-approved` with a description.
+creates `merge-approved` with a description. If its account cannot create labels, it says so;
+create the label yourself.
 
 ## `merge.required_checks`
 
