@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'usage_archive'
+require_relative '../code_spans'
 require_relative '../prose_limits'
 require_relative '../publication/deferred_rendering'
 require_relative '../publication/rendered_prose'
@@ -48,8 +49,13 @@ module Shaka
       [merged, checked]
     end
 
+    # Only Shaka's region is checked, through the render prose limits already need; text a person
+    # keeps outside it is theirs.
     def rendered_before_write?(preview, current, prose, deferred)
-      prose.verify_publication!(self, Publishing.managed_region(preview), kind: :description, pull: current)
+      region = Publishing.managed_region(preview)
+      html = markdown(region)
+      prose.verify!(html, kind: :description, changed_lines: ProseLimits.changed_lines(current))
+      CodeSpans.check!(region, html)
       verify_rendering(preview)
       true
     rescue DeferredRendering::Refused
