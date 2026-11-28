@@ -36,25 +36,30 @@ module Shaka
       def planned_cases(runs, cases, paths, settings, plan)
         by_case = runs.group_by { |run| run.fetch('case') }
         plan.fetch('cases').to_h do |id|
-          ratings, counts = attempt_counts(by_case.fetch(id, []), plan.fetch('repeats'))
-          [id, counts.merge(case_score(ratings, cases.fetch(id), paths[id], settings))]
+          rated, counts = attempt_counts(by_case.fetch(id, []), plan.fetch('repeats'))
+          [id, counts.merge(case_score(rated, cases.fetch(id), paths[id], settings))]
         end
       end
 
       def attempt_counts(attempts, repeats)
-        ratings = attempts.filter_map { |run| rating(run) }
-        [ratings, { 'attempted' => attempts.size, 'unattempted' => [repeats - attempts.size, 0].max,
-                    'rated' => ratings.size }]
+        rated = attempts.select { |run| rating(run) }
+        [rated, { 'attempted' => attempts.size, 'unattempted' => [repeats - attempts.size, 0].max,
+                  'rated' => rated.size }]
       end
 
-      # Agreement needs at least two ratings.
-      def case_score(ratings, row, paths, settings)
+      # Agreement needs at least two ratings. Merge reads a rating only from a ready checkpoint, so the gate
+      # counts a report that is not ready as unknown, while agreement still uses the reviewer's rating.
+      def case_score(rated, row, paths, settings)
+        ratings = rated.map { |run| rating(run) }
+        gated = rated.map { |run| gate_rating(run) }
         reference = row['reference']
         { 'ratings' => ratings, 'consistent' => ratings.size < 2 ? 'UNKNOWN' : ratings.uniq.one?,
           'published' => row['published'], 'matches_published' => ratings.count(row['published']),
           'reference' => reference || 'UNKNOWN', 'against_reference' => against(ratings, reference),
-          'risk_gate' => THRESHOLDS.to_h { |max| [max, gate(ratings, reference, paths, settings, max)] } }
+          'risk_gate' => THRESHOLDS.to_h { |max| [max, gate(gated, reference, paths, settings, max)] } }
       end
+
+      def gate_rating(run) = run.dig('result', 'ready') ? rating(run) : 'unknown'
 
       # Underestimates are the costly error: a rating below the maintainer's can pass the risk gate.
       def against(ratings, reference)
