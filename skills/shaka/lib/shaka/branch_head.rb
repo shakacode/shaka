@@ -10,7 +10,7 @@ module Shaka
   # overwritten. The accepted head lives in the checkout's own branch config; `accept` and `push` change it.
   class BranchHead
     SAFE = %w[unchanged not_pushed].freeze
-    USERINFO = %r{(://)[^/@\s]+@}
+    USERINFO = %r{(://)[^/@]+@}
 
     # Drops user:password@ from any URL in text that a command prints.
     def self.redact(text) = text.to_s.gsub(USERINFO, '\\1')

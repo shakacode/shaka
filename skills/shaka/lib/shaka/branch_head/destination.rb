@@ -82,7 +82,7 @@ module Shaka
       def push_setting_redirect
         ["branch.#{@branch}.pushRemote", 'remote.pushDefault'].each do |key|
           value = config_values(key).last # Git uses the last value of a repeated key.
-          return "#{key} sends pushes to #{value.inspect}; Shaka pushes to origin only." if value && value != REMOTE
+          return "#{key} sends pushes elsewhere; Shaka pushes to origin only." if value && value != REMOTE
         end
         nil
       end
@@ -92,7 +92,7 @@ module Shaka
         upstream = config_values("branch.#{@branch}.remote").last
         return if upstream.nil? || upstream == REMOTE
 
-        "#{@branch} tracks #{upstream.inspect}; Shaka pushes to origin only."
+        "#{@branch} tracks a remote other than origin; Shaka pushes to origin only."
       end
 
       def origin_redirect

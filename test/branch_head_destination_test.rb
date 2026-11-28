@@ -68,6 +68,15 @@ class BranchHeadDestinationTest < Minitest::Test
 
   def test_printed_errors_drop_url_credentials
     assert_equal 'see https://git.example.com/o/r', Shaka::BranchHead.redact('see https://user:secret@git.example.com/o/r')
+    assert_equal 'see https://git.example.com/o/r',
+                 Shaka::BranchHead.redact('see https://user:two words@git.example.com/o/r')
+  end
+
+  # A rejected upstream is never echoed, so a password the redaction cannot parse still stays out of the output.
+  def test_rejected_upstream_value_is_never_printed
+    git(@task, 'config', "branch.#{BRANCH}.remote", 'https://user:two words@git.example.com/o/r')
+
+    refute_includes JSON.generate(check), 'words'
   end
 
   # Git skips pushInsteadOf for an explicit push URL, so the push lands where the check read.
