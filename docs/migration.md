@@ -75,8 +75,10 @@ reported errors. When every project passes, switch with the verified-checkout pr
 Prepare a branchless detached release checkout (no local branch refs):
 
 ```bash
+set -euo pipefail
+test ! -e DIR
 git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
-git -C DIR fetch --quiet origin "tag v1.0.0"
+git -C DIR fetch --quiet origin tag "v1.0.0"
 git -C DIR checkout --detach "refs/tags/v1.0.0"
 git -C DIR for-each-ref --format='%(refname:short)' refs/heads/ | while read -r name; do
   git -C DIR branch -D "$name"

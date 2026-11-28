@@ -103,8 +103,10 @@ Prepare a dedicated detached tag checkout `DIR` with no local branch refs (the
 installer requires a detached HEAD and refuses extra local branches):
 
 ```bash
+set -euo pipefail
+test ! -e DIR
 git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
-git -C DIR fetch --quiet origin "tag vVERSION"
+git -C DIR fetch --quiet origin tag "vVERSION"
 git -C DIR checkout --detach "refs/tags/vVERSION"
 git -C DIR for-each-ref --format='%(refname:short)' refs/heads/ | while read -r name; do
   git -C DIR branch -D "$name"

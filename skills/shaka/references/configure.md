@@ -73,7 +73,12 @@ To refresh Shaka configuration for the installed version, which regenerates
    `seam check --root DIR --local`; a failure stops the change.
 4. Publish through the migration flow: `evidence guard --flow migration` before staging and
    push, and `description --publication-flow migration`. Put the update step from the next
-   section in `steps_besides_merging`, or `none` when that section lists none.
+   section in `steps_besides_merging`, or `none` when that section lists none. Before
+   merging, apply the pre-merge pause in
+   [Migrate an older contract](migration.md#migrate-an-older-contract) whenever any
+   installation in use would reject the proposed contract or compatibility is unknown
+   (including removal-only changes that older installations still reject). Ruby does not
+   enforce that pause.
 5. The change takes effect when its PR merges. To try it on one task first, follow
    [settings preview](settings-preview.md).
 
@@ -103,7 +108,5 @@ pinned releases: switch to a compatible release using
 [keep a tested release](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md#keep-a-tested-release)),
 who: everyone running Shaka on this repository, where: each machine with an
 installation, verify: `shaka doctor --brief` reports Repository seam HEALTHY.
-When any installation in use would reject the proposed contract, apply the
-pre-merge pause in
-[Migrate an older contract](migration.md#migrate-an-older-contract) before this
-update step runs. Ruby checks none of this; the agent applies it.
+Keep the pre-merge pause from the publish step above; this update runs after merge.
+Ruby checks none of this; the agent applies it.
