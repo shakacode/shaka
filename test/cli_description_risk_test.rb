@@ -18,7 +18,7 @@ class CliDescriptionRiskTest < Minitest::Test
   HEAD = 'c' * 40
   EVIDENCE = Shaka::PostImplementationEvidence
 
-  def description_content = super.merge('checkpoint' => { 'head' => HEAD })
+  def description_content = super.merge(@linked || { 'checkpoint' => { 'head' => HEAD } })
 
   # The reviewer rated the change low. Its file sits in this repository's own merge_and_trust area, which the
   # packaged areas lack.
@@ -99,6 +99,15 @@ class CliDescriptionRiskTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_includes File.read(File.join(dir, 'published.md')), '**Risk: not rated yet**'
     end
+  end
+
+  # Without the checkpoint object the command cannot look up this head's rating, so a linked checkpoint
+  # would otherwise publish as unrated.
+  def test_a_linked_checkpoint_without_its_head_is_refused
+    @linked = { 'post_implementation' => comments.first.fetch('html_url') }
+    _output, error, status = Dir.mktmpdir { |dir| run_description(dir, ref: true) }
+    refute_predicate status, :success?
+    assert_includes error, 'supply checkpoint'
   end
 
   # The real command reads the draft flag from the pull it fetches, so a Merge checkpoint names the step first.
