@@ -198,7 +198,8 @@ phases:
         Ask the maintainer every policy question the request leaves open, together, each with a
         recommendation. Planning is complete when every touched path has an assigned area;
         every retired setting has an upgrade path, renamed settings included; and the
-        maintainer has answered those questions. First team setup follows its own procedure.
+        maintainer has answered those questions. First team setup follows
+        [its own procedure](<{{package_root}}/skills/shaka/references/repository-setup.md#publish-team-configuration>).
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report. Follow
         [keep the task plan recoverable](<{{package_root}}/skills/shaka/references/delivery.md#keep-the-task-plan-recoverable>)
@@ -253,7 +254,7 @@ phases:
     done_when: >-
       The seam, settings, and PR shape are settled, review consent is resolved,
       selected CLI reviewers passed the startup probe or it is disabled, any fresh-host fallback
-      has an established review path, and the checkpoint says proceed.
+      has an established review path, open policy questions are answered, and the checkpoint says proceed.
   - id: implement
     title: Implement
     body: |-
