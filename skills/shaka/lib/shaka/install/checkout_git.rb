@@ -3,6 +3,7 @@
 require 'fileutils'
 require 'open3'
 require 'tmpdir'
+require_relative 'refusal'
 
 module Shaka
   module Install
@@ -66,6 +67,23 @@ module Shaka
             remove_staging(path)
           end
         end
+      end
+
+      # Clone and fetch fail the same way for a misspelled branch and an unreachable repository, and Git's wording
+      # changes with version and locale, so the refusal names both causes and the ls-remote command that shows
+      # which one it is. That command runs where Git ran, so a relative repository path names the same repository,
+      # and -- keeps a repository that starts with a hyphen from being read as an option.
+      def reaching(remote)
+        yield
+      rescue ArgumentError
+        shown = Refusal.url(@repository)
+        list = Refusal.command('git', '-C', @root, 'ls-remote', '--heads', '--', Refusal.url(remote))
+        raise ArgumentError, Refusal.message(
+          "Installation could not get branch #{@branch} from #{shown}",
+          'Git could not download it; the branch may not exist there, or the repository may be unreachable',
+          Refusal.decide('which branch to use or how to restore access',
+                         'to list its branches or see why it cannot be reached', list)
+        )
       end
 
       def git(*)
