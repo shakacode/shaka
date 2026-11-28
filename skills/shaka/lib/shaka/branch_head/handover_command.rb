@@ -6,6 +6,7 @@ require_relative '../branch_head'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
 require_relative '../local_review/path_guard'
+require_relative 'destination'
 require_relative 'handover'
 require_relative 'owner_tag'
 require_relative 'ownership'
@@ -19,9 +20,8 @@ module Shaka
       OPERATIONS = %w[release pickup status].freeze
       CONTINUE = %w[holds picked_up].freeze
       PR = %r{\A(?<repository>[\w.-]+/[\w.-]+)#(?<number>\d+)\z}
-      FIELDS = 'state,headRefName,headRefOid,statusCheckRollup,body,author'
+      FIELDS = 'state,headRefName,headRefOid,headRepository,headRepositoryOwner,statusCheckRollup,body'
       SECONDS = 30
-      HOLDS = 'This checkout holds the PR. Continue.'
       AUTHORITY = { 'release' => ['--maintainer', 'Release for an owner who cannot (maintain or admin role)'],
                     'pickup' => ['--override', 'Take over an unreleased PR a maintainer confirmed abandoned'] }.freeze
 
@@ -45,7 +45,7 @@ module Shaka
         pull = pull_request(options[:pr], cli)
         raise Error, "The PR is #{pull['state'].to_s.downcase}; nothing to hand over." unless pull['state'] == 'OPEN'
 
-        ownership = Ownership.new(options[:pr], pull['author'], cli)
+        ownership = Ownership.new(options[:pr], cli)
         return status(options[:root], ownership) if operation == 'status'
 
         hand_over(operation, ownership, pull, options)
@@ -62,11 +62,9 @@ module Shaka
       # Whether this checkout still holds the PR, as every turn's check asks once the task has one.
       def status(root, ownership)
         state = ownership.state
-        paused = Ownership.pause(state, OwnerTag.recorded(root))
-        return { 'state' => 'holds', 'owner' => state['owner'], 'guidance' => HOLDS }.compact unless paused
-
-        { 'state' => paused, 'owner' => state['owner'], 'decided_by' => state['url'],
-          'guidance' => Ownership::GUIDANCE.fetch(paused) }.compact
+        current = Ownership.pause(state, OwnerTag.recorded(root)) || 'holds'
+        { 'state' => current, 'owner' => state['owner'], 'decided_by' => state['url'],
+          'guidance' => Ownership::GUIDANCE.fetch(current) }.compact
       end
 
       def content(options)
@@ -84,16 +82,20 @@ module Shaka
         output, error, success = Doctor::BoundedCommand.new(timeout: SECONDS).call(argv)
         raise Error, "Cannot read PR #{request}: #{error.strip}" unless success
 
-        pull = JSON.parse(output)
-        { 'state' => pull['state'], 'branch' => pull['headRefName'], 'head' => pull['headRefOid'],
-          'checks' => pull['statusCheckRollup'], 'body' => pull['body'], 'author' => pull.dig('author', 'login') }
+        summary(JSON.parse(output))
       rescue JSON::ParserError => e
         raise Error, "Cannot parse PR #{request}: #{e.message}"
       end
 
+      def summary(pull)
+        { 'state' => pull['state'], 'branch' => pull['headRefName'], 'head' => pull['headRefOid'],
+          'repository' => [pull.dig('headRepositoryOwner', 'login'), pull.dig('headRepository', 'name')].join('/'),
+          'checks' => pull['statusCheckRollup'], 'body' => pull['body'] }
+      end
+
       # A PATH without the checkout's directories and a gh from it, so a gh committed in the checkout never runs.
       def gh_runtime(root)
-        checkout = File.realpath(root)
+        checkout = Destination.worktree_root(File.realpath(root))
         path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: checkout, drop_candidate: true)
         gh = LocalReviewPathGuard.safe_executable(path, 'gh', checkout)
         raise Error, 'gh is not on PATH outside the checkout' unless gh
@@ -137,7 +139,7 @@ module Shaka
         flags.on(flag, text) { options[flag.delete_prefix('--').to_sym] = true }
       end
 
-      private_class_method :outcome, :hand_over, :content, :pull_request, :gh_runtime, :parse, :option_parser,
+      private_class_method :outcome, :hand_over, :content, :pull_request, :summary, :gh_runtime, :parse, :option_parser,
                            :authority_flags
     end
   end

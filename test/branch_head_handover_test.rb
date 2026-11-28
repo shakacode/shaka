@@ -62,6 +62,11 @@ class BranchHeadHandoverTest < Minitest::Test
     assert_false ownership.state['released']
   end
 
+  # A PR taken over before release and pickup existed has an owner other than its author.
+  def test_any_writer_may_release_before_the_first_pickup
+    assert_equal 'released', release(@task, 'origtag', push_task('first'), as: 'teammate')['state']
+  end
+
   def test_only_the_owner_or_a_maintainer_releases
     sha = released_task
     pickup(teammate_clone, 'newtag')

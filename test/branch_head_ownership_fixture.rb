@@ -104,7 +104,7 @@ module BranchHeadOwnershipFixture
 
   private
 
-  def ownership = Shaka::BranchHead::Ownership.new(REQUEST, 'owner', ['gh'])
+  def ownership = Shaka::BranchHead::Ownership.new(REQUEST, ['gh'])
 
   def content(tag) = { 'identity' => IDENTITY, 'owner_tag' => tag, 'remaining' => 'Write the docs' }
 
@@ -113,7 +113,7 @@ module BranchHeadOwnershipFixture
     Shaka::BranchHead::Handover.new(head, ownership, content(tag), root)
   end
 
-  def pull_for(sha) = { 'branch' => BRANCH, 'head' => sha, 'checks' => [], 'body' => '' }
+  def pull_for(sha) = { 'branch' => BRANCH, 'head' => sha, 'repository' => 'base/repo', 'checks' => [], 'body' => '' }
 
   def release(root, tag, sha, as: 'owner', maintainer: false)
     @github.login = as
@@ -157,10 +157,14 @@ module BranchHeadOwnershipFixture
     Shaka::Doctor::BoundedCommand.define_singleton_method(:new) { |**| fake }
     @original_cli = Shaka::BranchHead::HandoverCommand.method(:gh_runtime)
     Shaka::BranchHead::HandoverCommand.define_singleton_method(:gh_runtime) { |_root| ['gh'] }
+    # The fixture's origin is a local path, which names no repository; PickupCheckoutTest covers the real check.
+    @original_target = Shaka::BranchHead::PickupCheckout.method(:pushes_to?)
+    Shaka::BranchHead::PickupCheckout.define_singleton_method(:pushes_to?) { |_root, pull| pull['repository'] == 'base/repo' }
   end
 
   def restore_gh
     Shaka::Doctor::BoundedCommand.define_singleton_method(:new, @original_new)
     Shaka::BranchHead::HandoverCommand.define_singleton_method(:gh_runtime, @original_cli)
+    Shaka::BranchHead::PickupCheckout.define_singleton_method(:pushes_to?, @original_target)
   end
 end

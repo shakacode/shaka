@@ -5,6 +5,7 @@ require_relative '../handoff/wip_note'
 require_relative '../publication/text'
 require_relative 'owner_tag'
 require_relative 'ownership'
+require_relative 'pickup_checkout'
 require_relative 'release_report'
 
 module Shaka
@@ -54,7 +55,8 @@ module Shaka
         OwnerTag.record(@root, @tag)
         lead = override ? 'Took over this PR as a maintainer override.' : 'Picked up this PR.'
         result = outcome(post(lead, { 'New owner' => "`#{@tag}`" }, mark(before, 'pickup', override)))
-        OwnerTag.restore(@root, earlier) unless result['state'] == 'picked_up'
+        # Another pickup in this worktree may have recorded its own tag since; leave that one alone.
+        OwnerTag.restore(@root, earlier) if result['state'] != 'picked_up' && OwnerTag.recorded(@root) == @tag
         result
       end
 
@@ -102,12 +104,7 @@ module Shaka
           raise Error, 'The PR is not released. Ask its owner to release it, or pass --override once a maintainer ' \
                        'confirms the task is abandoned.'
         end
-        branch = OwnerTag.branch(@root)
-        check = @head.check
-        return if branch == pull['branch'] && [check['live'], check['local']].all?(pull['head'])
-
-        raise Error, "Cannot pick up from this checkout: #{branch} is at #{check['local']} and origin/#{branch} at " \
-                     "#{check['live'] || 'nothing'}, but the PR head is #{pull['branch']} at #{pull['head']}."
+        PickupCheckout.verify(@root, @head, pull)
       end
 
       def mark(before, event, maintainer, head = nil)

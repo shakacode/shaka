@@ -9,7 +9,8 @@ module Shaka
     # Who owns an unfinished PR, read from the release and pickup comments `handover release|pickup` post on it.
     # Each comment names the deciding comment it saw (`after`), and counts only if that is still the deciding one,
     # so of two writes made against the same state, the one GitHub stores first wins and the other changes nothing.
-    # A release counts from the account holding the PR, a pickup only after a release, and a maintainer release or
+    # A release counts from the account that last picked the PR up, or any writer before the first pickup, whom the
+    # helper limits to the WIP Details owner; a pickup counts only after a release, and a maintainer release or
     # override pickup only from an account with the maintain or admin role. Anyone can type the mark, so a comment
     # from an account without write access never counts.
     class Ownership
@@ -21,6 +22,7 @@ module Shaka
       READS = 3
 
       GUIDANCE = {
+        'holds' => 'This checkout holds the PR. Continue.',
         'released' => "The PR was released for pickup. Stop this chat's monitors, keep local work, and leave the " \
                       'branch and PR alone. Continue only after `handover pickup` makes this checkout the owner.',
         'taken_over' => "Another owner picked up this PR. Stop this chat's monitors, keep local work, leave the " \
@@ -36,13 +38,12 @@ module Shaka
         'taken_over' if state['owner'] && state['owner'] != tag
       end
 
-      # request is the --pr match, with repository and number; author is the PR author, who holds it at first.
+      # request is the --pr match, with repository and number.
       # cli is [environment, path] for a GitHub CLI outside the checkout.
-      def initialize(request, author, cli)
+      def initialize(request, cli)
         @cli = cli
         @repository = request[:repository]
         @number = request[:number]
-        @author = author
         @roles = {}
       end
 
@@ -50,7 +51,7 @@ module Shaka
       # 'applied' => ids of every comment that took effect }.
       # A nil owner that is not released means the original owner, who never picked the PR up, still holds it.
       def state(events = self.events)
-        initial = { 'owner' => nil, 'released' => false, 'id' => 0, 'login' => @author, 'applied' => [] }
+        initial = { 'owner' => nil, 'released' => false, 'id' => 0, 'login' => nil, 'applied' => [] }
         events.each_with_object(initial) do |event, state|
           apply(state, event) if event['trusted'] && event['after'] == state['id'] && allowed?(event, state)
         end
@@ -86,7 +87,7 @@ module Shaka
         return role(event['login']).last.then { MAINTAINERS.include?(it) } if event['maintainer']
         return state['released'] if event['event'] == 'pickup'
 
-        !state['released'] && event['login'] == state['login']
+        !state['released'] && [nil, event['login']].include?(state['login'])
       end
 
       def events
