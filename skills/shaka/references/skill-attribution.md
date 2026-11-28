@@ -28,7 +28,8 @@ When the skill belongs to a pack, add `pack` with the upstream `OWNER/REPO`, plu
 `/PATH` when the pack is not the repository root, not a URL: for example
 `cursor/plugins/pstack`, whichever port or copy you installed. `source` still names
 where this copy came from. Each part may use ASCII letters, digits, `.`, `_`, and
-`-`. Omit `pack` when you cannot tell, it is private, or it needs other characters.
+`-`, and may not be `.` or `..`. Omit `pack` when you cannot tell, it is private, or
+it needs other characters.
 
 Select `agent-reported` with null `corroboration`, or `corroborated` when a native
 event or recorded tool call confirms invocation/loading; name that record in
