@@ -12,14 +12,17 @@ class CodeSpansTest < Minitest::Test
     'Such as ```js``` blocks.' => '<p>Such as <code>js</code> blocks.</p>',
     "    ~~~\nUse ```js``` here." => "<pre><code>~~~\n</code></pre>\n<p>Use <code>js</code> here.</p>",
     'Use \\\\```js``` here.' => '<p>Use \\<code>js</code> here.</p>',
-    'Use ```js``` or ```` ```js``` ````.' => '<p>Use <code>js</code> or <code>```js```</code>.</p>'
+    'Use ```js``` or ```` ```js``` ````.' => '<p>Use <code>js</code> or <code>```js```</code>.</p>',
+    "Use ```js``` here.\n\n~~~\n````js````\n~~~" =>
+      "<p>Use <code>js</code> here.</p>\n<pre><code>````js````\n</code></pre>"
   }.freeze
   KEPT = {
     'Such as ```` ```js``` blocks ````.' => '<p>Such as <code>```js``` blocks</code>.</p>',
     'Use \\```js``` here.' => '<p>Use ```js``` here.</p>',
     "> ```md\n> ```js```\n> ```" => '<blockquote><pre><span>```</span>js<span>```</span></pre></blockquote>',
     "- ~~~text\n  ```js```\n  ~~~" => "<ul><li><pre><code>```js```\n</code></pre></li></ul>",
-    'Use `code` and ``a`b``.' => '<p>Use <code>code</code> and <code>a`b</code>.</p>'
+    'Use `code` and ``a`b``.' => '<p>Use <code>code</code> and <code>a`b</code>.</p>',
+    "Summary.\n\n<!-- note ```js``` -->" => '<p>Summary.</p>'
   }.freeze
 
   def test_an_example_whose_backticks_github_drops_is_refused
@@ -37,7 +40,8 @@ class CodeSpansTest < Minitest::Test
     source, html = LOST.first
     github = client(response({ 'id' => 1, 'body' => '', 'additions' => 4, 'deletions' => 2 }), html_response(html))
 
-    assert_raises(Shaka::Error) { github.description(body: "#{source}\n") }
+    error = assert_raises(Shaka::Error) { github.description(body: "#{source}\n") }
+    assert_includes error.message, 'GitHub renders ```js``` as inline code'
     assert_equal 2, @calls.size
     assert_includes JSON.parse(@calls.last[1])['text'], source
   end
@@ -48,8 +52,10 @@ class CodeSpansTest < Minitest::Test
     github = client(response({ 'id' => 1, 'body' => person, 'additions' => 4, 'deletions' => 2 }),
                     html_response('<p>Summary.</p>'))
 
-    error = assert_raises(RuntimeError) { github.description(body: "Summary.\n") }
-    assert_equal 'Unexpected GitHub request', error.message
-    refute_includes JSON.parse(@calls[1][1])['text'], person.strip
+    # The stub then has no answer for the full-body render that follows the region checks.
+    assert_raises(RuntimeError) { github.description(body: "Summary.\n") }
+    region, whole = @calls[1..2].map { |_, input| JSON.parse(input).fetch('text') }
+    assert_equal 'Summary.', region.strip
+    assert_includes whole, person.strip
   end
 end

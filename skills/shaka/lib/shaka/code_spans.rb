@@ -15,14 +15,16 @@ module Shaka
 
     module_function
 
-    # html is GitHub's rendering of source. Each occurrence is counted, so a kept copy cannot hide a lost one.
+    # html is GitHub's rendering of source. Each occurrence is counted, so a kept copy cannot hide a lost
+    # one, and a copy must stand alone, so ```` ```` ```` text cannot stand in for ```.
+    # HTML comments render as nothing, so examples inside them are not counted.
     def check!(source, html)
-      written = source.to_enum(:scan, CANDIDATE).map { Regexp.last_match[0] }.tally
+      written = source.gsub(/<!--.*?-->/m, '').to_enum(:scan, CANDIDATE).map { Regexp.last_match[0] }.tally
       return if written.empty?
 
       shown = visible(html)
-      lost = written.find { |candidate, count| shown.scan(candidate).size < count }&.first
-      raise Error, "GitHub renders #{lost} as inline code and drops its backticks; #{ADVICE}." if lost
+      lost = written.find { |candidate, count| shown.scan(/(?<!`)#{Regexp.escape(candidate)}(?!`)/).size < count }
+      raise Error, "GitHub renders #{lost.first} as inline code and drops its backticks; #{ADVICE}." if lost
     end
 
     # Highlighting splits code into elements, so tags go before the comparison.
