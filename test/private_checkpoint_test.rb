@@ -29,7 +29,7 @@ class PrivateCheckpointTest < Minitest::Test
   def test_private_final_preparation_accepts_current_review
     with_trial do
       prepare_private_opt_out
-      alter_pull { |pull| pull['comments'] = [product_review(@ref)] }
+      alter_pull { |pull| pull['comments'] = [product_review(@ref), HandoffFixtures.usage_snapshot(@ref)] }
       assert_equal 10, invoke('squash-message', '--head', @ref, '--content-file', message_file)['id']
       assert_empty invoke('handoff')['owed']
     end
