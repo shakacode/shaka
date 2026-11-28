@@ -22,9 +22,8 @@ module Shaka
         raise Error, 'Expected OWNER/REPO NUMBER and --ref SHA.' unless arguments.length == 2 && options[:ref]
 
         CallLog.tag(repository: arguments[0], number: arguments[1])
-        puts JSON.generate(record(GitHub.new(*arguments), trusted_seam(options)))
-        0
-      rescue OptionParser::ParseError, Error, SystemCallError, KeyError, JSON::ParserError => e
+        report(record(GitHub.new(*arguments), trusted_seam(options)))
+      rescue OptionParser::ParseError, Error, SystemCallError, KeyError, JSON::ParserError, ArgumentError => e
         warn "shaka pr stats: #{e.message.gsub(/[\r\n]+/, ' ')}"
         1
       end
@@ -38,6 +37,15 @@ module Shaka
         publisher.merged
         { 'head' => snapshot['headRefOid'], 'state' => snapshot['state'],
           'stats' => ThroughputStats.read(body(github)) }
+      end
+
+      # A merged pull request whose stats block still lacks the merge time fails the job, so the gap is visible.
+      def report(result)
+        puts JSON.generate(result)
+        return 0 unless result['state'] == 'MERGED' && result['stats'] && !result['stats']['t3']
+
+        warn 'shaka pr stats: the merge time was not recorded.'
+        1
       end
 
       def record_ready(publisher, snapshot)

@@ -84,6 +84,14 @@ class PrStatsTest < Minitest::Test
     assert_equal MERGED.iso8601, JSON.parse(out).dig('stats', 't3')
   end
 
+  def test_the_command_fails_when_the_merge_time_was_not_recorded
+    github = MergedFakeGitHub.new("Intro.\n\n#{unready_block}\n", merged_page.except('mergedAt'))
+    _, err = capture_io do
+      with_stubs(github) { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7 --ref main]) }
+    end
+    assert_includes err, 'the merge time was not recorded'
+  end
+
   def test_the_command_refuses_to_run_without_a_trusted_ref
     _, err = capture_io { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7]) }
     assert_includes err, '--ref SHA'

@@ -6,7 +6,7 @@ require 'yaml'
 # The pr stats workflow runs only the default branch's code, after a merge into it, with a narrow token.
 class PrStatsWorkflowTest < Minitest::Test
   WORKFLOW = File.expand_path('../.github/workflows/pr-stats.yml', __dir__)
-  CONDITION = 'github.event.pull_request.merged == true && ' \
+  CONDITION = "github.repository == 'shakacode/shaka' && github.event.pull_request.merged == true && " \
               'github.event.pull_request.base.ref == github.event.repository.default_branch'
 
   def test_the_workflow_runs_only_after_a_merge_into_the_default_branch
@@ -27,6 +27,11 @@ class PrStatsWorkflowTest < Minitest::Test
     refute steps.first.fetch('with').key?('ref'), 'the job must not check out the pull request head'
     refute steps.first.dig('with', 'persist-credentials')
     refute_match(/\$\{\{/, steps.last['run'])
+  end
+
+  def test_the_workflow_reads_settings_from_the_checked_out_default_branch
+    run = YAML.load_file(WORKFLOW).dig('jobs', 'stats', 'steps').last['run']
+    assert_includes run, '--root . --ref "$GITHUB_SHA"'
   end
 
   def test_the_workflow_pins_every_action_to_a_commit
