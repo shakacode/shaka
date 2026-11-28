@@ -51,7 +51,8 @@ class HandoffConversationTest < Minitest::Test
   def test_an_unreadable_comment_list_leaves_a_note
     result = handoff(comments: :unreadable)
 
-    assert_empty result['owed']
+    # The usage journal reads the same list, and an unproven head snapshot stays owed.
+    assert_equal ['Usage snapshots are unread: Usage journal response is malformed.'], result['owed']
     assert_includes result['notes'], 'Conversation comments are unread: Comment listing response is malformed.'
   end
 end

@@ -12,6 +12,7 @@ require_relative 'handoff/hold'
 require_relative 'handoff/merge_wait'
 require_relative 'handoff/review_threads'
 require_relative 'handoff/squash_note'
+require_relative 'handoff/usage'
 require_relative 'handoff/walkthrough'
 require_relative 'handoff/wip_note'
 require_relative 'post_implementation/evidence'
@@ -26,6 +27,7 @@ module Shaka
     include HandoffHold
     include HandoffApprovalHold
     include HandoffMergeWait
+    include HandoffUsage
 
     OWED_EXIT = 2
     SHORT = 7
@@ -74,7 +76,7 @@ module Shaka
       [attention_fact(checks, live), draft_fact(snapshot), hold_fact,
        checks_fact(checks, snapshot['requiredChecksUnavailable']),
        threads_fact, comment_fact(snapshot), walkthrough_fact(live), review_fact(snapshot), checkpoint_fact(live),
-       squash_fact(snapshot, live), closing_fact, wip_fact(live), rendering_fact(live)].compact
+       *record_facts(snapshot, live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.

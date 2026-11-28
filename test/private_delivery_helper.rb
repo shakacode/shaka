@@ -136,7 +136,8 @@ module PrivateDeliveryFixture
     File.write(File.join(@state, 'pull.json'), JSON.generate(
                                                  'snapshot' => { 'headRefOid' => @ref, 'state' => 'OPEN',
                                                                  'isDraft' => false, 'baseRefName' => 'main' },
-                                                 'checks' => []
+                                                 'checks' => [],
+                                                 'comments' => [HandoffFixtures.usage_snapshot(@ref)]
                                                ))
   end
 

@@ -42,7 +42,8 @@ how each held up. For how Shaka works with those sources today, read
   the checkpoint's low, medium, or high **Risk** rating then replaced
   ([#1081](https://github.com/shakacode/shaka/pull/1081)). Adequate with accepted gaps
   became **Adequate, with gaps the reviewer judged acceptable**
-  ([#1021](https://github.com/shakacode/shaka/pull/1021)).
+  ([#1021](https://github.com/shakacode/shaka/pull/1021)), and the verdict itself became
+  adequate with named gaps, because a reviewer model judged those gaps, not a person.
 - **Restated checks:** "11 of 12" is #740's own count of the PRs merged after #553.
   "32 of 101" comes from the window above, where 101 descriptions list check bullets
   under Verification. A description counts when one of those bullets matches this
