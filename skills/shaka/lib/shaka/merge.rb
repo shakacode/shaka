@@ -81,11 +81,11 @@ module Shaka
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    # GitHub cannot catch a seam check that fails while these are read, so it is read again.
+    # GitHub cannot catch a seam-declared check that fails while these are read, so they are read again.
     def verify_reviews(head, base, walkthrough, gate)
       MergeWalkthrough.new(@github, @walkthrough_due).verify!(walkthrough, head)
       evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
-      verify_gate if gate['source'] == 'seam'
+      verify_gate unless gate['source'] == 'github'
       evidence
     end
 
