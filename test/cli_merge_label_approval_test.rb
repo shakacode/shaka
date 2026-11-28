@@ -62,7 +62,8 @@ class CliMergeLabelApprovalTest < Minitest::Test
 
   # A trusted Ask repository whose PR carries merge-approved, added by labeler with permission.
   def labeled(labeler, permission)
-    with_merge_repository(merge_policy.merge('auto_merge_max_risk' => 'low')) do |root, ref, mutation|
+    with_merge_repository(merge_policy.merge('preference' => 'ask',
+                                             'auto_merge_max_risk' => 'low')) do |root, ref, mutation|
       fake = File.join(root, 'fake-bin', 'gh')
       File.write(fake, File.read(fake).sub("require 'json'\n", "require 'json'\n#{LABEL_GH}"))
       event = { 'event' => 'labeled', 'actor' => { 'login' => labeler }, 'label' => { 'name' => 'merge-approved' },
