@@ -38,6 +38,7 @@ class InstallGitFailureNextStepTest < Minitest::Test
     repository = "--upload-pack=touch #{marker}"
     output = refusal(@root, '--directory', File.join(@directory, 'new'), '--repository', repository,
                      '--agent', 'claude')
+    assert_includes git_words_free(output), DECISION
     assert_includes output, "ls-remote --heads -- #{Shellwords.escape(repository)}"
     Open3.capture2e(environment, 'sh', '-c', command(output))
     refute_path_exists marker
