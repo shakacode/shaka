@@ -103,4 +103,7 @@ pinned releases: switch to a compatible release using
 [keep a tested release](https://github.com/shakacode/shaka/blob/main/docs/manual-installation.md#keep-a-tested-release)),
 who: everyone running Shaka on this repository, where: each machine with an
 installation, verify: `shaka doctor --brief` reports Repository seam HEALTHY.
-Ruby checks none of this; the agent applies it.
+When any installation in use would reject the proposed contract, apply the
+pre-merge pause in
+[Migrate an older contract](migration.md#migrate-an-older-contract) before this
+update step runs. Ruby checks none of this; the agent applies it.

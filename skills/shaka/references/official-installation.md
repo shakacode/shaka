@@ -17,12 +17,13 @@ request does not name a branch or source install, check the official GitHub
 releases for the latest published version at or above 1.0.0 (compared by
 semantic version, excluding GitHub drafts and prereleases). If one exists, follow
 [Install a published release](#install-a-published-release). If the lookup
-succeeds with no suitable release, install from source when the user allowed
-that fallback. If the lookup fails, report it as unverified and ask before
-falling back to source.
+succeeds with no suitable release, install from source only when the user
+already allowed that fallback; otherwise ask and wait (do not clone). If the
+lookup fails, report it as unverified and ask before falling back to source.
 
-Review the source and installer, then clone into a directory outside the
-project repositories the user works in:
+Only after a named-branch request or after the rules above allow a source
+install: review the source and installer, then clone into a directory outside
+the project repositories the user works in:
 
 ```bash
 umask 022
