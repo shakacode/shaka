@@ -73,7 +73,8 @@ deterministic risk gate:
   repeats pass after the arm's risk areas raise the rating. `configured_max_risk` names
   the arm's own setting; the other value shows what changing it would do.
   `wrong_passes` and `needless_holds` compare with what the maintainer's rating would
-  allow. As in merge, a checkpoint that is not ready counts as unknown here. Merge also checks verification adequacy, size limits, hold labels, and
+  allow. As in merge, a checkpoint that is not ready holds; `wrong_passes` and
+  `needless_holds` judge the reviewer's rating alone. Merge also checks verification adequacy, size limits, hold labels, and
   required checks, so a pass here is not a merge.
 - `failed`, `dollars`, `duration_ms`: runs with no rating, and their cost and time.
   Missing usage or timing makes a total `UNKNOWN`.

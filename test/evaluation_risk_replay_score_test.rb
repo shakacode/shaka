@@ -72,12 +72,13 @@ class EvaluationRiskReplayScoreTest < Minitest::Test
     assert_equal 1, arm.dig('cases', 'k1', 'risk_gate', 'low', 'holds')
   end
 
-  def test_a_checkpoint_that_is_not_ready_holds_at_the_gate_whatever_its_rating
+  def test_a_checkpoint_that_is_not_ready_holds_without_blaming_a_matching_rating
     blocked = rated('low').tap { |run| run['result']['ready'] = false }
-    entry = score([blocked], paths: ['lib/a.rb']).dig('candidate', 'cases', 'k1')
+    entry = score([blocked], paths: ['lib/a.rb'], reference: 'low').dig('candidate', 'cases', 'k1')
 
     assert_equal ['low'], entry.fetch('ratings')
-    assert_equal [0, 1], entry.dig('risk_gate', 'medium').values_at('passes', 'holds')
+    assert_equal [0, 1, 0, 0],
+                 entry.dig('risk_gate', 'low').values_at('passes', 'holds', 'needless_holds', 'wrong_passes')
   end
 
   def test_an_unknown_rating_counts_as_an_abstention_against_any_reference

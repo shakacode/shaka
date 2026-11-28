@@ -56,7 +56,7 @@ module Shaka
         { 'ratings' => ratings, 'consistent' => ratings.size < 2 ? 'UNKNOWN' : ratings.uniq.one?,
           'published' => row['published'], 'matches_published' => ratings.count(row['published']),
           'reference' => reference || 'UNKNOWN', 'against_reference' => against(ratings, reference),
-          'risk_gate' => THRESHOLDS.to_h { |max| [max, gate(gated, reference, paths, settings, max)] } }
+          'risk_gate' => THRESHOLDS.to_h { |max| [max, gate([gated, ratings], reference, paths, settings, max)] } }
       end
 
       def gate_rating(run) = run.dig('result', 'ready') ? rating(run) : 'unknown'
@@ -79,14 +79,17 @@ module Shaka
       # unknown counts as high, as the checkpoint treats it.
       def rank(rating) = LEVELS.index(rating) || (LEVELS.size - 1)
 
-      def gate(ratings, reference, paths, settings, max)
-        decisions = ratings.map { |rating| passes?(rating, paths, settings, max) }
-        result = { 'passes' => decisions.count(true), 'holds' => decisions.count(false) }
+      # Passes and holds follow merge, readiness included; the errors against the reference come from the
+      # reviewer's rating alone, so a hold for an unready checkpoint is not blamed on the rating.
+      def gate((gated, ratings), reference, paths, settings, max)
+        shipped = gated.map { |rating| passes?(rating, paths, settings, max) }
+        result = { 'passes' => shipped.count(true), 'holds' => shipped.count(false) }
         return result.merge('wrong_passes' => 'UNKNOWN', 'needless_holds' => 'UNKNOWN') unless reference
 
+        rated = ratings.map { |rating| passes?(rating, paths, settings, max) }
         wanted = passes?(reference, paths, settings, max)
-        result.merge('wrong_passes' => wanted ? 0 : decisions.count(true),
-                     'needless_holds' => wanted ? decisions.count(false) : 0)
+        result.merge('wrong_passes' => wanted ? 0 : rated.count(true),
+                     'needless_holds' => wanted ? rated.count(false) : 0)
       end
 
       def passes?(rating, paths, settings, max)
