@@ -144,13 +144,19 @@ run its registered helper or pass `--directory DIR`; installation there keeps it
 selection. An explicit repository or branch overrides the gem default.
 
 Follow [Before take-over](#before-take-over) when switching from an existing installation.
-To install a new release, run `DIR/bin/install --release VERSION --directory DIR --take-over`
-in a separate directory `DIR` (add `--skills-dir SKILLS_DIR` when replacing a
-custom-only install, and `--repository URL` when the target checkout's origin
-differs from the previous installation's recorded URL; on Windows, use
-`ruby DIR\bin\install` as above). When switching after a cutover check, reuse
-the verified checkout as `DIR` and confirm its `HEAD` matches the recorded
-commit before running take-over.
+To install a new release into a prepared empty directory `DIR`, run
+`DIR/bin/install --release VERSION --directory DIR --take-over` (add
+`--skills-dir SKILLS_DIR` when replacing a custom-only install, and
+`--repository URL` when the target checkout's origin differs from the previous
+installation's recorded URL; on Windows, use `RUBY DIR\bin\install` as above).
+When switching after a cutover check, reuse the verified checkout as `DIR`,
+confirm its `HEAD` still matches the recorded commit and that the working tree
+is clean from outside that checkout, then run take-over from the currently
+registered trusted installer:
+`TRUSTED/bin/install --take-over --directory DIR --release VERSION` (plus
+`--skills-dir` / `--repository` when needed). Do not invoke `DIR/bin/install`
+for that cutover switch: an edited installer in `DIR` can run before the
+destination cleanliness check.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`

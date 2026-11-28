@@ -84,8 +84,9 @@ reports `trusted/ref` for `NEW_DEFAULT_SHA`. During a release cutover, switch
 the active installation only after that check passes: confirm the verified
 preview checkout's `HEAD` still matches the recorded commit, then follow
 [Install a published release](official-installation.md#install-a-published-release)
-(including [Before take-over](official-installation.md#before-take-over)) with
-that verified checkout as `--directory DIR`. Resume held work once the helper
+(including [Before take-over](official-installation.md#before-take-over)),
+reusing that verified checkout as `--directory DIR` and running take-over from
+the currently registered trusted installer. Resume held work once the helper
 verifies `trusted/ref` for the merged default-branch SHA and affected
 installations are ready.
 

@@ -80,21 +80,22 @@ or later as
 `RUBY --disable-gems --disable-rubyopt DIR\skills\shaka\scripts\shaka.rb`.
 
 ```text
-Prepare a branchless detached checkout of Shaka 1.0.0 for the compatibility checks in docs/migration.md. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the team and individual seam checks against this project's verified default-branch commit
+Prepare a branchless detached checkout of Shaka 1.0.0 for the compatibility checks in docs/migration.md. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the applicable team or individual seam check for this project's settings against its verified default-branch commit
 ```
 
 Use that checkout's helper. On POSIX, set `SHAKA_RUBY` to the absolute path to
 Ruby 3.4 or later before invoking `DIR/skills/shaka/scripts/shaka` (an
 unregistered release checkout does not select Ruby on its own). Use the
-project's verified default-branch commit for `DEFAULT_SHA`.
+project's verified default-branch commit for `DEFAULT_SHA`. Choose the check
+that matches the settings in use:
 
 - For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a
   clean checkout at that commit. Require `trusted/ref` for the same SHA before
   offering a switch (a selected settings preview can report `preview/local`
   instead).
 - For individual settings, run `seam private check --root PROJECT --ref DEFAULT_SHA`
-  against the local copy that has those settings. The result reports any setting
-  or wrapper that needs attention.
+  against the local copy that has those settings. Treat a successful private
+  report as local validation for that setup.
 
 </details>
 
