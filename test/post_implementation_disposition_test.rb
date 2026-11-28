@@ -58,7 +58,7 @@ class PostImplementationDispositionTest < Minitest::Test
     end
   end
 
-  def test_ready_checkpoint_lists_pr_numbers_the_squash_body_leaves_unexplained
+  def test_ready_checkpoint_lists_pr_numbers_in_the_squash_message
     with_result do |result, path|
       result['disposition'] = disposition('Merge')
       define_singleton_method(:message_file) do |content_path|
