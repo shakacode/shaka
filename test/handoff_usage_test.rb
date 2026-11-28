@@ -84,7 +84,8 @@ class HandoffUsageTest < Minitest::Test
 
   # The PR author's own account publishes usage too; its marked snapshot is not a comment awaiting a reply.
   def test_the_authors_journal_comment_is_not_an_unanswered_comment
-    result = handoff(author: 'person', usage: [HandoffFixtures.usage_snapshot(HEAD, author: 'person')])
+    result = handoff(author: 'person', writers: ['person'],
+                     usage: [HandoffFixtures.usage_snapshot(HEAD, author: 'person')])
 
     assert_empty result.fetch('owed')
     refute_includes result.fetch('status'), 'unanswered'
