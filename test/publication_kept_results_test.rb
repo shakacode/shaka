@@ -217,6 +217,17 @@ class PublicationKeptLinePlacementTest < Minitest::Test
     end
   end
 
+  # Only a heading at the start of a line is a heading; a marked body reads back from CRLF too.
+  def test_an_inline_heading_mention_or_crlf_still_keeps_the_line
+    with_checkout do |root, ref|
+      kept = "#{current_line(ref)} #{Shaka::VerificationLine::KEPT}"
+      marked = body(ref, "#{Shaka::VerificationLine::MARKER}\n#{published_line(ref)}").gsub("\n", "\r\n")
+      [body(ref).sub('## Verification', "See ## Verification\n\n## Verification"), marked].each do |text|
+        assert_equal kept, Shaka::VerificationLine.line(prepare(root, ref, {}, body: text).verdict)
+      end
+    end
+  end
+
   # A region that ends at the heading has nothing to keep and must not stop the publication.
   def test_an_empty_verification_section_keeps_nothing
     with_checkout do |root, ref|

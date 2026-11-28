@@ -13,8 +13,8 @@ module Shaka
     # Descriptions published before the marker hold the line under their Verification heading, or,
     # for a routine run, a compact sentence there and the line at the top of the Evidence and
     # limitations fold. Delete this reading once no open PR was described before #1325.
-    HEADING = "## Verification\n\n"
-    FOLD = "<summary>Evidence and limitations</summary>\n\n"
+    HEADING = /^## Verification\n\n/
+    FOLD = %r{^<summary>Evidence and limitations</summary>\n\n}
     COMPACT = 'Validation passed; local review completed at '
 
     module_function
