@@ -3,6 +3,7 @@
 require 'open3'
 require_relative '../doctor/bounded_command'
 require_relative '../error'
+require_relative '../local_review/path_guard'
 require_relative '../workflow_version'
 
 module Shaka
@@ -16,9 +17,22 @@ module Shaka
       PUSH_SECONDS = 120
       ENVIRONMENT = WorkflowVersion::GIT_ENVIRONMENT.merge('GIT_TERMINAL_PROMPT' => '0').freeze
 
-      def initialize(root:, branch:)
+      # A PATH without the checkout's directories and an absolute git from it, so a git, ssh, or credential
+      # helper committed in the checkout never runs; this check runs at every turn, often in a candidate's checkout.
+      # The checkout's real path, since the guard compares real paths and the checkout may sit under a symlink.
+      def self.runtime(root)
+        checkout = File.realpath(root)
+        path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: checkout, drop_candidate: true)
+        git = LocalReviewPathGuard.safe_executable(path, 'git', checkout)
+        raise Error, 'git is not on PATH outside the checkout' unless git
+
+        [ENVIRONMENT.merge('PATH' => path), git]
+      end
+
+      def initialize(root:, branch:, runtime: self.class.runtime(root))
         @root = root
         @branch = branch
+        @env, @git = runtime
       end
 
       def remote = REMOTE
@@ -107,7 +121,7 @@ module Shaka
       # git config exits 1 for a missing key; any other failure is a failed read, never "not configured".
       # Empty values stay, since an empty last value still overrides an earlier origin.
       def config_values(key, *type)
-        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '-z', *type, '--get-all', key)
+        output, error, status = Open3.capture3(@env, @git, '-C', @root, 'config', '-z', *type, '--get-all', key)
         return [] if status.exitstatus == 1
         raise Error, "Cannot read #{key}: #{error.strip}" unless status.success?
 
@@ -116,7 +130,7 @@ module Shaka
       end
 
       def git_lines(*)
-        output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *)
+        output, error, status = Open3.capture3(@env, @git, '-C', @root, *)
         raise Error, "git #{[*].first(2).join(' ')} failed: #{error.strip}" unless status.success?
 
         # Only Git's newline goes, and empty lines stay, so a URL ending in a newline counts as two and pauses.
@@ -134,7 +148,7 @@ module Shaka
       end
 
       def bounded(seconds, *arguments)
-        Doctor::BoundedCommand.new(timeout: seconds).call([ENVIRONMENT, 'git', '-C', @root, *arguments])
+        Doctor::BoundedCommand.new(timeout: seconds).call([@env, @git, '-C', @root, *arguments])
       rescue SystemCallError => e
         ['', e.message, false]
       end

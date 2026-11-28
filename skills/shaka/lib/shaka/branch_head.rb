@@ -17,7 +17,6 @@ module Shaka
     # Drops user:password@ from any URL in text that a command prints.
     def self.redact(text) = text.to_s.gsub(USERINFO, '://')
     SHA = Destination::SHA
-    ENVIRONMENT = Destination::ENVIRONMENT
 
     GUIDANCE = {
       'unchanged' => 'The remote branch is where this task left it. Continue.',
@@ -38,8 +37,10 @@ module Shaka
 
     def initialize(root:)
       @root = root
+      runtime = Destination.runtime(root)
+      @env, @git = runtime
       @branch = current_branch
-      @destination = Destination.new(root:, branch: @branch)
+      @destination = Destination.new(root:, branch: @branch, runtime:)
       @remote = @destination.remote
     end
 
@@ -119,14 +120,14 @@ module Shaka
 
     # Accepting a head the local branch lacks would let work continue on a stale tip.
     def ancestor?(commit, descendant)
-      _output, _error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'merge-base', '--is-ancestor', commit,
+      _output, _error, status = Open3.capture3(@env, @git, '-C', @root, 'merge-base', '--is-ancestor', commit,
                                                descendant)
       status.success?
     end
 
     # git config --get exits 1 for a missing key; any other failure must not read as "no record".
     def accepted_head
-      output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, 'config', '--local', '--get',
+      output, error, status = Open3.capture3(@env, @git, '-C', @root, 'config', '--local', '--get',
                                              config_key)
       return output.strip if status.success?
       return if status.exitstatus == 1
@@ -144,7 +145,7 @@ module Shaka
     end
 
     def git(*arguments)
-      output, error, status = Open3.capture3(ENVIRONMENT, 'git', '-C', @root, *arguments)
+      output, error, status = Open3.capture3(@env, @git, '-C', @root, *arguments)
       raise Error, "git #{arguments.first} failed: #{error.strip}" unless status.success?
 
       output
