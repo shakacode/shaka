@@ -12,18 +12,20 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 When the request names a release version, follow
 [Install a published release](#install-a-published-release) with that version.
 When the request names a branch, follow the source clone below with that branch
-(`git clone --branch NAME` and `bin/install --branch NAME`). Otherwise, when the
-request does not name a branch or source install, check the official GitHub
-releases for the latest published version at or above 1.0.0 (compared by
-semantic version, excluding GitHub drafts and prereleases). If one exists, follow
-[Install a published release](#install-a-published-release). If the lookup
-succeeds with no suitable release, install from source only when the user
-already allowed that fallback; otherwise ask and wait (do not clone). If the
-lookup fails, report it as unverified and ask before falling back to source.
+(`git clone --branch NAME` and `bin/install --branch NAME`). When the request
+asks for a source install (without naming a branch), follow the source clone
+below. Otherwise, when the request does not name a branch or source install,
+check the official GitHub releases for the latest published version at or above
+1.0.0 (compared by semantic version, excluding GitHub drafts and prereleases).
+If one exists, follow [Install a published release](#install-a-published-release).
+If the lookup succeeds with no suitable release, install from source only when
+the user already allowed that fallback; otherwise ask and wait (do not clone).
+If the lookup fails, report it as unverified and ask before falling back to
+source.
 
-Only after a named-branch request or after the rules above allow a source
-install: review the source and installer, then clone into a directory outside
-the project repositories the user works in:
+Only after a named-branch request, an explicit source-install request, or after
+the rules above allow a source fallback: review the source and installer, then
+clone into a directory outside the project repositories the user works in:
 
 ```bash
 umask 022

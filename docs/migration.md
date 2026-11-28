@@ -109,8 +109,9 @@ Preview a migration of this repository's shared pilot settings using the migrati
   [pilot changelog](https://github.com/shakacode/shaka/blob/b11f2f7d0d0cf3c7dd9ca78760a7a8c1eac708cb/CHANGELOG.md#removed).
   The preview identifies work you need to do before applying the conversion.
 
-Review the settings PR and its checks. For incompatible pilot keys, finish
-running affected tasks and hold new ones before merging, then switch with the
-verified-checkout prompt under
+Review the settings PR and its checks. Whenever any installation in use would
+reject the merged contract (renamed keys, dropped command-path mappings, or
+other validation failures), finish running affected tasks and hold new ones
+before merging, then switch with the verified-checkout prompt under
 [keep a tested release](manual-installation.md#keep-a-tested-release) once the
 merged commit passes.

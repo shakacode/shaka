@@ -6,13 +6,13 @@ For an ordinary settings migration with an already suitable installed Shaka,
 use that trusted installed helper and skip the separate checkout and
 installation switch below (still coordinate the pause below if any installation
 in use rejects the merged contract). For a release cutover, prepare a separate
-detached tag checkout using only the clone and detach steps under
+detached tag checkout using the clone, detach, and inspection steps under
 [Install a published release](official-installation.md#install-a-published-release)
-while the previous installation stays active, and record its `HEAD` commit. Use
-the absolute path to that checkout's `skills/shaka/scripts/shaka` (or
-`ruby …\skills\shaka\scripts\shaka.rb` on native Windows) and set `SHAKA_RUBY`
-to the absolute path to Ruby 3.4 or later for each POSIX-launcher invocation of
-the target helper.
+(stop before `bin/install`) while the previous installation stays active, and
+record its `HEAD` commit. Use the absolute path to that checkout's
+`skills/shaka/scripts/shaka` (or `ruby …\skills\shaka\scripts\shaka.rb` on
+native Windows) and set `SHAKA_RUBY` to the absolute path to Ruby 3.4 or later
+for each POSIX-launcher invocation of the target helper.
 
 In this section, "the helper" is the target helper for a release cutover and
 otherwise the trusted installed helper. Run the helper's `seam migrate --root ROOT
