@@ -33,7 +33,7 @@ module Shaka
             .to_enum(:scan, CANDIDATE).map { Regexp.last_match[0] }
     end
 
-    # Highlighting splits code into elements, so tags go before the comparison.
-    def visible(html) = CGI.unescapeHTML(html.gsub(/<[^>]*>/, ''))
+    # Highlighting splits code into elements, so tags go before the comparison. The text is only compared, never output.
+    def visible(html) = CGI.unescapeHTML(html.split(/<[^>]*>/).join)
   end
 end
