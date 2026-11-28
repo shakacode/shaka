@@ -340,7 +340,7 @@ is only its account, and the next commit can make it out of date. To check every
 the harness, the way your tests do, ask:
 
 ```text
-Make our verification harness part of Shaka validation for every PR, so a harness failure fails validation
+Make our verification harness part of Shaka validation for every PR, so a harness failure fails validation and its screenshots and logs are saved outside the repository
 ```
 
 The agent adds the harness to your `validate` script, and to `validate-local` if you have
