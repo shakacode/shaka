@@ -160,7 +160,8 @@ once Auto's gates pass. The label covers the PR, not one commit, so later pushes
 Remove it before the agent submits the merge to take the choice back. On a merge-queue
 branch, a PR already queued stays queued until you remove it from the queue. `shaka merge
 --auto --label-approval` counts the label only when the PR's events show that the last
-account to add it has write access now. When the agent hands a PR back with
+account to add it has write access now. It trusts the account, not who clicked, so an agent
+working under your account could add it; only you should. When the agent hands a PR back with
 `awaiting-merge-approval`, it also tries to create `merge-approved`, with a description, if
 the repository lacks it. The label does not apply to a first-setup preview or to a PR whose
 base is neither the [`base_branch`](#base_branch) nor the default branch; both stay Ask.
