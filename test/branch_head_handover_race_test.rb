@@ -19,6 +19,7 @@ class BranchHeadHandoverRaceTest < Minitest::Test
     assert_includes last_comment, 'did not take effect'
     assert_paused 'taken_over', @teammate
     assert_paused nil, third
+    assert_nil Shaka::BranchHead::OwnerTag.recorded(@teammate)
   end
 
   # A second release made against the original owner lands after the PR changed hands, and changes nothing.
@@ -50,6 +51,19 @@ class BranchHeadHandoverRaceTest < Minitest::Test
 
     assert_equal 'released', release(@task, 'origtag', sha)['state']
     refute_includes @github.comments.first['body'], 'did not take effect'
+  end
+
+  # The pickup comment is stored and then the command dies; a retry with the same tag finishes without posting again.
+  def test_a_pickup_interrupted_after_posting_can_be_finished
+    released_task
+    teammate_clone
+    @github.after_post = -> { raise Shaka::Error, 'interrupted' }
+    assert_raises(Shaka::Error) { pickup(@teammate, 'newtag') }
+    posted = @github.comments.size
+
+    assert_equal 'picked_up', pickup(@teammate, 'newtag')['state']
+    assert_equal posted, @github.comments.size
+    assert_paused nil, @teammate
   end
 
   private

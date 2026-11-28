@@ -112,7 +112,7 @@ phases:
         After a successful rename, read back the actual title and refresh the owning
         unfinished PR's WIP Details before ending the turn, following the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
-      - Before writing to an unfinished PR, whether resuming or adopting it, follow the
+      - Before writing to an unfinished PR, whether resuming, adopting, releasing, or picking it up, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
       - Record a named initial return point after an unambiguous initiating instruction,
         following [return points](<{{package_root}}/skills/shaka/references/return-points.md>).

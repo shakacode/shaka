@@ -24,6 +24,14 @@ module Shaka
         raise Error, "Cannot record #{key(root)}: #{error.strip}" unless status.success?
       end
 
+      # Puts back the tag a checkout had before a pickup that did not count; nil removes it.
+      def restore(root, tag)
+        return record(root, tag) if tag
+
+        _output, error, status = config(root, '--unset-all', key(root))
+        raise Error, "Cannot clear #{key(root)}: #{error.strip}" unless status.success? || status.exitstatus == 5
+      end
+
       # The checked-out branch, which `branch check` requires to be the PR head branch.
       def branch(root)
         output, error, status = git(root, 'symbolic-ref', '--quiet', 'HEAD')

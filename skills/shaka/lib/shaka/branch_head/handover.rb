@@ -44,8 +44,18 @@ module Shaka
         return own(before['url']) if holds?(before) && OwnerTag.recorded(@root) == @tag
 
         refuse_pickup(before, pull, override)
+        claim(before, override)
+      end
+
+      # The tag is recorded before posting, so a pickup that counts is never left unrecorded if a later step fails;
+      # a pickup that did not count gives the checkout its earlier tag back.
+      def claim(before, override)
+        earlier = OwnerTag.recorded(@root)
+        OwnerTag.record(@root, @tag)
         lead = override ? 'Took over this PR as a maintainer override.' : 'Picked up this PR.'
-        outcome(post(lead, { 'New owner' => "`#{@tag}`" }, mark(before, 'pickup', override)))
+        result = outcome(post(lead, { 'New owner' => "`#{@tag}`" }, mark(before, 'pickup', override)))
+        OwnerTag.restore(@root, earlier) unless result['state'] == 'picked_up'
+        result
       end
 
       private
