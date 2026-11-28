@@ -113,8 +113,8 @@ as the cause, and CodeRabbit kept asking for changes on GitHub.
 - `Validate` on PRs ran 878 times, and 36 runs ended failed (4.1%).
 - None of the 32 hosted review failures said anything about the code.
 - Cancelled runs are excluded. A new push on a branch cancels its older runs.
-- The `Windows` workflow had no failed attempts. Its job continues on error, so a
-  green run does not show that the Windows checks passed.
+- The `Windows` workflow had no failed attempts. Its job continued on error then, so a
+  green run did not show that the Windows checks passed.
 
 ## What hosted Claude review led to
 
