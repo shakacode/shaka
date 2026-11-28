@@ -1166,7 +1166,7 @@ in its summary, decisions, checkpoint next action, intent fields (including
 review focus reasons and the task understanding), verification summary and gaps,
 risk record summary, and sections. The lines Shaka adds, such as the links line,
 metrics, field labels, publisher note, and the risk text that grows with the risk
-rating, do not count, so the same text fits at every rating.
+rating, do not count, so the same text fits the length limits at every rating.
 
 Shaka counts those words exactly as the agent wrote them, without reading the
 Markdown, so the count is predictable and the same when GitHub declines to render.

@@ -515,7 +515,7 @@ phases:
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Point reviewers to the code instead of retelling it: the description links the walkthrough,
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.
-        `description` and `walkthrough` refuse visible prose past the trusted
+        `description` and `walkthrough` refuse prose past the trusted
         [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits), so pass `--ref` to both.
         On a refusal, rewrite the text,
         publish again, and note the refusal in the description's review history details.
