@@ -69,34 +69,21 @@ module Shaka
         end
       end
 
-      # Clone and fetch fail alike when origin lacks the branch and when Git cannot reach origin. ls-remote tells
-      # them apart by its exit status and the exact ref it lists, because Git's wording changes with version and
-      # locale. When origin has the branch, the failure is neither, so Git's own message stands.
+      # Clone and fetch fail the same way for a misspelled branch and an unreachable repository, and Git's wording
+      # changes with version and locale, so the refusal names both causes and the ls-remote command that shows
+      # which one it is. That command runs where Git ran, so a relative repository path names the same repository,
+      # and -- keeps a repository that starts with a hyphen from being read as an option.
       def reaching(remote)
         yield
-      rescue ArgumentError => e
-        raise ArgumentError, remote_refusal(remote) || e.message
-      end
-
-      # The printed check runs where the probe ran, so a relative repository path names the same repository,
-      # and -- keeps a repository that starts with a hyphen from being read as an option.
-      def remote_refusal(remote)
-        ref = "refs/heads/#{@branch}"
-        output, _, status = run_git('ls-remote', '--exit-code', '--heads', '--', remote, ref)
-        # The pattern also matches longer names that end in it, such as refs/heads/x/refs/heads/main.
-        return if status.success? && output.lines.any? { it.chomp.end_with?("\t#{ref}") }
-
-        list = Refusal.command('git', '-C', @root, 'ls-remote', '--heads', '--', Refusal.url(remote))
-        return missing_branch(list) if status.success? || status.exitstatus == 2
-
-        Refusal.message('Installation could not download Shaka', "Git could not reach #{Refusal.url(@repository)}",
-                        "run #{list} to check the network and access, then run this command again")
-      end
-
-      def missing_branch(list)
+      rescue ArgumentError
         shown = Refusal.url(@repository)
-        Refusal.message("Installation branch #{@branch} is not on #{shown}", "#{shown} has no branch #{@branch}",
-                        Refusal.decide('which branch to install', 'to list its branches', list))
+        list = Refusal.command('git', '-C', @root, 'ls-remote', '--heads', '--', Refusal.url(remote))
+        raise ArgumentError, Refusal.message(
+          "Installation could not get branch #{@branch} from #{shown}",
+          'Git could not download it; the branch may not exist there, or the repository may be unreachable',
+          Refusal.decide('which branch to use or how to restore access',
+                         'to list its branches or see why it cannot be reached', list)
+        )
       end
 
       def git(*)
