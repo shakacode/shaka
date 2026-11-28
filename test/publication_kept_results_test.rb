@@ -18,7 +18,12 @@ module KeptResultsFixture
 
   def current_line(head) = published_line(head).sub(' (exit 0)', '')
 
-  def body(head, gate = published_line(head)) = "before\n<!-- shaka:begin -->\n#{gate}\n<!-- shaka:end -->"
+  # The helper puts the line, and any setup gaps, under the heading, and the line alone first in the fold.
+  def body(head, gate = published_line(head), gaps = nil)
+    section = ['## Verification', gate, *gaps].join("\n\n")
+    fold = "<details>\n<summary>Evidence and limitations</summary>\n\n#{gate}\n\n</details>"
+    "before\n<!-- shaka:begin -->\n#{section}\n\n#{fold}\n<!-- shaka:end -->"
+  end
 
   def prepare(root, ref, options, body:, head_repository: REPOSITORY)
     pull = { 'changed_files' => 0, 'body' => body, 'base' => { 'sha' => ref },
@@ -86,7 +91,7 @@ class PublicationKeptResultsTest < Minitest::Test
   def test_the_kept_line_survives_another_republish_unchanged
     with_checkout do |root, ref|
       first = Shaka::VerificationLine.render(prepare(root, ref, {}, body: body(ref)).verdict, URL)
-      second = prepare(root, ref, {}, body: "<!-- shaka:begin -->\n#{first}\n<!-- shaka:end -->")
+      second = prepare(root, ref, {}, body: body(ref, *first.split("\n\n")))
       assert_equal first, Shaka::VerificationLine.render(second.verdict, URL)
     end
   end
@@ -107,7 +112,7 @@ class PublicationKeptResultsTest < Minitest::Test
   def test_setup_gaps_stay_with_the_kept_line
     with_checkout do |root, ref|
       gaps = '**Setup gaps:** 1 of 2 configured reviewers completed.'
-      settings = prepare(root, ref, {}, body: body(ref, "#{published_line(ref)}\n\n#{gaps}"))
+      settings = prepare(root, ref, {}, body: body(ref, published_line(ref), gaps))
       assert_includes Shaka::VerificationLine.render(settings.verdict, URL), gaps
     end
   end

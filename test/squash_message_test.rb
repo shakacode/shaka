@@ -56,6 +56,34 @@ class SquashMessageTest < Minitest::Test
     end
   end
 
+  def test_every_pr_number_but_the_prs_own_is_listed_for_the_agent_to_judge
+    body = "Ends the bullets #1242 had.\n\n- See #12, owner/repo#3, and #1242.\n\nFixes #7"
+
+    assert_equal({ 'squash_message_references' => { 'references' => ['#6', '#1242', '#12', 'owner/repo#3', '#7'],
+                                                    'guidance' => Shaka::SquashMessage::REFERENCE_GUIDANCE } },
+                 squash(title: 'Revert #6 (#42)', body:).reference_check)
+  end
+
+  def test_the_prs_own_number_with_its_repository_is_not_listed
+    body = 'Follows (...Owner/Repo#42), See...owner/repo#42, #17&other/repo#42, café#17.'
+    message = Shaka::SquashMessage.new({ 'title' => 'T', 'body' => body }, number: 42, repository: 'owner/repo')
+
+    assert_equal ['#17', 'other/repo#42'], message.reference_check.dig('squash_message_references', 'references')
+  end
+
+  def test_numbers_beside_urls_and_slashes_are_listed
+    body = "See https://x.test/notes—#1242.\n\nCompare #7/#8 and https://x.test/notes/#9."
+
+    assert_equal ['#1242', '#7', '#8', '#9'],
+                 squash(body:).reference_check.dig('squash_message_references', 'references')
+  end
+
+  def test_a_body_without_other_numbers_needs_no_check
+    body = "Ends the bullets.\n\nIssue&#39;s a#1 at https://x.test/notes"
+
+    assert_empty squash(body:).reference_check
+  end
+
   def test_a_multiline_or_missing_title_is_refused
     assert_raises(Shaka::Error) { squash(title: "One\nTwo") }
     assert_raises(Shaka::Error) { squash(title: ' ') }
