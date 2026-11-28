@@ -22,8 +22,7 @@ for, and what done looks like before coding. Correct any mismatch in chat. It wa
 to five minutes for a reply when your coding tool can wake it after a delay, and keeps
 reading meanwhile; no reply means it continues. When it restated the goal, the PR
 records whether you confirmed it, and the default final checkpoint, when it runs,
-compares the result with it. The agent asks when
-it needs your decision.
+compares the result with it. The agent asks when it needs your decision.
 
 ## Choose a merge policy
 
