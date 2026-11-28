@@ -90,7 +90,10 @@ An installation older than a key, an option, or a nested shape refuses the whole
 file, so every task on it stops. Whether a teammate's installation is that old cannot be
 checked from the repository, so list the update on every settings PR that adds or changes
 a setting's value. A change that only removes keys, or writes no setting, such as one that
-edits only a prompt file or a comment, lists none.
+edits only a prompt file or a comment, lists none unless the pre-merge pause above applies
+because an installation in use would reject the merged contract or compatibility is
+unknown; then list the same `after merge` update or switch row so the description names
+who must recover and how to verify readiness.
 
 Date each new key and each new named option, such as a new choice for a setting, by
 searching the saved helper's source for the key's heading or the option:

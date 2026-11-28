@@ -72,36 +72,15 @@ reported errors. When every project passes, switch with the verified-checkout pr
 <details>
 <summary>Run the checks from a terminal</summary>
 
-Prepare a branchless detached release checkout (no local branch refs):
+Ask your agent to prepare a branchless detached checkout of the target release
+using the Install a published release procedure (clone, detach, and inspect
+only; keep the current installation), then run the team or individual
+compatibility checks from that checkout. On native Windows, have it launch the
+helper with `ruby …\skills\shaka\scripts\shaka.rb`.
 
-```bash
-(
-  set -euo pipefail
-  umask 022
-  test ! -e DIR
-  git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
-  git -C DIR fetch --quiet origin tag "v1.0.0"
-  git -C DIR checkout --detach "refs/tags/v1.0.0"
-  git -C DIR for-each-ref --format='%(refname:lstrip=2)' refs/heads/ | while read -r name; do
-    git -C DIR branch -D "$name"
-  done
-)
+```text
+Prepare a branchless detached checkout of Shaka 1.0.0 for the compatibility checks in docs/migration.md. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the team and individual seam checks against this project's verified default-branch commit
 ```
-
-On Windows, run this block in Git Bash (or another POSIX shell) and add
-`--config core.autocrlf=false --config core.eol=lf` to the `git clone`. Confirm
-`git -C DIR for-each-ref --format='%(refname)' refs/heads/` is empty, then
-record `git -C DIR rev-parse HEAD` so the later switch can reuse this checkout.
-Use `DIR/skills/shaka/scripts/shaka` as the helper, or on native Windows
-PowerShell or cmd run `ruby DIR\skills\shaka\scripts\shaka.rb`. Set `SHAKA_RUBY`
-to the absolute path to Ruby 3.4 or later when you use the POSIX launcher. Use
-the project's verified default-branch commit for `DEFAULT_SHA`.
-
-- For team settings, run the helper with `seam check --root PROJECT --ref DEFAULT_SHA`
-  in a clean checkout at that commit. Confirm it reports `trusted/ref` for the same SHA.
-- For individual settings, run the helper with `seam private check --root PROJECT --ref DEFAULT_SHA`
-  against the local copy that has those settings. The result reports any setting
-  or wrapper that needs attention.
 
 </details>
 
