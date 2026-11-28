@@ -64,6 +64,8 @@ To refresh Shaka configuration for the installed version, which regenerates
 
 1. Read the current value with `configure settings --ref`. Before editing, tell the
    maintainer whether installations must update after merge, as the next section says.
+   For a change to trust, review, or merge policy, first render the trusted workflow with the
+   saved helper's `workflow` command and settle the policy as its Plan step describes.
 2. Start a branch from the fresh default branch. Edit the file the report names as
    `config_path`, keeping its comments. Set only the keys the change needs.
 3. Show the result with `configure settings --root DIR --local`, and with `prompt show
