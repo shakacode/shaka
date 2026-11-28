@@ -14,6 +14,7 @@ class PublishedResultsTest < Minitest::Test
   BLIND = CODEX.merge('commands' => { 'ran' => 3, 'succeeded' => 0, 'sandbox_failed' => 3 }).freeze
   LINE = '**Validation and review:** `validate` passed; local review by openai/codex at `abcdef1`.'
   REVIEW_URL = 'https://github.com/shakacode/shaka/pull/1#issuecomment-2'
+  PLACEHOLDER = 'Agent `placeholder` text.'
   GAP = '**Setup gaps:** `openai/codex` could not start its sandbox, so it reviewed only the diff'
   # A list carried from the published body renders between the Verification section and the fold.
   COMMENTS = "<!-- shaka:human-comments -->\n## Human comments\n\n1 comment · read at `abcdef1`\n\n" \
@@ -42,20 +43,21 @@ class PublishedResultsTest < Minitest::Test
     assert read(render(VALIDATE, BLIND, comments: true)).fetch('kept_gaps').start_with?(GAP)
   end
 
+  # Since #1344 description refuses agent text that copies these lines; bodies published earlier may hold them.
   def test_a_summary_worded_like_the_line_is_never_kept
-    assert_nil read(render(summary: LINE))
+    assert_nil read(render(summary: PLACEHOLDER).sub(PLACEHOLDER, LINE))
   end
 
   def test_a_check_worded_like_the_line_is_never_kept
-    assert_nil read(render(checks: [LINE]))
+    assert_nil read(render(checks: [PLACEHOLDER]).sub(PLACEHOLDER, LINE))
   end
 
   # A details item renders inside the fold after the helper's own line, so the real fold decides.
   def test_a_details_item_titled_like_the_fold_cannot_supply_the_line
-    item = { 'summary' => 'Evidence and limitations', 'body' => LINE }
+    item = { 'summary' => 'Evidence and limitations', 'body' => PLACEHOLDER }
 
-    assert_nil read(render(details: [item]))
-    kept = read(render(VALIDATE, BLIND, details: [item]))
+    assert_nil read(render(details: [item]).sub(PLACEHOLDER, LINE))
+    kept = read(render(VALIDATE, BLIND, details: [item]).sub(PLACEHOLDER, LINE))
     assert_equal LINE, kept.fetch('kept_line')
     assert kept.fetch('kept_gaps').start_with?(GAP)
   end
@@ -71,7 +73,7 @@ class PublishedResultsTest < Minitest::Test
   # Without real gaps the agent's summary follows the line; only the helper's whole gap sentence counts.
   def test_a_summary_worded_like_a_gap_is_not_kept_as_one
     summary = '**Setup gaps:** 1 of 2 configured reviewers completed, see `x`.'
-    kept = read(render(FAILED, CODEX, summary:))
+    kept = read(render(FAILED, CODEX, summary: PLACEHOLDER).sub(PLACEHOLDER, summary))
 
     assert kept.fetch('kept_line').start_with?('**Validation and review:** `validate` failed (exit 1)')
     assert_nil kept.fetch('kept_gaps')

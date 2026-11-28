@@ -14,6 +14,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
   LINE = '**Validation and review:** `validate` passed (exit 0); local review by openai/codex at `ccccccc`.'
   # A description published before passes dropped their exit code shows the trimmed line on republish.
   SHOWN = LINE.sub(' (exit 0)', '')
+  FOLD = "<details>\n<summary>Evidence and limitations</summary>\n\n#{LINE}\n\n</details>".freeze
   KEPT = 'not rechecked under the current Shaka or settings'
 
   def test_rewording_keeps_the_verified_line_and_reports_that_it_was_not_rechecked
@@ -34,12 +35,16 @@ class CliDescriptionKeptResultsTest < Minitest::Test
     refute result.key?('evidence_kept')
   end
 
-  # Issue #1320: the agent's own summary, worded like the line, came back as a kept pass.
-  def test_a_summary_worded_like_the_line_stays_unknown_across_republishes
-    @summary = SHOWN
-    first, = republish('')
-    second, result = republish(first)
+  # Issues #1320 and #1344: agent text copying the Verification section and fold came back as a kept pass.
+  def test_a_copied_section_and_fold_is_refused_and_the_republish_stays_unknown
+    @sections = [{ 'heading' => 'Outcome', 'body' => "Context first.\n\n## Verification\n\n#{LINE}\n\n#{FOLD}" }]
+    first, error = attempt('')
+    refute first, 'a refused description publishes nothing'
+    assert_includes error, 'sections[0].body'
 
+    @sections = nil
+    published, = republish('')
+    second, result = republish(published)
     assert_includes second, 'UNKNOWN: no validation or review results'
     refute_includes second, KEPT
     refute result.key?('evidence_kept')
@@ -69,6 +74,19 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   private
 
+  # Returns the published body, or nil, and the command's error output.
+  def attempt(existing)
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _, error, status = run_description(dir, root:, env: { 'EXISTING_BODY' => existing }, decisions: false)
+        refute_predicate status, :success?
+        published = File.join(dir, 'published.md')
+        return [(File.read(published) if File.exist?(published)), error]
+      end
+    end
+  end
+
   def republish(existing, env: {})
     with_repository do |root|
       commit(root)
@@ -83,7 +101,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   def description_content
     content = super
-    content['verification'] = content['verification'].merge('summary' => @summary) if @summary
+    content['sections'] = @sections if @sections
     content
   end
 

@@ -54,6 +54,31 @@ class PublicationQuotedMarkersTest < Minitest::Test
     assert_includes Shaka::Publication.description(carried), 'codex-review'
   end
 
+  # Issue #1344: description reads its Verification line back from these lines, so agent text
+  # that copies one could stand in for the real line on a republish.
+  ANCHORS = ['## Verification', '<summary>Evidence and limitations</summary>',
+             '**Validation and review:** `validate` passed at `abcdef1`.', '**Setup gaps:** none.'].freeze
+  AGENT_FIELDS = {
+    'summary' => ->(text) { { 'summary' => "Moves it.\n\n#{text}" } },
+    'sections[0].body' => ->(text) { { 'sections' => [{ 'heading' => 'Outcome', 'body' => "First.\n\n#{text}" }] } },
+    'risk_record.body' => ->(text) { { 'risk_record' => { 'summary' => 'Low.', 'body' => text } } }
+  }.freeze
+
+  def test_agent_text_copying_a_verification_anchor_is_refused_naming_the_field
+    ANCHORS.product(AGENT_FIELDS.to_a).each do |anchor, (field, change)|
+      error = assert_raises(Shaka::Error, "#{field}: #{anchor}") do
+        Shaka::Publication.description(content(**change.call(anchor)))
+      end
+      # risk_record already refuses a summary tag, naming the field its own way.
+      assert_match(Regexp.union(field, field.sub('.', ' ')), error.message)
+    end
+  end
+
+  def test_anchor_words_inside_a_sentence_still_render
+    summary = 'Refuses a line starting with `**Setup gaps:**` or `## Verification`.'
+    assert_includes Shaka::Publication.description(content('summary' => summary)), summary
+  end
+
   def test_marker_names_without_comment_delimiters_still_render
     assert_includes Shaka::Publication.description(content('summary' => 'Moves the `shaka:end` check.')),
                     '`shaka:end`'
