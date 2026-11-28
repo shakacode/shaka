@@ -66,8 +66,8 @@ Name any other projects you want checked. Your agent uses the target release in 
 separate checkout to check the settings and confirm the command wrapper files are
 executable. The preview leaves wrapper execution to your normal task checks. If
 an individual setup fails, keep the current installation while you review the
-reported errors. When every project passes, switch to the verified `1.0.0` checkout
-you checked using [keep a tested release](manual-installation.md#keep-a-tested-release).
+reported errors. When every project passes, switch with the verified-checkout prompt under
+[keep a tested release](manual-installation.md#keep-a-tested-release).
 
 <details>
 <summary>Run the checks from a terminal</summary>
@@ -100,7 +100,7 @@ Preview a migration of this repository's shared pilot settings using the migrati
   The preview identifies work you need to do before applying the conversion.
 
 Review the settings PR and its checks. For incompatible pilot keys, finish
-running affected tasks and hold new ones before merging, then switch to the
-verified `1.0.0` checkout you checked using
+running affected tasks and hold new ones before merging, then switch with the
+verified-checkout prompt under
 [keep a tested release](manual-installation.md#keep-a-tested-release) once the
 merged commit passes.

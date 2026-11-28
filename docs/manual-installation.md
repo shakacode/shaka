@@ -122,10 +122,17 @@ Keep my current version available for rollback
 ```
 
 If no suitable stable release is available, ask the agent to explain the official
-installation options before choosing one. When switching after a compatibility
-check, replace `the latest published stable Shaka release` with the exact version
-and verified checkout you checked. A release stays at its recorded commit.
+installation options before choosing one. A release stays at its recorded commit.
 The installer can keep the earlier version available while it moves the skill links.
+
+After a compatibility check, switch with the verified checkout you checked:
+
+```text
+Install Shaka 1.0.0 from the verified checkout DIR I just used for the settings preview.
+Keep my current version available for rollback
+```
+
+Replace `1.0.0` and `DIR` with the version and absolute path from that preview.
 
 ## Verify and update
 

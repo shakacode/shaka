@@ -15,9 +15,9 @@ Otherwise, when the request does not name a branch or source install, check the
 official GitHub releases for the latest published version at or above 1.0.0
 (compared by semantic version, excluding GitHub drafts and prereleases). If one
 exists, follow [Install a published release](#install-a-published-release). If
-the lookup succeeds with no suitable release, install from source unless the
-user asked for a published release only. If the lookup fails, report it as
-unverified and ask before falling back to source.
+the lookup succeeds with no suitable release, install from source when the user
+allowed that fallback. If the lookup fails, report it as unverified and ask
+before falling back to source.
 
 Review the source and installer, then clone into a directory outside the
 project repositories the user works in:
@@ -97,6 +97,12 @@ installer rejects release checkouts that keep a local branch such as `main`):
 git clone --no-checkout --branch "vVERSION" -- https://github.com/shakacode/shaka.git DIR
 git -C DIR checkout --detach "refs/tags/vVERSION"
 ```
+
+On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the
+`git clone`, as in the source-install path above, or the installer refuses the
+checkout because Git converted its line endings. From PowerShell or cmd, start
+the installer as `ruby DIR\bin\install`, since Windows cannot run the
+extensionless script.
 
 Confirm `git -C DIR branch --list` is empty, inspect the checked-out files, and
 record `git -C DIR rev-parse HEAD` if you are previewing a release cutover. For
