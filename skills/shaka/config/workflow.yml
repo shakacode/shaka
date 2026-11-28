@@ -1097,7 +1097,7 @@ always: |-
   run `handover status --root DIR --pr OWNER/REPO#NUMBER` at those points and continue on `holds`.
   On `released` or `taken_over`, stop this chat's monitors and leave the branch and PR alone; the
   takeover procedure's `handover release` and `handover pickup` are the PR writes these states allow,
-  and a maintainer's `handover pickup --override` may also run from an `unrecorded` checkout.
+  and `handover pickup` may also run from the `unrecorded` checkout it is about to take over.
   Reconcile a `moved` or
   `unrecorded` head with local work, record it with `branch accept --root DIR --head SHA`, and
   rerun head-specific validation and review. Accepting a head transfers no ownership; the

@@ -85,6 +85,17 @@ class BranchHeadHandoverTest < Minitest::Test
     assert_paused 'taken_over', third
   end
 
+  def test_pickup_needs_the_local_branch_at_the_pr_head
+    released_task
+    teammate_clone
+    commit(@task, 'newer')
+    git(@task, 'push', '--quiet', 'origin', BRANCH)
+    posted = @github.comments.size
+
+    assert_raises(Shaka::Error) { pickup(@teammate, 'newtag') }
+    assert_equal posted, @github.comments.size
+  end
+
   def test_pickup_needs_the_pr_branch_on_origin
     released_task
     teammate_clone

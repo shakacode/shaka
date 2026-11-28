@@ -6,7 +6,7 @@ require_relative '../error'
 
 module Shaka
   class BranchHead
-    # Who owns an unfinished PR, read from the release and pickup comments `branch release|pickup` post on it.
+    # Who owns an unfinished PR, read from the release and pickup comments `handover release|pickup` post on it.
     # Each comment names the deciding comment it saw (`after`), and counts only if that is still the deciding one,
     # so of two writes made against the same state, the one GitHub stores first wins and the other changes nothing.
     # A release counts from the account holding the PR, a pickup only after a release, and a maintainer release or
@@ -22,7 +22,7 @@ module Shaka
 
       GUIDANCE = {
         'released' => "The PR was released for pickup. Stop this chat's monitors, keep local work, and leave the " \
-                      'branch and PR alone. Continue only after `branch pickup` makes this checkout the owner.',
+                      'branch and PR alone. Continue only after `handover pickup` makes this checkout the owner.',
         'taken_over' => "Another owner picked up this PR. Stop this chat's monitors, keep local work, leave the " \
                         'branch and PR alone, and report the local work to the user.'
       }.freeze

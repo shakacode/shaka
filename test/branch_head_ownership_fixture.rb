@@ -5,7 +5,7 @@ require 'shaka/branch_head/handover_command'
 require 'shaka/branch_head/command'
 require_relative 'branch_head_fixture'
 
-# A PR's comments held in memory, answering the gh calls Ownership and `branch --pr` make, so release and pickup
+# A PR's comments held in memory, answering the gh calls `shaka handover` makes, so release and pickup
 # run against real Git checkouts without the network. `as` names the account the next comments come from.
 module BranchHeadOwnershipFixture
   include BranchHeadFixture

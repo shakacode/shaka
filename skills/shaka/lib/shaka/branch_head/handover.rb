@@ -16,7 +16,7 @@ module Shaka
       RELEASED = 'Released. End this task, and report the release link and any local work left behind.'
       LOST = 'The pickup did not count: another came first, or this account cannot override. Leave the branch ' \
              'and PR alone and tell the user who owns it.'
-      UNSEEN = 'GitHub does not list the comment yet, so whether it counted is unknown. Run `branch check --pr` ' \
+      UNSEEN = 'GitHub does not list the comment yet, so whether it counted is unknown. Run `handover status` ' \
                'before anything else.'
 
       def initialize(head, ownership, content, root)
@@ -93,11 +93,11 @@ module Shaka
                        'confirms the task is abandoned.'
         end
         branch = OwnerTag.branch(@root)
-        live = @head.check['live']
-        return if branch == pull['branch'] && live && live == pull['head']
+        check = @head.check
+        return if branch == pull['branch'] && [check['live'], check['local']].all?(pull['head'])
 
-        raise Error, "Cannot pick up from this checkout: origin/#{branch} is at #{live || 'nothing'}, but the PR " \
-                     "head is #{pull['branch']} at #{pull['head']}."
+        raise Error, "Cannot pick up from this checkout: #{branch} is at #{check['local']} and origin/#{branch} at " \
+                     "#{check['live'] || 'nothing'}, but the PR head is #{pull['branch']} at #{pull['head']}."
       end
 
       def mark(before, event, maintainer, head = nil)

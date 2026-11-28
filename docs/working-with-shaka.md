@@ -144,16 +144,16 @@ reports who owns the PR and stops. Only comments from accounts with write access
 
 If the previous owner cannot release the PR, a maintainer (an account with the
 maintain or admin role) can do it for them. The release then says their unpushed work
-is unknown. A maintainer can also take over an unreleased PR after confirming the
+is unknown unless the maintainer reports it. A maintainer can also take over an unreleased PR after confirming the
 previous agent has stopped:
 
 ```text
 /shaka take over https://github.com/OWNER/REPO/pull/N because the previous agent has stopped
 ```
 
-After a release or pickup, the old chat stops at its next turn, even when a monitor
-wakes it. It keeps its local work, leaves the branch and the PR alone, and tells you
-what it held.
+The old chat checks ownership at the start of each turn, even when a monitor wakes it.
+After a release or pickup, it keeps its local work, leaves the branch and the PR alone,
+and tells you what it held. Once the new owner pushes, the old chat's push is refused too.
 
 You can push to the agent's branch yourself. At its next turn or push, the agent notices,
 stops editing and publishing, and tells you. It combines your commits with its own before it
