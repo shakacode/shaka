@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'attention'
+require_relative 'merge_approval_label'
 require_relative 'merge_wait_review'
 require_relative 'status'
 
@@ -23,7 +24,8 @@ module Shaka
       verify_same_target!(reviewed, snapshot)
       RequiredChecks.verify_passing!(snapshot['requiredChecks'])
       Attention.new(@github).call(state: 'merge', expected: snapshot)
-               .merge('review' => review, **snapshot.slice('readOver', 'unknownFields'))
+               .merge('review' => review, **snapshot.slice('readOver', 'unknownFields'),
+                      'merge_approval_label' => MergeApprovalLabel.new(@github).ensure_repository_label)
     end
 
     private

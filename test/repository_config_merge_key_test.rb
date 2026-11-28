@@ -71,4 +71,16 @@ class RepositoryConfigMergeKeyTest < Minitest::Test
       assert_includes error.message, 'duplicate key: base_branch'
     end
   end
+
+  # Deep nesting would overflow Ruby's stack in Psych (issue #1354); the refusal names the file instead.
+  def test_rejects_deep_nesting_with_a_shaka_error
+    with_repository do |root|
+      path = File.join(root, '.agents/shaka/config.yml')
+      File.write(path, "#{File.read(path)}deep: #{'[' * 3000}#{']' * 3000}\n")
+
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, '.agents/shaka/config.yml nests deeper than'
+    end
+  end
 end

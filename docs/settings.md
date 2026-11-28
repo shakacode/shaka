@@ -161,6 +161,22 @@ approvals still apply. `Go` starts work; it is not merge consent. Ruby checks
 readiness; the agent establishes your task-scoped authority. See
 [merge policy](working-with-shaka.md#choose-a-merge-policy).
 
+To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub,
+then resume the agent that owns the PR; the label alone does not wake it. The agent merges
+once every Auto gate passes, and later pushes keep your choice.
+
+- **Take it back:** remove the label. The agent checks it just before merging, so a removal in
+  the last moment may come too late, and a PR already in a merge queue stays queued.
+- **Who counts:** the label counts only when the last account to add it has write access. It
+  trusts the account, not who clicked, so an agent working under your account could add it;
+  only you should.
+- **Where it applies:** not to a first-setup preview, a task you told to use Ask, or a PR whose
+  base is neither the [`base_branch`](#base_branch) nor the default branch; those stay Ask.
+
+When the agent asks you to approve a merge in a repository without the label, it tries to
+create `merge-approved` with a description. If the label is still missing afterward, create it
+yourself.
+
 ## `merge.required_checks`
 
 **Optional.** CI checks that must pass before Shaka treats a PR as ready. Use it
@@ -231,8 +247,9 @@ Shaka rejects the former `merge.auto_max_review_floor` and
 into [`high_risk_areas`](#high_risk_areas) or [`medium_risk_areas`](#medium_risk_areas).
 
 **Optional. Default: `low`.** The highest [risk](#high_risk_areas) the agent may merge without
-your approval. Each level includes the ones below it. Under `preference: ask` you approve every
-merge anyway, so this setting matters under `preference: auto`.
+your approval. Each level includes the ones below it. It applies whenever the agent merges under
+Auto, including a PR you labeled `merge-approved` under `preference: ask`; otherwise you approve
+every merge under Ask anyway.
 
 - `low` lets the agent merge only a PR whose checkpoint rates it low risk.
 - `medium` lets the agent merge a PR rated low or medium.
