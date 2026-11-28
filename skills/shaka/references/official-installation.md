@@ -153,17 +153,16 @@ Follow [Before take-over](#before-take-over) when switching from an existing
 installation. Prepare `DIR` with the clone recipe above (or reuse a verified
 preview checkout). Before take-over, confirm from outside `DIR` that
 `git -C DIR rev-parse HEAD` still matches the recorded commit and
-`git -C DIR status --porcelain --untracked-files=all` is empty. Then run:
+`git -C DIR status --porcelain --untracked-files=all` is empty. Then run take-over as
 `bin/install --take-over --directory DIR --release VERSION` (add
 `--skills-dir SKILLS_DIR` when replacing a custom-only install, and
 `--repository URL` when the destination origin differs from the previous
-installation's recorded URL):
-
-- Prefer the currently registered installer's `bin/install` when that checkout
-  already accepts `--release`.
-- When the registered installer predates `--release` (typical pilot cutover),
-  use the destination's `DIR/bin/install` after the outside cleanliness check
-  above. On Windows, start it as `RUBY DIR\bin\install` with Ruby 3.4 or later.
+installation's recorded URL). Prefer the currently registered installer's
+`bin/install` when that checkout already accepts `--release`. When it predates
+`--release` (typical pilot cutover), use the destination's `DIR/bin/install`
+after the outside cleanliness check above. On native Windows, start whichever
+installer you selected as `RUBY …\bin\install` with the absolute path to Ruby
+3.4 or later.
 
 A first installation (no take-over) still runs
 `DIR/bin/install --release VERSION --directory DIR --agent HOST` from that

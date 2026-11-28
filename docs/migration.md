@@ -73,7 +73,7 @@ reported errors. When every project passes, switch with the verified-checkout pr
 <summary>Ask your agent to run the checks</summary>
 
 ```text
-Prepare a branchless detached checkout of Shaka 1.0.0 for this project's compatibility checks. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the applicable team or individual seam check for this project's settings against its verified default-branch commit
+Prepare a branchless detached checkout of Shaka 1.0.0 for this project's compatibility checks. Keep my current installation. Use the official Install a published release clone and inspect steps, set SHAKA_RUBY to Ruby 3.4 or later for the helper (or use RUBY --disable-gems --disable-rubyopt on native Windows), then run the applicable team or individual seam check for this project's settings against its verified default-branch commit
 ```
 
 Your agent prepares the checkout, records its `HEAD`, and runs the check that
