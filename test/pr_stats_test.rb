@@ -92,6 +92,14 @@ class PrStatsTest < Minitest::Test
     assert_includes err, 'the merge time was not recorded'
   end
 
+  def test_an_unknown_merge_time_also_fails_the_command
+    block = Shaka::ThroughputStats.update(unready_block, 't3' => 'UNKNOWN')
+    github = MergedFakeGitHub.new("Intro.\n\n#{block}\n", merged_page.except('mergedAt'))
+    capture_io do
+      with_stubs(github) { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7 --ref main]) }
+    end
+  end
+
   def test_the_command_refuses_to_run_without_a_trusted_ref
     _, err = capture_io { assert_equal 1, Shaka::PrWatch::StatsCommand.run(%w[owner/repo 7]) }
     assert_includes err, '--ref SHA'

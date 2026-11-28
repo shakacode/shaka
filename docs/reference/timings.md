@@ -129,8 +129,8 @@ adds a label when it stops for you and removes it when work resumes.
   branch, including one you click on GitHub. When the description already has
   Shaka's timings, it records the merge time. It also records the ready time if
   the required checks and configured CI review passed before the merge. A check
-  rerun after the merge leaves the ready time UNKNOWN unless a watch recorded it
-  first. Other repositories do not run this workflow.
+  rerun after the merge leaves the ready time UNKNOWN unless a watch or an earlier
+  description update recorded it first. Other repositories do not run this workflow.
   When GitHub has no ready timestamp, a fork PR can keep the displayed ready
   time for the same head and mark it unverified. The description command reports
   that gap too.

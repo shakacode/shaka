@@ -42,11 +42,13 @@ module Shaka
       # A merged pull request whose stats block still lacks the merge time fails the job, so the gap is visible.
       def report(result)
         puts JSON.generate(result)
-        return 0 unless result['state'] == 'MERGED' && result['stats'] && !result['stats']['t3']
+        return 0 unless result['state'] == 'MERGED' && merge_unrecorded?(result['stats'])
 
         warn 'shaka pr stats: the merge time was not recorded.'
         1
       end
+
+      def merge_unrecorded?(stats) = stats && [nil, 'UNKNOWN'].include?(stats['t3'])
 
       def record_ready(publisher, snapshot)
         rows = snapshot['requiredChecks']
