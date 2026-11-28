@@ -202,17 +202,39 @@ and stop. Otherwise run `handoff OWNER/REPO NUMBER --root DIR --ref SHA` to read
 the live head, label, checks, and walkthrough and WIP heads, then continue. A missing
 or outdated note after a crash is a reason to inspect live state, not to abandon recovery.
 
-**Take over in a new task:** require maintainer confirmation that the previous
-owner stopped or is handing over. An idle task, old timestamp, or missing note
-is insufficient. Then, in a checkout whose `origin` holds the PR head, check it out under its
-own branch name, run `branch check`, bring the local branch up to the live head, and accept it
-with `branch accept --head SHA`. Then publish a complete note with a new owner tag before other
-work. Immediately after it, post a takeover comment with
-`reply --key takeover-OWNER_TAG` that names the new Owner and Revision and points
-to WIP Details for the rest; leave Chat link out. It grants no authority. A resume
-by the same owner posts none. Recheck checks, review, and merge authority. Inspect
-and preserve staged, unstaged, untracked, stashed, and unpushed work when the old
-checkout is reachable; record it as `UNKNOWN` when it is not.
+**Release for another owner:** when the user asks this owner to hand the PR over,
+push what should travel with it, stop this chat's monitors and `pr watch`, and run
+`attention --state none`. Then run `handover release --pr OWNER/REPO#NUMBER
+--content-file PATH` from this checkout. The content holds `identity`, `owner_tag` from
+this note's Owner, and a one-line `remaining`. The helper posts the live head, check
+counts, and the unpushed work it finds, which is `UNKNOWN` unless this checkout is the
+WIP Details Workspace. A maintainer releasing for an owner who cannot adds `--maintainer`
+and supplies `unpushed` only from what that owner reported; otherwise the release says
+`UNKNOWN`. A release that did not take effect fails
+and says so on the PR. On success the command exits 2, since this chat now stops: report
+the release link and any local work left behind, and end the task.
+
+**Pick up a released PR:** in a checkout other than the previous owner's whose `origin`
+holds the PR head, check it out under its own branch name, bring it up to the live head,
+and run `handover pickup --pr OWNER/REPO#NUMBER --content-file PATH` with `identity` and a
+new random `owner_tag`. The
+helper refuses before posting unless origin's same-named branch is at the PR head. Its
+comment announces the new owner, and the first pickup GitHub stores after the release
+wins. A `lost` result names the owner; report it and stop. On `picked_up`, accept the
+head with `branch accept --head SHA`, then publish a complete note with that owner tag
+before other work. Recheck checks, review, and merge authority. Inspect and preserve
+staged, unstaged, untracked, stashed, and unpushed work when the old checkout is
+reachable; otherwise take the release's report or record `UNKNOWN`.
+
+**Take over an unreleased PR:** require maintainer confirmation that the previous
+owner stopped. An idle task, old timestamp, or missing note is insufficient. Then
+pick it up as above with `--override` from an account with the maintain or admin role.
+
+Each comment counts only against the state it was made on, so a stale release or
+pickup changes nothing. `handover status` reads the comments and returns `released` or
+`taken_over` in a checkout that no longer holds the PR. The old chat therefore stops at
+its next turn, even when a monitor wakes it, and `branch push` refuses once the new
+owner has pushed.
 
 ### Announce the start on the issue
 
@@ -226,8 +248,8 @@ fields as WIP Details, applies `wip.include_checkout_path`, refuses a PR number,
 keys the comment by owner tag, so a rerun replaces it and a new owner posts its own.
 Post it once; after the PR exists, its WIP Details is the record.
 
-The note records state. It is not a lock or authorization, and the read/write gap
-still allows a race. Maintainer confirmation prevents competing owners.
+The note records state. It is not a lock or authorization; once a PR exists, its
+release and pickup comments decide who owns it.
 
 ## Reject an approach and restart
 

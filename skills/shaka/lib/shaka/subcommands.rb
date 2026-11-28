@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'branch_head/command'
+require_relative 'branch_head/handover_command'
 require_relative 'checkpoint'
 require_relative 'claim'
 require_relative 'companions/command'
@@ -46,6 +47,9 @@ module Shaka
       'enforcement' => entry { |arguments| Enforcement.run(arguments) },
       'evidence' => entry(Evidence::Command::ACTIONS.keys) { |arguments| Evidence::Command.run(arguments) },
       'guidance' => entry { |arguments| Guidance.run(arguments) },
+      'handover' => entry(BranchHead::HandoverCommand::OPERATIONS) do |arguments|
+        BranchHead::HandoverCommand.run(arguments)
+      end,
       'install' => entry do |arguments|
         require_relative 'install/command'
         Install::Command.new(File.expand_path('../../../..', __dir__), program: 'shaka install').run(arguments)

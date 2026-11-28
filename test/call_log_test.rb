@@ -133,6 +133,7 @@ class CallLogNamesTest < Minitest::Test
     assert_equal({ 'branch' => Shaka::BranchHead::Command::OPERATIONS,
                    'configure' => Shaka::ConfigureSettings::OPERATIONS,
                    'evidence' => Shaka::Evidence::Command::ACTIONS.keys, 'pr' => %w[watch],
+                   'handover' => Shaka::BranchHead::HandoverCommand::OPERATIONS,
                    'post-implementation' => Shaka::PostImplementation::ACTIONS, 'prompt' => Shaka::PromptShow::OPERATIONS,
                    'repos' => Shaka::Repos::OPERATIONS, 'review' => Shaka::LocalReview::ACTIONS,
                    'seam' => Shaka::Seam::OPERATIONS, 'timings' => Shaka::TimingsReport::OPERATIONS,

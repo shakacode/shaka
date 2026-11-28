@@ -118,9 +118,10 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   for the named head. It records owner, current chat name, chat link, observed activity, revision,
   workspace, unfinished work, stop reason, authority, state, and next action.
   Apply the session-link rules and `wip.include_checkout_path` setting.
-  A new owner needs maintainer confirmation of the prior owner's stop or handoff,
-  then publishes a new tag, refreshes evidence and authority, and preserves reachable
-  local work. Unreachable work stays unknown. A resumed owner that finds a transfer
+  A new owner picks up a PR its prior owner released, or takes over with maintainer
+  confirmation of the prior owner's stop; release and pickup comments on the PR decide
+  one owner. The new owner then publishes a new tag, refreshes evidence and authority,
+  and preserves reachable local work. Unreachable work stays unknown. A resumed owner that finds a transfer
   stops with local work unpushed. The note grants no authority or lock; no heartbeat,
   lease, or coordination service is added.
 
