@@ -1594,3 +1594,4 @@ installed Shaka release.
 
 Unknown keys and invalid values produce an error. Link requirements and design
 plans from `AGENTS.md`.
+<!-- scratch check for 1372 -->
