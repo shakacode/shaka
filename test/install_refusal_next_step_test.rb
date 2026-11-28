@@ -73,14 +73,23 @@ class InstallRefusalNextStepTest < Minitest::Test
     assert_includes output, 'Next: a person must decide'
   end
 
-  # A clone has no checkout to list origin's branches from, so the step lists them from the repository itself.
+  # The printed check runs from the new folder, as the clone did, so a relative repository names the same one.
   def test_a_mistyped_branch_into_a_new_folder_needs_a_person
     folder = File.join(@directory, 'new')
-    output = refusal(@root, '--directory', folder, '--repository', @remote, '--branch', 'mian', '--agent', 'claude')
+    output = refusal(@root, '--directory', folder, '--repository', '../remote.git', '--branch', 'mian',
+                     '--agent', 'claude')
     assert_includes output, 'Next: a person must decide which branch to install; to list its branches, run git'
-    assert_includes git_words_free(output), "#{@remote} has no branch mian"
+    assert_includes git_words_free(output), '../remote.git has no branch mian'
     assert_includes listed(output), 'refs/heads/main'
     installer(@root, '--directory', folder, '--repository', @remote, '--branch', 'main', '--agent', 'claude')
+  end
+
+  # The clone reads a hyphenated repository as a path, so the check after its failure must too.
+  def test_a_failed_clone_never_reads_the_repository_as_an_option
+    marker = File.join(@directory, 'ran')
+    refusal(@root, '--directory', File.join(@directory, 'new'), '--repository', "--upload-pack=touch #{marker}",
+            '--agent', 'claude')
+    refute_path_exists marker
   end
 
   def test_an_update_that_cannot_reach_origin_names_the_check
@@ -113,7 +122,7 @@ class InstallRefusalNextStepTest < Minitest::Test
 
   # Runs the ls-remote command a refusal names and returns what it lists.
   def listed(output)
-    command = output[/(git (?:-C \S+ )?ls-remote --heads \S+)/, 1]
+    command = output[/(git -C \S+ ls-remote --heads -- \S+)/, 1]
     refute_nil command, output
     listing, process = Open3.capture2e(environment, 'sh', '-c', command)
     assert_predicate process, :success?, listing
