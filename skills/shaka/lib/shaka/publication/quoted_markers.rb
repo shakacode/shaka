@@ -10,7 +10,7 @@ module Shaka
   # It reads the Verification line back the same way (issue #1344), from these lines.
   module QuotedMarkers
     MARKER = %r{<!--\s*/?shaka:[\w:.-]*}
-    ANCHOR = %r{^(?:## Verification[ \t#]*\r?$|<summary>Evidence and limitations</summary>|#{
+    ANCHOR = %r{^(?:## Verification|<summary>Evidence and limitations</summary>|#{
       Regexp.escape(VerificationLine::LABEL)}|#{Regexp.escape(VerificationLine::GAPS)})}
 
     module_function

@@ -74,9 +74,9 @@ class PublicationQuotedMarkersTest < Minitest::Test
     end
   end
 
-  # Reviewers of #1344: a CRLF ending or closing hashes slipped past the heading anchor.
+  # Reviewers of #1344: a CRLF ending, closing hashes, or more words slipped past a whole-line match.
   def test_heading_variants_are_refused
-    ["## Verification\r\nBody.", '## Verification ##'].each do |text|
+    ["## Verification\r\nBody.", '## Verification ##', '## Verification results'].each do |text|
       error = assert_raises(Shaka::Error, text.inspect) { Shaka::Publication.description(content('summary' => text)) }
       assert_includes error.message, 'summary'
     end
