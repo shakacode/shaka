@@ -18,13 +18,14 @@ module Shaka
     # A block builds the body from the pull request it replaces, using this same read. With `deferred`, a
     # refused renderer moves the checks to the rendering GitHub stores, and a failing write is undone.
     # `writer`, called after the block, gives the four-field identity line that signs any usage archive comments.
-    def description(body: nil, prose: ProseLimits.new, deferred: false, writer: nil)
+    # `examples: false` skips the backtick check for a refresh that changes only usage, not the prose.
+    def description(body: nil, prose: ProseLimits.new, deferred: false, writer: nil, examples: true)
       current = pull
       archive = UsageArchive.new(self)
       readable = archive_pull(current, archive)
       rendered = publishable(block_given? ? yield(readable) : body)
       plan = description_plan(archive, current, rendered, writer&.call)
-      merged, checked = publish_archive(plan, current, prose, deferred)
+      merged, checked = publish_archive(plan, current, prose, deferred, examples)
       return confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged) if checked
 
       checked_description(current, merged, prose)
@@ -38,8 +39,8 @@ module Shaka
     end
 
     # Returns the body to write and whether GitHub's renderer checked it.
-    def publish_archive(plan, current, prose, deferred)
-      checked = rendered_before_write?(plan.preview, current, prose, deferred)
+    def publish_archive(plan, current, prose, deferred, examples)
+      checked = rendered_before_write?(plan.preview, current, prose, deferred, examples)
       check_unchanged(current['body'].to_s, current)
       merged = check_length(plan.publish)
       return [merged, checked] if merged == plan.preview
@@ -51,11 +52,11 @@ module Shaka
 
     # Only Shaka's region is checked, through the render prose limits already need; text a person
     # keeps outside it is theirs.
-    def rendered_before_write?(preview, current, prose, deferred)
+    def rendered_before_write?(preview, current, prose, deferred, examples)
       region = Publishing.managed_region(preview)
       html = markdown(region)
       prose.verify!(html, kind: :description, changed_lines: ProseLimits.changed_lines(current))
-      CodeSpans.check!(region, html)
+      CodeSpans.check!(region, html) if examples
       verify_rendering(preview)
       true
     rescue DeferredRendering::Refused

@@ -297,7 +297,7 @@ module Shaka
 
       def publish(publication, usage)
         github = GitHub.new(publication['repository'], publication['number'])
-        github.description { |pull| refreshed_region(pull['body'], usage_for(pull, usage)) }
+        github.description(examples: false) { |pull| refreshed_region(pull['body'], usage_for(pull, usage)) }
       end
 
       def usage_for(pull, usage)

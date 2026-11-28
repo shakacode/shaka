@@ -46,6 +46,15 @@ class CodeSpansTest < Minitest::Test
     assert_includes JSON.parse(@calls.last[1])['text'], source
   end
 
+  # A usage refresh rewrites only usage, so prose published earlier cannot stop it.
+  def test_a_refresh_without_the_check_goes_on_to_the_full_render
+    source, html = LOST.first
+    github = client(response({ 'id' => 1, 'body' => '', 'additions' => 4, 'deletions' => 2 }), html_response(html))
+
+    error = assert_raises(RuntimeError) { github.description(body: "#{source}\n", examples: false) }
+    assert_equal 'Unexpected GitHub request', error.message
+  end
+
   # A person's text outside Shaka's region is theirs; only the region is rendered for this check.
   def test_text_outside_the_region_is_not_checked
     person = "#{LOST.keys.first}\n\n"
