@@ -85,10 +85,11 @@ the active installation only after that check passes: confirm the verified
 preview checkout's `HEAD` still matches the recorded commit, then follow
 [Install a published release](official-installation.md#install-a-published-release)
 (including [Before take-over](official-installation.md#before-take-over)),
-reusing that verified checkout as `--directory DIR` and running take-over from
-the currently registered trusted installer. Resume held work once the helper
-verifies `trusted/ref` for the merged default-branch SHA and affected
-installations are ready.
+reusing that verified checkout as `--directory DIR` and following the take-over
+steps there (registered `--release`-capable installer when available, otherwise
+the destination installer after the outside cleanliness check). Resume held work
+once the helper verifies `trusted/ref` for the merged default-branch SHA and
+affected installations are ready.
 
 Keep `version: 1` for configurations supported by Shaka 1.x. Apply the
 [published compatibility policy](https://github.com/shakacode/shaka/blob/main/docs/migration.md#what-stays-compatible-in-1x)

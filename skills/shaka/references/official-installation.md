@@ -9,24 +9,29 @@ and ignores project Ruby and Bundler settings. Never edit the dedicated checkout
 
 ## Install
 
+When the request reuses a verified release checkout (for example the
+verified-checkout switch prompt), follow
+[Install a published release](#install-a-published-release) and skip the clone
+recipe: confirm that checkout's recorded `HEAD` and a clean working tree from
+outside it, then run the take-over steps there.
 When the request names a release version, follow
 [Install a published release](#install-a-published-release) with that version.
 When the request names a branch, follow the source clone below with that branch
 (`git clone --branch NAME` and `bin/install --branch NAME`). When the request
-asks for a source install unconditionally (without naming a branch and without
-making source only a fallback if no release exists), follow the source clone
-below. Otherwise, when the request does not name a branch or source install,
-check the official GitHub releases for the latest published version at or above
-1.0.0 (compared by semantic version, excluding GitHub drafts and prereleases).
-If one exists, follow [Install a published release](#install-a-published-release).
-If the lookup succeeds with no suitable release, install from source only when
-the user already allowed that fallback; otherwise ask and wait (do not clone).
-If the lookup fails, report it as unverified and ask before falling back to
-source.
+asks for a source install unconditionally (no branch, and source is not only a
+fallback if no release exists), follow the source clone below. Otherwise check
+the official GitHub releases for the latest published version at or above 1.0.0
+(compared by semantic version, excluding GitHub drafts and prereleases),
+including when the request only authorizes source as a fallback if none is
+published. If one exists, follow
+[Install a published release](#install-a-published-release). If the lookup
+succeeds with no suitable release, install from source only when the user
+already allowed that fallback; otherwise ask and wait (do not clone). If the
+lookup fails, report it as unverified and ask before falling back to source.
 
-Only after a named-branch request, an explicit source-install request, or after
-the rules above allow a source fallback: review the source and installer, then
-clone into a directory outside the project repositories the user works in:
+Only after a named-branch request, an unconditional source-install request, or
+after the rules above allow a source fallback: review the source and installer,
+then clone into a directory outside the project repositories the user works in:
 
 ```bash
 umask 022
@@ -143,20 +148,24 @@ New gem installations select their own version. To reuse an existing custom inst
 run its registered helper or pass `--directory DIR`; installation there keeps its source
 selection. An explicit repository or branch overrides the gem default.
 
-Follow [Before take-over](#before-take-over) when switching from an existing installation.
-To install a new release into a prepared empty directory `DIR`, run
-`DIR/bin/install --release VERSION --directory DIR --take-over` (add
-`--skills-dir SKILLS_DIR` when replacing a custom-only install, and
-`--repository URL` when the target checkout's origin differs from the previous
-installation's recorded URL; on Windows, use `RUBY DIR\bin\install` as above).
-When switching after a cutover check, reuse the verified checkout as `DIR`,
-confirm its `HEAD` still matches the recorded commit and that the working tree
-is clean from outside that checkout, then run take-over from the currently
-registered trusted installer:
-`TRUSTED/bin/install --take-over --directory DIR --release VERSION` (plus
-`--skills-dir` / `--repository` when needed). Do not invoke `DIR/bin/install`
-for that cutover switch: an edited installer in `DIR` can run before the
-destination cleanliness check.
+Follow [Before take-over](#before-take-over) when switching from an existing
+installation. Prepare `DIR` with the clone recipe above (or reuse a verified
+preview checkout). Before take-over, confirm from outside `DIR` that
+`git -C DIR rev-parse HEAD` still matches the recorded commit and
+`git -C DIR status --porcelain` is empty. Then run take-over with
+`--directory DIR --release VERSION` (add `--skills-dir SKILLS_DIR` when
+replacing a custom-only install, and `--repository URL` when the destination
+origin differs from the previous installation's recorded URL):
+
+- Prefer the currently registered installer's `bin/install` when that checkout
+  already accepts `--release`.
+- When the registered installer predates `--release` (typical pilot cutover),
+  use the destination's `DIR/bin/install` after the outside cleanliness check
+  above. On Windows, start it as `RUBY DIR\bin\install` with Ruby 3.4 or later.
+
+A first installation (no take-over) still runs
+`DIR/bin/install --release VERSION --directory DIR --agent HOST` from that
+prepared checkout.
 To roll back, [restore the saved installation](installation.md#restore-the-saved-installation).
 Keep both checkouts so active chats can use the previous helper. Release `install --update` checks
 that the remote tag still resolves to the recorded commit; it never advances to `main`
