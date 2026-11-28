@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'shellwords'
+require_relative '../lib/shaka_release/prepare'
+require_relative '../lib/shaka_release/publish'
+
+USAGE = <<~TEXT
+  Usage: bin/release prepare --shaka PATH --out DIR (--behavior-records FILE... | --skip-behavior-gate)
+         bin/release publish --approval FILE [--dry-run]
+TEXT
+
+command = ARGV.shift
+options = { behavior_records: [] }
+parser = OptionParser.new do |cli|
+  cli.banner = USAGE
+  case command
+  when 'prepare'
+    cli.on('--shaka PATH', 'Trusted Shaka helper outside this checkout') { options[:shaka] = it }
+    cli.on('--out DIR', 'Directory outside this checkout for the gem, notes, and approval') { options[:out] = it }
+    cli.on('--behavior-records FILE', 'A release behavior batch; repeat for each profile') do |file|
+      options[:behavior_records] << file
+    end
+    cli.on('--skip-behavior-gate', 'Publish without the behavior gate and say so in the notes') do
+      options[:skip_behavior_gate] = true
+    end
+  when 'publish'
+    cli.on('--approval FILE', 'The approval.json that prepare wrote') { options[:approval] = it }
+    cli.on('--dry-run', 'Report what is published and what remains, and change nothing') { options[:dry_run] = true }
+  end
+end
+begin
+  parser.parse!
+  abort parser.to_s unless ARGV.empty?
+  case command
+  when 'prepare'
+    abort parser.to_s unless options[:shaka] && options[:out]
+    approval = ShakaRelease::Prepare.new(root: Dir.pwd, **options).run
+    puts JSON.pretty_generate(approval)
+    puts "\nAsk for approval of this commit and these digests, then run:"
+    puts "bin/release publish --approval #{File.join(File.dirname(approval.fetch('gem')), 'approval.json').shellescape}"
+  when 'publish'
+    abort parser.to_s unless options[:approval]
+    ShakaRelease::Publish.new(root: Dir.pwd, approval: options[:approval], dry_run: options[:dry_run]).run
+  else
+    abort USAGE
+  end
+rescue Shaka::Error, OptionParser::ParseError, SystemCallError, JSON::ParserError, Gem::Package::Error => e
+  warn "Release refused: #{e.message}"
+  exit 1
+end

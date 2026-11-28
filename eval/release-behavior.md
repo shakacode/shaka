@@ -24,8 +24,9 @@ for each profile the maintainer intends to qualify. This command does not launch
 models. Paid execution requires its own authorized plan and the existing evaluation
 budget, including failed trials, retries and judges.
 
-After preflight, use its `commit` as `RELEASE_SHA` and check each batch against the
-release skill directory:
+`bin/release prepare` runs this check for each batch it receives, against the release
+checkout's own commit, and saves each result beside the approval file. To check a batch
+by hand, use that commit as `RELEASE_SHA` and the release skill directory:
 
 ```bash
 eval/bin/release-behavior --commit RELEASE_SHA --skill /release/checkout/skills/shaka \

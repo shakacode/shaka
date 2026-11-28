@@ -32,8 +32,13 @@ module ShakaRelease
                      'notes_sha256' => Digest::SHA256.hexdigest(notes), 'publication_authorized' => false)
     end
 
-    private
+    # The body of the version's CHANGELOG.md entry, or nil when the file has no such heading.
+    def self.changelog_entry(root, version)
+      changelog = File.read(File.join(root, 'CHANGELOG.md'))
+      changelog.split(/^## \[#{Regexp.escape(version)}\][^\n]*\n/, 2)[1]&.split(/^## |^\[[^\]]+\]:/, 2)&.first
+    end
 
+    # A clean checkout at remote main, at the commit under release.
     def check_source
       refuse 'commit must be a full SHA matching HEAD' unless @commit.match?(/\A[0-9a-f]{40}\z/) &&
                                                               git('rev-parse', 'HEAD').strip == @commit
@@ -42,6 +47,8 @@ module ShakaRelease
       remote = git('ls-remote', '--exit-code', REMOTE, 'refs/heads/main').split
       refuse 'commit differs from remote main' unless remote == [@commit, 'refs/heads/main']
     end
+
+    private
 
     def check_index_flags
       flags = git('ls-files', '-v', '-z').split("\0")
@@ -83,8 +90,7 @@ module ShakaRelease
 
     def check_notes(version)
       notes = File.read(@notes)
-      changelog = File.read(File.join(@root, 'CHANGELOG.md'))
-      section = changelog.split(/^## \[#{Regexp.escape(version)}\][^\n]*\n/, 2)[1]&.split(/^## |^\[[^\]]+\]:/, 2)&.first
+      section = self.class.changelog_entry(@root, version)
       refuse 'notes must match the nonempty version changelog entry' unless section && !notes.strip.empty? &&
                                                                             section.strip == notes.strip
       notes

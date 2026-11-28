@@ -5,11 +5,37 @@ require_relative '../../eval/lib/shaka/evaluation/release_behavior'
 module ReleaseBehaviorFixture
   E = Shaka::Evaluation
   ROOT = File.expand_path('../..', __dir__)
+  # Builds a complete passing batch for a skill directory; release tests use it too.
+  module Records
+    module_function
+
+    # Returns the skill commit and one passing record per release-safety case.
+    def passing(skill)
+      snapshot = E::SkillSnapshot.read(skill).slice(*E::Comparison::SKILL)
+      [snapshot.fetch('skill_commit'),
+       E::ReleaseSafetyBank.cases.map.with_index { |scenario, index| record(scenario, index, snapshot) }]
+    end
+
+    def record(scenario, index, snapshot)
+      record = JSON.parse(File.read(File.join(ROOT, 'test/fixtures/evaluation-run-record.json')))
+      record['trial_id'] = "synthetic-release-#{index}"
+      record['task'] = task(scenario)
+      record['fingerprint'].merge!(snapshot, 'task_bank_version' => E::ReleaseSafetyBank.version,
+                                             'criteria_set_hash' => E::DecisionReplay.criteria(scenario.fetch('expected')))
+      record['gate'] = [{ 'id' => 'decision_exact_match', 'passed' => true, 'reason' => 'Synthetic exact match' }]
+      record['usage']['cache_neutral_dollars'] = 0.01
+      record
+    end
+
+    def task(scenario)
+      { 'id' => scenario.fetch('id'), 'bank' => 'custom', 'tier' => 1,
+        'kind' => 'regression', 'bank_version' => E::ReleaseSafetyBank.version }
+    end
+  end
+
   def setup
     prepare_skill
-    snapshot = E::SkillSnapshot.read(@skill).slice(*E::Comparison::SKILL)
-    @commit = snapshot.fetch('skill_commit')
-    @records = E::ReleaseSafetyBank.cases.map.with_index { |scenario, index| record(scenario, index, snapshot) }
+    @commit, @records = Records.passing(@skill)
   end
 
   def teardown = FileUtils.remove_entry(@directory)
@@ -29,22 +55,6 @@ module ReleaseBehaviorFixture
   def git(*)
     _, error, status = Open3.capture3(TEST_GIT, '-C', @directory, *)
     raise error unless status.success?
-  end
-
-  def record(scenario, index, snapshot)
-    record = JSON.parse(File.read(File.join(ROOT, 'test/fixtures/evaluation-run-record.json')))
-    record['trial_id'] = "synthetic-release-#{index}"
-    record['task'] = task(scenario)
-    record['fingerprint'].merge!(snapshot, 'task_bank_version' => E::ReleaseSafetyBank.version,
-                                           'criteria_set_hash' => E::DecisionReplay.criteria(scenario.fetch('expected')))
-    record['gate'] = [{ 'id' => 'decision_exact_match', 'passed' => true, 'reason' => 'Synthetic exact match' }]
-    record['usage']['cache_neutral_dollars'] = 0.01
-    record
-  end
-
-  def task(scenario)
-    { 'id' => scenario.fetch('id'), 'bank' => 'custom', 'tier' => 1,
-      'kind' => 'regression', 'bank_version' => E::ReleaseSafetyBank.version }
   end
 
   def check = E::ReleaseBehavior.new(records: @records, skill: @skill, commit: @commit).check
