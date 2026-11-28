@@ -357,7 +357,9 @@ The PR description uses the same two cases. When the agent publishes without
 validation and review results, and the description holds no verified line that
 Shaka wrote for this commit, the Validation and review line says UNKNOWN. Shaka
 marks the line it writes with a hidden comment and keeps only that line, so a
-verification summary or check worded like it does not count. It then names
+verification summary or check worded like it does not count. A description
+published before that marker existed keeps the line at the top of its Evidence and
+limitations section, where older versions of Shaka wrote it. It then names
 a local review published for this commit, or an earlier review that still covers
 it and why, for example: "The local review of `e33df55` covers this revision,
 which only updates it from `main`." The review's findings stay in its comment,

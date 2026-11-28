@@ -208,6 +208,23 @@ class PublicationKeptLinePlacementTest < Minitest::Test
     end
   end
 
+  # The helper writes its marker alone on a line; one inside prose marks nothing.
+  def test_a_marker_that_does_not_stand_alone_keeps_nothing
+    with_checkout do |root, ref|
+      text = region("## Verification\n\nSee #{MARKER} #{current_line(ref)}")
+      assert_nil prepare(root, ref, {}, body: text).verdict
+    end
+  end
+
+  # In a description from before the marker, a copied fold makes the helper's own unclear.
+  def test_an_older_description_with_two_folds_keeps_nothing
+    with_checkout do |root, ref|
+      copied = "```\n<details>\n<summary>Evidence and limitations</summary>\n\n#{current_line(ref)}\n```"
+      assert_nil prepare(root, ref, {},
+                         body: folded_body(ref).sub('## Verification', "#{copied}\n\n## Verification")).verdict
+    end
+  end
+
   # A person may save the description in GitHub's editor, which can leave CRLF line endings.
   def test_crlf_line_endings_keep_the_line_and_its_gaps_in_either_layout
     with_checkout do |root, ref|

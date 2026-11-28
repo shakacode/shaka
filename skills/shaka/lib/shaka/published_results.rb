@@ -33,23 +33,28 @@ module Shaka
       line && { 'kept_line' => line, 'kept_gaps' => gaps }
     end
 
-    # Supplied text cannot carry a Shaka marker, so only the paragraph after the helper's one marker
-    # counts, and a summary, section, or check worded like the line is never kept. Returns that line
-    # and the helper's Setup gaps sentence when it follows. A description without the marker is read
-    # from the top of its first Evidence and limitations fold, where older helpers wrote the line.
+    # Supplied text cannot carry a Shaka marker, so only the line after the helper's one marker, which
+    # sits alone on its own line, counts, and a summary, section, or check worded like the line is
+    # never kept. Returns that line and the helper's Setup gaps sentence when it follows. A
+    # description without the marker is read from the top of its one Evidence and limitations fold,
+    # where older helpers wrote the line.
     def own_line(region, head)
       marked = region.scan(VerificationLine::MARKER).size
-      return if marked > 1
       return legacy_line(region, head) if marked.zero?
 
-      first, second = region.split(VerificationLine::MARKER, 2).last.strip.split("\n\n", 3)
-      line = first.to_s[/\A#{verified_line(head).source}/]
-      [line, second.to_s.strip[/\A#{GAPS.source}\z/]]
+      own = region.match(/^#{Regexp.escape(VerificationLine::MARKER)}\n/o) if marked == 1
+      own && marked_line(own.post_match, head)
     end
 
+    def marked_line(text, head)
+      first, second = text.split("\n\n", 3)
+      [first.to_s[/\A#{verified_line(head).source}/], second.to_s.strip[/\A#{GAPS.source}\z/]]
+    end
+
+    # A second fold, such as a copied example, leaves the helper's own unclear, so it keeps nothing.
     def legacy_line(region, head)
-      fold = region.match(FOLD)
-      line = fold && region[fold.end(0)..][/\A#{verified_line(head).source}/]
+      fold = region.match(FOLD) if region.scan(FOLD).one?
+      line = fold && fold.post_match[/\A#{verified_line(head).source}/]
       [line, line && legacy_gaps(region, line)]
     end
 
@@ -80,6 +85,6 @@ module Shaka
     def verified_line(head)
       /#{Regexp.escape(VerificationLine::LABEL)} (?!UNKNOWN)[^\n]* at `#{Regexp.escape(head.to_s[0, 7])}`\./
     end
-    private_class_method :own_line, :legacy_line, :legacy_gaps, :verified_line, :passed?, :drifted_only?
+    private_class_method :own_line, :marked_line, :legacy_line, :legacy_gaps, :verified_line, :passed?, :drifted_only?
   end
 end
