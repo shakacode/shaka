@@ -24,6 +24,12 @@ other skills. Use the resolved name, public source and available revision
 }
 ```
 
+When the skill came from a pack, a set of skills published together, add `pack`: the
+repository and folder where the original pack is published, such as
+`cursor/plugins/pstack`. Name the original even when you installed a fork or a renamed
+copy; `source` still says where your copy came from. Omit `pack` when you cannot tell,
+the pack is private, or Shaka refuses its form.
+
 Select `agent-reported` with null `corroboration`, or `corroborated` when a native
 event or recorded tool call confirms invocation/loading; name that record in
 `corroboration`. Both labels are agent-assessed. Ruby validates metadata, not

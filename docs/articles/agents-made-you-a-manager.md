@@ -18,7 +18,7 @@ an instruction the agent follows.
 
 ## Main results
 
-- Shaka covers ten of the twelve habits for each task. The two it skips are about
+- Shaka covers ten of the twelve habits. The two it skips are about
   where the analogy breaks and not needing a manager title.
 - The habits that protect the merge decision have code behind them when the agent
   merges. The merge helper refuses a PR over the size limits until you confirm that
@@ -40,7 +40,7 @@ reports, GitHub refuses, or only the agent follows it.
 | Habit, in this article's words | What Shaka does | Backed by |
 | --- | --- | --- |
 | Checks the agent can run | Runs the repository's checks, reviews the final commit, and links the results on the PR | Command, for a review line covering the merged commit |
-| Context the agent cannot find | Restates outcome, scope, and success criteria before coding | Agent |
+| Context the agent cannot find | Restates outcome, scope, and success criteria before coding, unless the task is small or fully specified | Agent |
 | Lessons that last | Points to retrospectives and `AGENTS.md` | Agent |
 | Hard rules only where needed | Lists each rule and what enforces it | Command, for 8 of 100 rules |
 | Planning first | Plans, then offers to agree on a design when choices are open | Agent |
@@ -70,8 +70,8 @@ reports, GitHub refuses, or only the agent follows it.
 - **Idea:** brief the agent on what it cannot learn from the code: why, constraints,
   what is out of scope, and what done means.
 - **In Shaka:** [give it an outcome](../working-with-shaka.md#give-it-an-outcome) asks
-  for only what the agent can't infer. Before coding, the agent restates the outcome,
-  scope, success criteria, and risky assumptions.
+  for only what the agent can't infer. Before coding on a task that isn't small or fully
+  specified, the agent restates the outcome, scope, success criteria, and risky assumptions.
 - **Backed by:** the agent. The audit says Ruby cannot verify understanding.
 - **Limit:** nothing checks that the restatement matches what you meant.
 

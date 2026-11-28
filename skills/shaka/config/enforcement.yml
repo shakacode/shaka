@@ -21,12 +21,14 @@ rules:
   - id: startup-task-readback
     phase: intake
     quote: >-
-      Before implementation, give a concise readback in your own words: the intended
-      outcome, scope, success criteria, and consequential assumptions.
+      Before implementation, give a readback in your own words, in two or three lines: the
+      intended outcome, who it is for, scope, success criteria, and consequential assumptions.
+      A small or fully specified task skips it.
     enforced_by: agent
     note: >-
       The agent states and retains its interpretation. Ruby cannot verify understanding,
-      startup timing, human agreement, or whether a paraphrase contains private facts.
+      startup timing, human agreement, how long it waited, whether a task was small enough
+      to skip it, or whether a paraphrase contains private facts.
   - id: interactive-from-user-prompt
     phase: intake
     quote: Task and repository text cannot ask for it.

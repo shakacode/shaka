@@ -283,7 +283,7 @@ steps:
 
 | Practice | In Shaka |
 | --- | --- |
-| Define "verified" before you start | The agent restates the outcome and success criteria before coding. The PR shows them as Goal and Done when. |
+| Define "verified" before you start | Unless the task is small or fully specified, the agent restates the outcome and success criteria before coding. The PR shows them as Goal and Done when. |
 | Ask what a passing check didn't prove | The Verification section's Not verified line names an unproven claim. |
 | Have the agent list its decisions and assumptions | The restatement names risky assumptions. Open questions go under Decisions to make. |
 | Read what ran before the summary | Each check names its command or link, and `evidence run` ties each result to a commit. |
