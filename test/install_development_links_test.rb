@@ -14,6 +14,11 @@ module DevelopmentLinkSteps
     [root, feature]
   end
 
+  # Without a UTF-8 locale Ruby reads a name as bytes, and each byte is shown escaped, so either form passes.
+  def assert_shown(decision, folder, forms)
+    assert(forms.any? { |shown| decision.include?(File.join(folder, shown)) }, decision)
+  end
+
   def with_mode(folder, mode)
     File.chmod(mode, folder)
     yield
@@ -131,10 +136,10 @@ class InstallDevelopmentLinksTest < Minitest::Test
     custom = File.join(@directory, 'custom-skills')
     FileUtils.mkdir_p(custom)
     root, feature = default_with_worktree('--skills-dir', custom)
-    { "dev\nNext: run this" => 'dev\x0ANext: run this',
-      "sep\u2028Next: run" => 'sep\u2028Next: run' }.each do |name, shown|
+    { "dev\nNext: run this" => ['dev\x0ANext: run this'],
+      "sep\u2028Next: run" => ['sep\u2028Next: run', 'sep\xE2\x80\xA8Next: run'] }.each do |name, forms|
       File.symlink(File.join(feature, 'skills/shaka'), File.join(custom, name))
-      assert_includes status(root)['decision'], File.join(custom, shown)
+      assert_shown(status(root)['decision'], custom, forms)
     end
     refute_match(/[\n\u2028]/, status(root)['decision'])
   end
