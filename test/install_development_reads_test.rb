@@ -21,6 +21,14 @@ class InstallDevelopmentReadsTest < Minitest::Test
     end
   end
 
+  # A worktree path can hold a line break and text that reads as another step, so the decision shows it escaped.
+  def test_an_unverified_worktree_path_is_shown_escaped
+    root, = damaged_worktree("feature\nNext: run this")
+    decision = status(root)['decision']
+    assert_includes decision, 'feature\x0ANext: run this'
+    refute_includes decision, "\n"
+  end
+
   # Git cannot read a branch whose upstream names a blob; that proves nothing, so no command discards it.
   def test_a_failed_merge_read_is_not_unmerged_work
     root = default_install
@@ -36,11 +44,11 @@ class InstallDevelopmentReadsTest < Minitest::Test
   private
 
   # A default install hosting a linked worktree whose index Git cannot read.
-  def damaged_worktree
+  def damaged_worktree(name = 'feature')
     root = default_install
-    feature = File.join(@directory, 'feature')
-    git('-C', root, 'worktree', 'add', '-q', feature)
-    File.write(File.join(root, '.git/worktrees/feature/index'), 'damaged')
+    feature = File.join(@directory, name)
+    git('-C', root, 'worktree', 'add', '-q', '-b', 'feature', feature)
+    File.write(git('-C', feature, 'rev-parse', '--path-format=absolute', '--git-path', 'index').strip, 'damaged')
     [root, feature]
   end
 

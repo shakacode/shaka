@@ -37,6 +37,9 @@ module Shaka
         @repository = repository
         @branch = branch
         @release = release
+        unknown = run.keys - %i[fresh_install skills_dir]
+        raise ArgumentError, "Unknown checkout options: #{unknown.join(', ')}" unless unknown.empty?
+
         @fresh_install, @skills_dir = run.values_at(:fresh_install, :skills_dir)
       end
 

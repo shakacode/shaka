@@ -76,26 +76,35 @@ module Shaka
         links = WorktreeLinks.into(worktrees.map { |entry| entry[:path] }, link_folders)
         return if links.empty?
 
-        named = links.map { |link| link.chars.map { |character| escaped(character) }.join }
-        { decision: "a person must decide where #{named.join(', ')} should point, because they lead into " \
+        { decision: "a person must decide where #{links.map { printable(it) }.join(', ')} should point, because " \
+                    'they lead into ' \
                     'the linked worktrees this step would remove, or could not be read to rule that out; repoint ' \
                     'them, then run this command again' }
       end
 
+      def printable(text) = text.chars.map { |character| escaped(character) }.join
+
       # Control characters, line and paragraph separators, and bytes that are not valid text are shown as \xNN
       # or \uNNNN. A backslash is doubled, so an escaped character cannot be confused with a name that spells one.
       def escaped(character)
-        return character.bytes.map { |byte| format('\\x%02X', byte) }.join unless character.valid_encoding?
+        return character.bytes.map { |byte| format('\\x%02X', byte) }.join if raw_bytes?(character)
         return '\\\\' if character == '\\'
         return character unless character.match?(/[[:cntrl:]\p{Zl}\p{Zp}]/)
 
         format(character.ord > 0xFF ? '\\u%04X' : '\\x%02X', character.ord)
       end
 
+      # Under a non-UTF-8 locale, Ruby reads non-ASCII names as binary or legacy-encoded text, which a Unicode
+      # pattern refuses, so those characters are shown as their bytes.
+      def raw_bytes?(character)
+        !character.valid_encoding? || (character.encoding != Encoding::UTF_8 && !character.ascii_only?)
+      end
+
+      # Worktree paths can hold any file name, so they are shown escaped like link names.
       def unread_decision(unread, held)
         also = held.empty? ? '' : ", and whether to keep #{Refusal.paths(held)}"
-        'a person must decide how to clear this checkout, because Shaka could not verify ' \
-          "#{Refusal.paths(unread)}#{also}; check that work, then run this command again"
+        printable('a person must decide how to clear this checkout, because Shaka could not verify ' \
+                  "#{Refusal.paths(unread)}#{also}; check that work, then run this command again")
       end
 
       # A second --force removes a locked worktree too. A worktree whose folder was deleted still holds
