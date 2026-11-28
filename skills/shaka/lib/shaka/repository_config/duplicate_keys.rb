@@ -8,6 +8,8 @@ module Shaka
     # Rejects YAML where a later entry could silently replace an earlier value: duplicate, merge, or tagged keys.
     module DuplicateKeys
       STR_TAG = 'tag:yaml.org,2002:str'
+      # Far beyond any real settings file, and far below the depth that overflows Psych's recursive visitors.
+      MAX_DEPTH = 100
 
       module_function
 
@@ -15,7 +17,20 @@ module Shaka
         stream = Psych.parse_stream(source, filename:)
         raise Error, "#{filename} must contain one YAML document" unless stream.children.length == 1
 
-        visit(stream.children.first.root)
+        root = stream.children.first.root
+        check_depth(root, filename)
+        visit(root)
+      end
+
+      # Walks without recursion, so the check itself cannot overflow the stack it protects.
+      def check_depth(root, label)
+        pending = [[root, 1]]
+        until pending.empty?
+          node, depth = pending.pop
+          raise Error, "#{label} nests deeper than #{MAX_DEPTH} levels" if depth > MAX_DEPTH
+
+          node.children&.each { |child| pending << [child, depth + 1] }
+        end
       end
 
       def visit(node)

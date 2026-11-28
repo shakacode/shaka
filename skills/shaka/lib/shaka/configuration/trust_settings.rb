@@ -30,9 +30,18 @@ module Shaka
 
       private
 
-      # Visits each document so an empty or comment-only file stays an empty allowlist.
+      # An empty or comment-only file has no document and stays an empty allowlist. YAML.safe_load reads only
+      # the first document, so a second one is refused rather than silently ignored.
       def reject_duplicate_keys(text)
-        Psych.parse_stream(text).children.each { |document| RepositoryConfig::DuplicateKeys.visit(document.root) }
+        documents = Psych.parse_stream(text).children
+        raise Error, 'Trust config must contain one YAML document.' if documents.length > 1
+
+        documents.each { |document| check_document(document.root) }
+      end
+
+      def check_document(root)
+        RepositoryConfig::DuplicateKeys.check_depth(root, 'YAML')
+        RepositoryConfig::DuplicateKeys.visit(root)
       rescue Error => e
         raise Error, "Trust config is invalid: #{e.message}."
       end
