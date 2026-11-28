@@ -1,9 +1,10 @@
 name: Windows
 
-# Free windows-latest runner. The job and each step continue after a failure so one
-# Windows bug does not hide the others, and so a red step does not block merge.
-# Pull requests and pushes run the quick steps. The full test suite takes about
-# 20 minutes, so it runs nightly and when someone starts this workflow by hand.
+# Free windows-latest runner. Pull requests and pushes run the quick steps, and a
+# failing quick step fails this check. Each step after Ruby setup runs even when
+# an earlier one failed, so one Windows bug does not hide the others. The full test
+# suite takes about 20 minutes and does not pass on Windows yet, so it runs nightly
+# and when someone starts this workflow by hand, and its failure does not fail the check.
 # Every pull request reports this check, so main can require it. A change the shared
 # classifier admits as documentation only skips every step after detection.
 on:
@@ -25,7 +26,6 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
-    continue-on-error: true
     timeout-minutes: 45
     env:
       SHAKA_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
@@ -66,29 +66,24 @@ jobs:
           bundler-cache: true
 
       - name: Documentation navigation
-        if: steps.changes.outputs.docs_only != 'true'
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.changes.outputs.docs_only != 'true' }}
         run: ruby bin/check-docs-navigation
 
       - name: shaka doctor
-        if: steps.changes.outputs.docs_only != 'true'
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.changes.outputs.docs_only != 'true' }}
         run: ruby bin/windows-exercise doctor
 
       - name: Repository commands
-        if: steps.changes.outputs.docs_only != 'true'
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.changes.outputs.docs_only != 'true' }}
         run: ruby bin/windows-exercise commands
 
       - name: Cursor usage hook
-        if: steps.changes.outputs.docs_only != 'true'
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.changes.outputs.docs_only != 'true' }}
         run: ruby bin/windows-exercise cursor
 
       # PowerShell, as a native Windows user starts Shaka; the exercise also drops Git's Unix tools from PATH.
       - name: Product command starts
-        if: steps.changes.outputs.docs_only != 'true'
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.changes.outputs.docs_only != 'true' }}
         shell: pwsh
         run: ruby bin/windows-exercise product
 
@@ -104,7 +99,7 @@ jobs:
       # home, and require pty in test/local_evaluation_probe_container_test.rb.
       # Five private trial files were still running at 90s.
       - name: Test suite
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         continue-on-error: true
         env:
           SHAKA_TEST_WORKERS: "2"

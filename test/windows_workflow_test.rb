@@ -15,13 +15,13 @@ class WindowsWorkflowTest < Minitest::Test
     @steps = @job.fetch('steps')
   end
 
-  def test_runs_on_the_free_windows_runner_without_blocking_merge
+  def test_runs_on_the_free_windows_runner_and_fails_when_a_step_fails
     on = @workflow['on'] || @workflow[true]
 
     assert_includes on.keys, 'pull_request'
     assert_equal ['main'], on.dig('push', 'branches')
     assert_equal 'windows-latest', @job.fetch('runs-on')
-    assert @job.fetch('continue-on-error')
+    refute @job.key?('continue-on-error')
     assert_equal 'read', @workflow.dig('permissions', 'contents')
     refute @workflow.key?('services')
   end
@@ -32,7 +32,9 @@ class WindowsWorkflowTest < Minitest::Test
 
     assert on.dig('schedule', 0, 'cron')
     assert on.key?('workflow_dispatch')
-    assert_equal "github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'", suite['if']
+    assert_equal "${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}",
+                 suite['if']
+    assert suite['continue-on-error']
   end
 
   def test_pins_the_same_checkout_and_ruby_actions_as_validate
@@ -56,7 +58,18 @@ class WindowsWorkflowTest < Minitest::Test
     assert_includes runs, 'ruby bin/windows-exercise commands'
     assert_includes runs, 'ruby bin/windows-exercise cursor'
     assert_includes runs, 'ruby bin/windows-exercise suite'
-    assert(exercise_steps.all? { |step| step['continue-on-error'] == true })
+  end
+
+  def test_a_failing_quick_step_fails_the_check
+    quick = @steps.reject { |step| step['run'] == 'ruby bin/windows-exercise suite' }
+
+    assert_empty(quick.select { |step| step.key?('continue-on-error') })
+  end
+
+  def test_later_steps_still_run_after_an_earlier_failure
+    later = @steps.drop(ruby_index + 1)
+
+    assert(later.all? { |step| step['if'].start_with?('${{ !cancelled() && ') })
   end
 
   def test_names_the_suite_file_windows_ruby_cannot_load
@@ -95,12 +108,14 @@ class WindowsWorkflowTest < Minitest::Test
   def test_skips_every_step_after_detection_for_documentation
     gated = @steps.drop(detector_index + 1).reject { |step| step['run'] == 'ruby bin/windows-exercise suite' }
 
-    assert_equal([DOCS_GATE], gated.map { |step| step['if'] }.uniq)
+    assert(gated.all? { |step| [DOCS_GATE, "${{ !cancelled() && #{DOCS_GATE} }}"].include?(step['if']) })
   end
 
   private
 
   def validate_job = @validate.dig('jobs', 'validate')
+
+  def ruby_index = @steps.index { |step| step['uses'].to_s.start_with?('ruby/setup-ruby@') }
 
   def detector_index = @steps.index { |step| step['id'] == 'changes' }
 
