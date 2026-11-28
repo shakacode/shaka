@@ -966,9 +966,9 @@ phases:
       - Under Ask, once nothing above holds the task at Ask, a `merge-approved` label chooses Auto
         for the PR, unlike the per-head approval above
         ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)).
-        When the PR carries it, run `merge --auto --label-approval` for the current head and keep the merge
-        wait until the merge succeeds, then run `attention` with `--state none`. On a refusal, handle
-        the blocker it names. Adding and removing the label stay with the maintainer.
+        When the PR carries it, run `merge --auto --label-approval` for the current head. Keep the merge
+        wait, even on resuming, until the merge succeeds, then run `attention` with `--state none`. On a
+        refusal, handle the blocker it names. Adding and removing the label stay with the maintainer.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base
