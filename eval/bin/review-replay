@@ -115,8 +115,9 @@ end
 
 def rows(options)
   case_id = options[:case]
-  cases = options[:checkpoint_risk] ? '../risk-replay/v1.jsonl' : '../review-replay/v1.jsonl'
-  rows = File.foreach(File.join(__dir__, cases)).map { |line| JSON.parse(line) }
+  cases = File.join(__dir__, '../review-replay/v1.jsonl')
+  cases = Shaka::Evaluation::RiskReplay::CASE_FILE if options[:checkpoint_risk]
+  rows = File.foreach(cases).map { |line| JSON.parse(line) }
   rows.select! { |row| row['id'] == case_id } if case_id
   raise ArgumentError, 'Unknown replay case' if rows.empty?
 

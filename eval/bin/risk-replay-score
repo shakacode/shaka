@@ -4,12 +4,12 @@
 require 'json'
 require 'open3'
 require 'optparse'
+require_relative '../lib/shaka/evaluation/risk_replay'
 require_relative '../lib/shaka/evaluation/risk_replay_score'
 require_relative '../../skills/shaka/lib/shaka/configuration'
 
 # Scores the private records a `review-replay --checkpoint-risk` run left in its state directory.
 SOURCE = File.realpath('../..', __dir__)
-CASES = File.join(SOURCE, 'eval/risk-replay/v1.jsonl')
 
 def options
   options = {}
@@ -46,27 +46,28 @@ def settings(records)
 end
 
 # A state directory holds one comparison; records from another would be pooled under the same arm names.
+# Returns the comparison's plan: its reviewer, effort, cases and repeats.
 def one_comparison!(records)
-  mixed = records.group_by { |record| record.fetch('arm') }.select do |_, runs|
-    runs.map { |run| run['selection'] }.uniq.size > 1
-  end
-  return if mixed.empty?
+  plans = records.map { |record| record['comparison'] }.uniq
+  selections = records.map { |record| record.values_at('arm', 'selection') }.uniq
+  arms = selections.map(&:first)
+  return plans.first if plans.one? && plans.first && arms.uniq.size == arms.size
 
-  raise ArgumentError, "The state directory mixes comparisons for #{mixed.keys.join(' and ')}; " \
-                       'score each comparison from its own state directory'
+  raise ArgumentError, 'The state directory mixes comparisons; score each comparison from its own state directory'
 end
 
 begin
   saved = records(options.fetch(:state))
   raise ArgumentError, 'No replay records in the state directory' if saved.empty?
 
-  one_comparison!(saved)
-
-  cases = File.foreach(CASES).to_h { |line| JSON.parse(line).then { |row| [row.fetch('id'), row] } }
+  plan = one_comparison!(saved)
+  cases = File.foreach(Shaka::Evaluation::RiskReplay::CASE_FILE).to_h { |line| JSON.parse(line).then { |row| [row.fetch('id'), row] } }
   paths = cases.transform_values { |row| changed_paths(row) }
-  puts JSON.pretty_generate(Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:,
-                                                                     settings: settings(saved)))
-rescue ArgumentError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError, Shaka::Error => e
+  score = Shaka::Evaluation::RiskReplayScore.score(records: saved, cases:, paths:, settings: settings(saved),
+                                                   plan:)
+  puts JSON.pretty_generate(score)
+rescue ArgumentError, IndexError, IOError, SystemCallError, JSON::ParserError, OptionParser::ParseError,
+       Shaka::Error => e
   warn "Score incomplete: #{e.message}"
   exit 1
 end

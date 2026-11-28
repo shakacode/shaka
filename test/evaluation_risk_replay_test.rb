@@ -45,6 +45,21 @@ class EvaluationRiskReplayTest < Minitest::Test
 
     refute replay.send(:completed?, result, { 'head' => 'c' * 40 })
     assert replay.send(:completed?, result.merge('risk' => { 'rating' => 'low' }), { 'head' => 'c' * 40 })
+    refute replay.send(:completed?, result.merge('risk' => Shaka::PostImplementationReport::LEGACY_RISK),
+                       { 'head' => 'c' * 40 })
+  end
+
+  def test_each_record_names_its_whole_comparison_and_repeat
+    replay = Shaka::Evaluation::RiskReplay.new(reviewer: 'openai/codex', effort: 'low', repeat: 2)
+    replay.instance_variable_get(:@comparison)[:cases] = %w[k01]
+    saved = []
+    replay.define_singleton_method(:replay) { |*| saved << save_run_metadata }
+    replay.define_singleton_method(:save_run_metadata) { [@comparison.dup, @repeat] }
+
+    replay.send(:replay_pair, 'k01', 0)
+
+    plan = { reviewer: 'openai/codex', effort: 'low', repeats: 2, cases: %w[k01] }
+    assert_equal [[plan, 0], [plan, 0], [plan, 1], [plan, 1]], saved
   end
 
   def test_repeat_is_refused_outside_a_checkpoint_risk_replay

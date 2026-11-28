@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../../../../skills/shaka/lib/shaka/post_implementation/risk'
-require_relative '../../../../skills/shaka/lib/shaka/post_implementation_report'
+require_relative 'risk_replay'
 
 module Shaka
   module Evaluation
@@ -16,26 +16,40 @@ module Shaka
 
       # records: saved run records of one comparison; cases: frozen rows by id; paths: changed files by case id;
       # settings: each arm's risk areas and threshold from its settings commit, as
-      # { 'high' => areas, 'medium' => areas, 'max_risk' => level }, keyed by arm.
-      def score(records:, cases:, paths:, settings:)
+      # { 'high' => areas, 'medium' => areas, 'max_risk' => level }, keyed by arm; plan: the comparison's
+      # planned 'cases' and 'repeats', so runs a stopped replay never made count as unattempted.
+      def score(records:, cases:, paths:, settings:, plan:)
         records.group_by { |record| record.fetch('arm') }.to_h do |arm, runs|
-          [arm, arm_score(runs, cases, paths, settings.fetch(arm))]
+          [arm, arm_score(runs, cases, paths, settings.fetch(arm), plan)]
         end
       end
 
-      def arm_score(runs, cases, paths, settings)
-        by_case = runs.group_by { |run| run.fetch('case') }
-        { 'runs' => runs.size, 'failed' => runs.count { |run| rating(run).nil? }, **costs(runs),
-          'configured_max_risk' => settings.fetch('max_risk'),
-          'cases' => by_case.to_h { |id, attempts| [id, case_score(attempts, cases.fetch(id), paths[id], settings)] } }
+      def arm_score(runs, cases, paths, settings, plan)
+        planned = planned_cases(runs, cases, paths, settings, plan)
+        { 'runs' => runs.size, 'failed' => runs.count { |run| rating(run).nil? },
+          'unattempted' => planned.values.sum { |entry| entry.fetch('unattempted') }, **costs(runs),
+          'configured_max_risk' => settings.fetch('max_risk'), 'cases' => planned }
       end
 
-      # A case whose repeats all failed still appears, and agreement needs at least two ratings.
-      def case_score(attempts, row, paths, settings)
+      # A case whose repeats all failed or never ran still appears.
+      def planned_cases(runs, cases, paths, settings, plan)
+        by_case = runs.group_by { |run| run.fetch('case') }
+        plan.fetch('cases').to_h do |id|
+          ratings, counts = attempt_counts(by_case.fetch(id, []), plan.fetch('repeats'))
+          [id, counts.merge(case_score(ratings, cases.fetch(id), paths[id], settings))]
+        end
+      end
+
+      def attempt_counts(attempts, repeats)
         ratings = attempts.filter_map { |run| rating(run) }
+        [ratings, { 'attempted' => attempts.size, 'unattempted' => [repeats - attempts.size, 0].max,
+                    'rated' => ratings.size }]
+      end
+
+      # Agreement needs at least two ratings.
+      def case_score(ratings, row, paths, settings)
         reference = row['reference']
-        { 'attempted' => attempts.size, 'rated' => ratings.size, 'ratings' => ratings,
-          'consistent' => ratings.size < 2 ? 'UNKNOWN' : ratings.uniq.one?,
+        { 'ratings' => ratings, 'consistent' => ratings.size < 2 ? 'UNKNOWN' : ratings.uniq.one?,
           'published' => row['published'], 'matches_published' => ratings.count(row['published']),
           'reference' => reference || 'UNKNOWN', 'against_reference' => against(ratings, reference),
           'risk_gate' => THRESHOLDS.to_h { |max| [max, gate(ratings, reference, paths, settings, max)] } }
@@ -85,8 +99,7 @@ module Shaka
 
       def rating(run)
         result = run['result'] || {}
-        rating = result.dig('risk', 'rating')
-        result['status'] == 'completed' && PostImplementationReport::RISK.include?(rating) ? rating : nil
+        result.dig('risk', 'rating') if result['status'] == 'completed' && RiskReplay.rated?(result)
       end
     end
   end

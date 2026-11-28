@@ -37,8 +37,11 @@ packet. The arm's settings commit, not the one in force when the PR merged, deci
 the custom prompt, the risk areas, and the threshold; it is the setting under test.
 
 Use a new state directory for each comparison. The first call that ends without a
-rating stops the run, as in the reviewer replay; rerun the same comparison into the
-same directory to fill in the rest. Before scoring, check the transcripts for reads of
+rating stops the run, as in the reviewer replay, and the scorer counts the calls it
+never made as unattempted. To retry, run the comparison again into a new state
+directory and score each directory on its own; rerunning into the old one repeats
+calls that already finished. Missing usage leaves a budget reservation to reconcile
+first. Before scoring, check the transcripts for reads of
 the case file or other scoring material, as the reviewer replay guide describes.
 
 ## Score it
@@ -48,12 +51,14 @@ eval/bin/risk-replay-score --state PRIVATE_STATE_DIR
 ```
 
 The scorer prints JSON for each arm and case, and refuses a state directory that
-holds more than one comparison. It keeps the model's judgment apart from Shaka's
+holds more than one comparison: records name their reviewer, effort, cases, and
+repeats as well as each arm's model and settings commit. It keeps the model's judgment apart from Shaka's
 deterministic risk gate:
 
-- `attempted`, `rated`, `ratings`, `consistent`: the repeats run, the ones that gave a
-  rating, what each said, and whether they agree. Agreement is `UNKNOWN` with fewer
-  than two ratings.
+- `attempted`, `unattempted`, `rated`, `ratings`, `consistent`: the repeats run, the
+  planned ones never run, the ones that gave a rating, what each said, and whether they
+  agree. Agreement is `UNKNOWN` with fewer than two ratings. A report with no rating,
+  which the checkpoint parser records as `unknown`, counts as failed, not as a rating.
 - `matches_published`: repeats matching the rating the original checkpoint published.
 - `against_reference`: `under`, `over`, or `match` against the maintainer's rating.
   An under-rating is the costly error, because it can let Auto merge the PR.
@@ -87,6 +92,7 @@ the published rating, and the merge outcome. The original repair history was not
 kept either, so every packet says so.
 
 Keep v1 frozen. A maintainer adds reference ratings by setting `reference` to `low`,
-`medium`, or `high` in a new version, together with the cases that tune a prompt kept
+`medium`, or `high` in a new version, named in `RiskReplay::CASE_FILE` so the replay
+and the scorer both read it, together with the cases that tune a prompt kept
 apart from the cases that measure it. Four cases can expose a regression; they cannot
 calibrate a threshold.
