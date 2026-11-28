@@ -3,7 +3,7 @@ Judge `verification_adequacy` by whether the packet's `verification` proves what
 
 - `adequate`: the checks reach what `safe_because` rests on, and `not_verified` leaves
   nothing material.
-- `adequate with accepted gaps`: the named gaps are acceptable for that risk.
+- `adequate with named gaps`: the named gaps are acceptable for that risk.
 - `inadequate`: no check reaches the fact the safety claim rests on.
 - `cannot judge`: the checks do not show what ran.
 

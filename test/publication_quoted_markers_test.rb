@@ -54,6 +54,24 @@ class PublicationQuotedMarkersTest < Minitest::Test
     assert_includes Shaka::Publication.description(carried), 'codex-review'
   end
 
+  # Issue #1344: without real gaps the summary follows the marked line and could read back as setup gaps.
+  def test_a_verification_summary_starting_with_the_setup_gaps_label_is_refused
+    ['**Setup gaps:** 1 of 2 configured reviewers completed; `x` did not.',
+     " \t**Setup gaps:** see `x`."].each do |text|
+      error = assert_raises(Shaka::Error, text.inspect) do
+        Shaka::Publication.description(content('verification' => VERIFICATION.merge('summary' => text)))
+      end
+      assert_includes error.message, 'verification.summary'
+    end
+  end
+
+  # Only the summary can sit where the reader looks, so other text may quote the label and the headings.
+  def test_other_text_may_quote_the_label_and_the_verification_lines
+    body = "**Setup gaps:** is Shaka's label.\n\n## Verification\n\n**Validation and review:** an example."
+    sections = [{ 'heading' => 'Outcome', 'body' => body }]
+    assert_includes Shaka::Publication.description(content('sections' => sections)), body
+  end
+
   def test_marker_names_without_comment_delimiters_still_render
     assert_includes Shaka::Publication.description(content('summary' => 'Moves the `shaka:end` check.')),
                     '`shaka:end`'

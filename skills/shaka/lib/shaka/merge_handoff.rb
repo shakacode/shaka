@@ -7,22 +7,24 @@ require_relative 'status'
 
 module Shaka
   # Checks what the maintainer would see before applying the merge approval label.
+  # Where GitHub refuses GraphQL, it reads over REST and names the fields REST cannot read; GitHub still
+  # enforces review approval and the merge queue when the maintainer clicks merge.
   class MergeHandoff
     def initialize(github, seam_required_checks:, review:)
       @github = github
-      @status = Status.new(github, seam_required_checks:)
+      @status = Status.new(github, seam_required_checks:, rest_fallback: true)
       @review = MergeWaitReview.new(github, **review)
     end
 
     def call
-      reviewed = @github.snapshot
+      reviewed = @github.state_snapshot
       open!(reviewed)
       review = @review.check!(reviewed)
       snapshot = @status.call
       verify_same_target!(reviewed, snapshot)
       RequiredChecks.verify_passing!(snapshot['requiredChecks'])
       Attention.new(@github).call(state: 'merge', expected: snapshot)
-               .merge('review' => review,
+               .merge('review' => review, **snapshot.slice('readOver', 'unknownFields'),
                       'merge_approval_label' => MergeApprovalLabel.new(@github).ensure_repository_label)
     end
 

@@ -78,6 +78,15 @@ module Shaka
         'records' => UsageJournalSummary.compact(UsageJournalRecords.combine(stored_records)) }
     end
 
+    # Whether a trusted snapshot measured a response for this commit, so handoff can tell if the head's usage is
+    # on the PR. A placeholder from a reader that found nothing proves no usage was saved. Combining first raises
+    # on the conflicts `collect` refuses, so a journal no successor can read never passes.
+    def covers?(commit)
+      UsageJournalRecords.combine(stored_records).any? do |record|
+        record['responses'].any? && record['commits'].any? { |named| named.casecmp?(commit) }
+      end
+    end
+
     private
 
     def unpublished(records)

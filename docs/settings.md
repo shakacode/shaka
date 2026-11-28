@@ -1086,6 +1086,9 @@ not a check of the whole text's accuracy.
 It flags a first sentence led by an internal tool, such as a command or helper, and
 one that gives a thing something only a person does, such as "A repository can now
 see when a reviewer could not run."
+It also flags a first sentence whose main verb only states a condition, such as "keeps"
+in "A pull request keeps its open decisions," when it mentions actions in other words
+instead of saying what changed.
 On a description, it also reads the Intent and Verification text you see without
 opening anything. For each term it flags, it suggests plainer words: "that commit"
 for "that head", for example. The agent decides whether a term needs changing.

@@ -51,7 +51,10 @@ class PrivateDeliverySettingsTest < Minitest::Test
     git(@root, 'add', '-f', '.agents/shaka')
     commit(@root)
     @ref = git(@root, 'rev-parse', 'HEAD')
-    alter_pull { |pull| pull['snapshot']['headRefOid'] = @ref }
+    alter_pull do |pull|
+      pull['snapshot']['headRefOid'] = @ref
+      pull['comments'] = [HandoffFixtures.usage_snapshot(@ref)]
+    end
   end
 
   def update_team_candidate

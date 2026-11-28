@@ -112,7 +112,7 @@ complete. Successful execution returns `completed`; that status does not mean Pr
 
 The report contains the head, conclusion, reasons, unresolved concerns, simpler
 alternative, a short `summary`, the task owner's `next_action`, and a required
-`verification_adequacy` object: a `verdict` of `adequate`, `adequate with accepted gaps`,
+`verification_adequacy` object: a `verdict` of `adequate`, `adequate with named gaps`,
 `inadequate`, or `cannot judge`, the `weakest_claim`, and the `next_check`, judged by the
 packaged [verdict definitions](../config/post-implementation-adequacy.md) whatever prompt
 is configured. The checkpoint

@@ -122,6 +122,10 @@ then give Shaka the PR:
 The agent checks the current state and explains what remains. It records the
 handover on the PR and rechecks merge authority before continuing.
 
+You can push to the agent's branch yourself. At its next turn or push, the agent notices,
+stops editing and publishing, and tells you. It combines your commits with its own before it
+continues, and it never pushes over commits it hasn't seen.
+
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See
 [interrupted work](expected-experience.md#resume-or-change-your-checkout) for recovery limits.
