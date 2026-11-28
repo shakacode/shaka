@@ -8,18 +8,18 @@ class HandoffMergeWaitThreadsTest < Minitest::Test
   include HandoffHarness
 
   MERGE = ['awaiting-merge-approval'].freeze
-  WITHDRAW = 'Review threads wait for an answer while awaiting-merge-approval is set: run ' \
-             '`attention --state none` and withdraw the merge-ready handoff in WIP Details before working on them.'
+
+  def withdraws?(result) = result['owed'].any? { |item| item.include?('`attention --state none`') }
 
   def test_an_unanswered_thread_owes_withdrawing_the_merge_wait
     result = handoff(labels: MERGE, threads: [thread('T1', replies: ['reviewer'])])
 
     assert_includes result['owed'], 'Reply on review threads waiting for an answer: T1.'
-    assert_includes result['owed'], WITHDRAW
+    assert withdraws?(result)
   end
 
   def test_answered_threads_leave_the_merge_wait_alone
-    refute_includes handoff(labels: MERGE, threads: [thread('T1', replies: ['shaka-agent'])])['owed'], WITHDRAW
+    refute withdraws?(handoff(labels: MERGE, threads: [thread('T1', replies: ['shaka-agent'])]))
   end
 
   def test_an_unanswered_thread_without_the_merge_wait_owes_only_the_reply
@@ -32,13 +32,38 @@ class HandoffMergeWaitThreadsTest < Minitest::Test
   def test_a_thread_only_an_excluded_author_opened_keeps_the_merge_wait
     result = handoff(visibility: 'public', labels: MERGE, threads: [thread('T1', opener: 'outsider')])
 
-    refute_includes result['owed'], WITHDRAW
+    refute withdraws?(result)
   end
 
   def test_a_thread_past_the_first_page_is_not_owed_as_a_withdrawal
     long_thread = thread('T1', replies: ['reviewer'])
     long_thread['comments']['pageInfo']['hasNextPage'] = true
 
-    refute_includes handoff(labels: MERGE, threads: [long_thread])['owed'], WITHDRAW
+    refute withdraws?(handoff(labels: MERGE, threads: [long_thread]))
+  end
+
+  def test_a_trusted_public_author_withdraws_the_merge_wait
+    result = handoff(visibility: 'public', trusted: ['reviewer'], labels: MERGE,
+                     threads: [thread('T1', opener: 'reviewer')])
+
+    assert withdraws?(result)
+  end
+
+  # A permission or trust-settings read that failed is not evidence the author may speak, so the thread
+  # stays owed for a reply while the merge wait stands.
+  def test_an_unverifiable_public_author_keeps_the_merge_wait
+    result = handoff(visibility: 'public', unverifiable: ['outsider'], labels: MERGE,
+                     threads: [thread('T1', opener: 'outsider')])
+
+    assert_includes result['owed'], 'Reply on review threads waiting for an answer: T1.'
+    refute withdraws?(result)
+  end
+
+  def test_unreadable_trusted_actor_settings_keep_the_merge_wait
+    result = handoff(visibility: 'public', trust_from_github: true, labels: MERGE,
+                     threads: [thread('T1', opener: 'reviewer')])
+
+    assert_includes result['owed'], 'Reply on review threads waiting for an answer: T1.'
+    refute withdraws?(result)
   end
 end

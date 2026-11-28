@@ -729,9 +729,11 @@ rules:
     enforced_by: reported
     detector: >-
       `handoff` owes running `attention --state none` while `awaiting-merge-approval` is set and
-      a review thread it owes an answer remains, and exits 2. It counts the threads
-      settled-resolution describes, so a thread past its first 100 comments, an unreadable thread
-      list, or a public thread only an excluded author opened leaves the label in place.
+      a review thread it owes an answer remains, and exits 2. It counts the threads the
+      settled-resolution entry describes, and in a public repository only those whose authors
+      `comments` screened and allowed. A thread past its first 100 comments, an unreadable thread
+      list, an excluded author, or an author whose permission or trust settings went unread leaves
+      the label in place, with the thread still owed or noted.
       Conversation comments do not count. Replying on the thread clears the item, so an agent
       that answers without removing the label leaves the merge wait standing. Nothing checks that
       WIP Details withdraws the handoff, and nothing runs when feedback arrives with no session to
