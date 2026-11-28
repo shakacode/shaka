@@ -20,11 +20,12 @@ module Shaka
 
       attr_reader :root, :record
 
-      def initialize(root, record)
+      def initialize(root, record, skills_dir: nil)
         @root = root
         @record = record
         @branch = record['branch']
         @release = record['release']
+        @skills_dir = skills_dir
       end
 
       def helper = command(File.join(@root, 'skills/shaka/scripts/shaka'))
