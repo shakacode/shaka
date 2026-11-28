@@ -55,8 +55,10 @@ If your repository [waits for every CI review](settings.md#reviewci_review_wait)
 <a id="in-your-editor"></a>
 
 When the result is something you judge by reading it, such as documentation or an
-article, the agent shows you a draft in chat before its slower checks. It says what
-it hasn't checked yet. Reply to redirect it; if you don't, the checks continue.
+article, the agent shows you a draft in chat before code review and full validation,
+leaving out anything private. It says what it hasn't checked yet, then continues
+without waiting. Your reply redirects the work, though checks already running may
+finish first.
 
 Say what you want changed in the same chat:
 
