@@ -348,7 +348,7 @@ one, since Shaka accepts a pass from either
 [validation script](settings.md#standard-command-scripts). If that means editing Shaka's
 own scripts, it does so in a separate settings PR. Once a branch includes the change, each
 time the agent validates that branch through Shaka, the harness runs, and Shaka ties the
-result to the exact code tested. A PR whose harness fails can't pass validation.
+result to the exact code tested. If the harness fails, that validation run fails.
 
 The harness has to run without a person wherever those scripts run, including CI if yours
 runs them. One that waits for a sign-in code, for example, can't be part of validation;
