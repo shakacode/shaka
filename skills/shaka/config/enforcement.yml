@@ -634,12 +634,14 @@ rules:
       from anyone but a bot after the last one, and exits 2. An agent post is this account's
       comment opening with the identity line or a hidden marker, so a maintainer's unmarked
       comment under the agent's login is the maintainer's. It reads the first 100 comments of
-      each thread, so a longer thread is only a note. Under merge approval it also notes
-      answered threads left open. It owes each conversation comment by the PR author or this
-      account, unmarked and not from a bot, that no later agent post links. A failed read is
-      only a note, so it owes nothing. Other people's conversation comments are not owed,
-      nothing checks optional reviews still running, and nothing stops a turn whose agent
-      ignores the exit status.
+      each thread, so a longer thread is only a note. In a public repository, a thread it would
+      otherwise owe is only a note when `comments` confirms it excludes one of the thread's
+      authors, because `reply` refuses there; a thread it could not screen stays owed. Under
+      merge approval it also notes answered threads left open. It owes each conversation
+      comment by the PR author or this account, unmarked and not from a bot, that no later
+      agent post links. A failed read of the threads or the conversation is only a note, so it
+      owes nothing. Other people's conversation comments are not owed, nothing checks optional
+      reviews still running, and nothing stops a turn whose agent ignores the exit status.
   - id: no-handoff-monitor
     phase: review
     quote: never create a monitor or follow-up issue for the handoff

@@ -10,6 +10,7 @@ class HandoffFakeGitHub
   LABELS = 'repos/owner/repo/issues/42/labels'
   REVIEWS = 'repos/owner/repo/pulls/42/reviews'
   COMMENTS = 'repos/owner/repo/issues/42/comments'
+  TRUST_FILE = '.agents/shaka/trusted-github-actors.yml'
 
   attr_reader :repository, :number
 
@@ -29,9 +30,13 @@ class HandoffFakeGitHub
   def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
   def issue_comments = @pull[:comments]
 
-  def graphql(query, **)
+  # The batched writer lookup passes its variables as a positional hash; it always fails here.
+  def graphql(query, batch = nil, **variables)
+    batch_failure(batch) if batch
     return { 'repository' => @pull.fetch(:queue_settings) } if query.include?('squashMergeCommitMessage')
     return closing_references if query.include?('closingIssuesReferences')
+
+    return trust_settings(query, variables[:expression]) if trust_query?(query)
     raise Shaka::Error, 'GraphQL failed or returned missing data.' if @pull[:threads] == :unreadable
 
     page = { 'nodes' => @pull.fetch(:threads, []), 'pageInfo' => { 'hasNextPage' => false } }
@@ -48,9 +53,54 @@ class HandoffFakeGitHub
 
   def api(path, **)
     return { 'login' => 'shaka-agent' } if path == 'user'
+    return visibility if path == 'repos/owner/repo'
+    return team_membership(Regexp.last_match(1)) if path =~ %r{\Aorgs/owner/teams/core/memberships/([^/]+)\z}
+    return permission(Regexp.last_match(1)) if path =~ %r{\Arepos/owner/repo/collaborators/([^/]+)/permission\z}
     raise "unexpected read #{path}" unless path == 'repos/owner/repo/pulls/42'
 
     { 'body' => @pull[:body], 'head' => { 'sha' => @pull.fetch(:final_head, @pull[:head]) } }
+  end
+
+  def batch_failure(batch)
+    @pull[:batch_reads]&.push(batch.size)
+    raise Shaka::Error, 'collaborator batch failed'
+  end
+
+  def trust_query?(query) = @pull[:allowlist] && query.match?(/defaultBranchRef|object\(/)
+
+  # The default branch's trusted-actor file, when a test supplies :allowlist. Only the copy at the
+  # default branch's commit exists, so reading any other revision fails.
+  def trust_settings(query, expression)
+    base = { 'repository' => { 'defaultBranchRef' => { 'target' => { 'oid' => 'b' * 40 } } } }
+    return base unless query.include?('object(')
+    raise Shaka::Error, "no trust file at #{expression}" unless expression == "#{'b' * 40}:#{TRUST_FILE}"
+
+    text = @pull.fetch(:allowlist)
+    { 'repository' => { 'object' => { '__typename' => 'Blob', 'isBinary' => false, 'isTruncated' => false,
+                                      'byteSize' => text.bytesize, 'text' => text } } }
+  end
+
+  def team_membership(login)
+    raise Shaka::Error, 'not a member' unless @pull.fetch(:team_members, []).include?(login)
+
+    { 'state' => 'active', 'url' => "https://api.github.com/orgs/owner/teams/core/memberships/#{login}" }
+  end
+
+  # A repository is private unless a test says otherwise, so no author is screened.
+  def visibility
+    raise Shaka::Error, 'Repository visibility is unavailable.' if @pull[:visibility] == :unreadable
+
+    { 'visibility' => @pull.fetch(:visibility, 'private') }
+  end
+
+  # Logins in :writers have write access; one in :unverifiable fails every permission read, and one
+  # in :fail_once fails only its first.
+  def permission(login)
+    @pull[:permission_reads]&.push(login)
+    raise Shaka::Error, 'permission read failed' if @pull.fetch(:unverifiable, []).include?(login)
+    raise Shaka::Error, 'permission read failed' if @pull[:fail_once]&.delete(login)
+
+    { 'user' => { 'login' => login }, 'permission' => @pull.fetch(:writers, []).include?(login) ? 'write' : 'read' }
   end
 
   def api_list(path)
@@ -147,10 +197,23 @@ module HandoffHarness
 
   def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
+  # pull[:trusted] lists the users the trusted-actor settings name; pull[:trust_from_github] skips
+  # that and loads them as production does.
+  # Loading from GitHub reads no machine allowlist, so the test sees only the default branch's file.
+  def screen(github, trust_config, from_github)
+    return Shaka::Handoff::ThreadScreen.new(github, trust_config:) unless from_github
+
+    Shaka::Handoff::ThreadScreen.new(github, machine_path: File.join(__dir__, 'missing', 'trusted.yml'))
+  end
+
   def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, walkthrough_publish: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
-    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:, walkthrough_publish:)
+    github = HandoffFakeGitHub.new(defaults.merge(pull))
+    trust_config = { users: pull.fetch(:trusted, []), bots: pull.fetch(:bots, []), metadata_bots: [],
+                     teams: pull.fetch(:teams, []) }
+    Shaka::Handoff.new(github, post_implementation:, walkthrough_publish:)
+                  .tap { |item| item.thread_screen = screen(github, trust_config, pull[:trust_from_github]) }
                   .call(head: expected, woken_by:)
   end
 end

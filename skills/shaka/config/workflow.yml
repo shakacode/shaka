@@ -515,7 +515,7 @@ phases:
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Point reviewers to the code instead of retelling it: the description links the walkthrough,
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.
-        `description` and `walkthrough` refuse visible prose past the trusted
+        `description` and `walkthrough` refuse prose past the trusted
         [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits), so pass `--ref` to both.
         On a refusal, rewrite the text,
         publish again, and note the refusal in the description's review history details.
@@ -596,11 +596,11 @@ phases:
         was proved, and the helper omits the line. An unfinished PR may list no checks
         yet. The helper cannot tell whether a check ran.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
-        text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
+        text, and optionally either `to` text or `block: true`, not both; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
         at the first later line containing `to`, or with `block: true` at the bare `end` or `}`
         closing that line's indentation, and otherwise links the one line.
-        `notes` lists reviewer notes, each with `path`, `from`, `to` or `block` as a code
+        `notes` lists reviewer notes, each with `path`, `from`, optional `to` or `block` as a code
         link takes them, and a Markdown `body`. The helper posts each one as an inline comment of
         the walkthrough review on those lines. A walkthrough for a change to three or more files
         supplies notes, unless walkthrough notes says to publish without them; a smaller change
@@ -614,7 +614,8 @@ phases:
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
         with the live full `head`; the helper reads the recommendation that opens the links line
         from this head's published checkpoint `disposition`, with an `inadequate` or `cannot judge`
-        verification verdict on the next line, and non-empty `decisions` head the description instead. Add a one-sentence `next_action` only for a dependency, check, or
+        verification verdict on the next line, and non-empty `decisions` head the description instead. While this head's
+        checkpoint recommends Merge, `description` refuses non-empty `decisions`. Add a one-sentence `checkpoint.next_action` only for a dependency, check, or
         approval the recommendation does not already say, such as `Merge after #570 lands.`
         Neither line names the commit; leave checks and any table without a commit
         unless one covers an earlier commit. Summarize consequential decisions,
@@ -622,7 +623,8 @@ phases:
         Republish when the recommendation or action changes.
         Set `deployment` to `auto` to link the newest successful GitHub
         deployment of the PR head, falling back to the latest current-head Cloudflare Pages
-        check when successful from the Cloudflare GitHub App. When neither provides a URL, the description shows `Deployment: none found` for that head.
+        check when successful from the Cloudflare GitHub App. When both lookups finish without a URL, the description shows `Deployment: none found`
+        for that head; when a lookup is too large to finish without one, `description` refuses.
         Supply an https URL yourself when the preview exists only in another provider comment
         or CI log. Use an explicit URL to choose among several preview projects, or `none`
         when the repository deploys nothing for the change. The helper links it beside the walkthrough.
@@ -1066,7 +1068,7 @@ always: |-
   once, prioritizing the primary owner. This also applies after checks pass in other phases.
   When a monitor will cause the coding tool to resume this session for pending work, add
   `--woken-by` naming it in place of a label. Settle each owed item and run it again before
-  stopping. An Ask handoff's comment-only watch keeps the merge label and omits `--woken-by`;
+  stopping. Relay its notes to the user. An Ask handoff's comment-only watch keeps the merge label and omits `--woken-by`;
   keep that owning chat available while automatic follow-up depends on it. Review-only work reports
   what `handoff` lists and leaves the PR unchanged. A session
   resuming a PR after a restart, crash, or new chat runs `handoff` without `--head` first, treats

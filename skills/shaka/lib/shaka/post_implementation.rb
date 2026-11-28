@@ -86,8 +86,10 @@ module Shaka
       publication = renderer.new(result, head:, repository: @arguments.first, message:, previews:)
       published = github.reply(body: publication.render, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
       safeguard = merge_safeguard(github, head, publication, published)
-      published.merge('merge_safeguard' => safeguard)
+      published.merge('merge_safeguard' => safeguard, **squash_references)
     end
+
+    def squash_references = @squash ? @squash.reference_check : {}
 
     # Settings come from the trusted default branch, never the PR. Without --ref there is no Auto merge
     # preview, and the risk rating uses the packaged high-risk areas.
@@ -124,7 +126,7 @@ module Shaka
       path = @options[:squash_message]
       raise Error, 'Ready checkpoint requires --squash-message with the commit title and body.' unless path
 
-      SquashMessage.for(github, JSON.parse(File.read(path, encoding: 'UTF-8')))
+      @squash = SquashMessage.for(github, JSON.parse(File.read(path, encoding: 'UTF-8')))
     end
 
     def publication_result
