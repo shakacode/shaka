@@ -44,7 +44,7 @@ class MergeFinalCheckpointTest < Minitest::Test
   end
 
   def test_verification_judged_adequate_merges
-    ['adequate', 'adequate with accepted gaps'].each do |verdict|
+    ['adequate', 'adequate with named gaps'].each do |verdict|
       setup
       assert_equal 'MERGED', merge_with_adequacy(verdict)['state']
     end

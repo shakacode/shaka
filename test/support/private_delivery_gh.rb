@@ -25,6 +25,8 @@ result = case ARGV.first
              exit
            when 'user' then { 'login' => 'shaka-agent' }
            when %r{/rules/branches/} then []
+           when %r{/collaborators/([^/]+)/permission\z}
+             { 'permission' => 'write', 'user' => { 'login' => Regexp.last_match(1) } }
            when %r{/comments}
              if ARGV.include?('POST')
                posted = request.merge('id' => 10, 'user' => { 'login' => 'shaka-agent' },

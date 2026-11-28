@@ -28,7 +28,7 @@ end
 
 def register_arguments(flags, options)
   arguments = %w[helper:PATH reviewer:ID criteria:SHA candidate-criteria:SHA baseline-model:MODEL candidate-model:MODEL
-                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID]
+                 effort:LEVEL state:DIR budget:DIR pr:NUMBER cap:USD case:ID bank:VERSION]
   arguments.each do |argument|
     name, value_name = argument.split(':')
     flags.on("--#{name} #{value_name}") { |value| options[name.tr('-', '_').to_sym] = value }
@@ -113,12 +113,24 @@ def repository_marker?(directory)
     (directory.join('HEAD').file? && directory.join('objects').directory? && directory.join('refs').directory?)
 end
 
+def review_bank(bank)
+  path = File.join(__dir__, "../review-replay/#{bank}.jsonl")
+  raise ArgumentError, 'Unknown replay bank' unless bank.match?(/\Av\d+\z/) && File.file?(path)
+
+  path
+end
+
+# The risk replay reads its own case file; --bank picks a code review replay's frozen cases.
+def case_file(options)
+  return review_bank(options.fetch(:bank, 'v2')) unless options[:checkpoint_risk]
+  raise ArgumentError, 'Use --bank only for a code review replay' if options[:bank]
+
+  Shaka::Evaluation::RiskReplay::CASE_FILE
+end
+
 def rows(options)
-  case_id = options[:case]
-  cases = File.join(__dir__, '../review-replay/v1.jsonl')
-  cases = Shaka::Evaluation::RiskReplay::CASE_FILE if options[:checkpoint_risk]
-  rows = File.foreach(cases).map { |line| JSON.parse(line) }
-  rows.select! { |row| row['id'] == case_id } if case_id
+  rows = File.foreach(case_file(options)).map { |line| JSON.parse(line) }
+  rows.select! { |row| row['id'] == options[:case] } if options[:case]
   raise ArgumentError, 'Unknown replay case' if rows.empty?
 
   rows
