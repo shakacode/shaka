@@ -6,6 +6,7 @@ require 'yaml'
 class WindowsWorkflowTest < Minitest::Test
   PIN = /\A[0-9a-f]{40}\z/
   DOCS_GATE = "steps.changes.outputs.docs_only != 'true'"
+  AFTER_RUBY = "!cancelled() && steps.ruby.outcome == 'success'"
 
   def setup
     @path = File.expand_path('../.github/workflows/windows.yml', __dir__)
@@ -32,8 +33,8 @@ class WindowsWorkflowTest < Minitest::Test
 
     assert on.dig('schedule', 0, 'cron')
     assert on.key?('workflow_dispatch')
-    assert_equal "${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}",
-                 suite['if']
+    nightly = "github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"
+    assert_equal "${{ #{AFTER_RUBY} && (#{nightly}) }}", suite['if']
     assert suite['continue-on-error']
   end
 
@@ -66,10 +67,10 @@ class WindowsWorkflowTest < Minitest::Test
     assert_empty(quick.select { |step| step.key?('continue-on-error') })
   end
 
-  def test_later_steps_still_run_after_an_earlier_failure
+  def test_later_steps_still_run_after_an_earlier_failure_once_ruby_is_set_up
     later = @steps.drop(ruby_index + 1)
 
-    assert(later.all? { |step| step['if'].start_with?('${{ !cancelled() && ') })
+    assert(later.all? { |step| step['if'].start_with?("${{ #{AFTER_RUBY}") })
   end
 
   def test_names_the_suite_file_windows_ruby_cannot_load
@@ -106,9 +107,9 @@ class WindowsWorkflowTest < Minitest::Test
   end
 
   def test_skips_every_step_after_detection_for_documentation
-    gated = @steps.drop(detector_index + 1).reject { |step| step['run'] == 'ruby bin/windows-exercise suite' }
-
-    assert(gated.all? { |step| [DOCS_GATE, "${{ !cancelled() && #{DOCS_GATE} }}"].include?(step['if']) })
+    assert_equal detector_index + 1, ruby_index
+    assert_equal DOCS_GATE, @steps.fetch(ruby_index)['if']
+    assert(@steps.drop(ruby_index + 1).all? { |step| step['if'].include?("steps.ruby.outcome == 'success'") })
   end
 
   private
