@@ -83,8 +83,10 @@ or later as
 Prepare a branchless detached checkout of Shaka 1.0.0 for the compatibility checks in docs/migration.md. Keep my current installation. Use the official Install a published release clone and inspect steps, then run the team and individual seam checks against this project's verified default-branch commit
 ```
 
-Use that checkout's helper. Use the project's verified default-branch commit for
-`DEFAULT_SHA`.
+Use that checkout's helper. On POSIX, set `SHAKA_RUBY` to the absolute path to
+Ruby 3.4 or later before invoking `DIR/skills/shaka/scripts/shaka` (an
+unregistered release checkout does not select Ruby on its own). Use the
+project's verified default-branch commit for `DEFAULT_SHA`.
 
 - For team settings, run `seam check --root PROJECT --ref DEFAULT_SHA` in a
   clean checkout at that commit. Require `trusted/ref` for the same SHA before

@@ -13,7 +13,8 @@ When the request names a release version, follow
 [Install a published release](#install-a-published-release) with that version.
 When the request names a branch, follow the source clone below with that branch
 (`git clone --branch NAME` and `bin/install --branch NAME`). When the request
-asks for a source install (without naming a branch), follow the source clone
+asks for a source install unconditionally (without naming a branch and without
+making source only a fallback if no release exists), follow the source clone
 below. Otherwise, when the request does not name a branch or source install,
 check the official GitHub releases for the latest published version at or above
 1.0.0 (compared by semantic version, excluding GitHub drafts and prereleases).
