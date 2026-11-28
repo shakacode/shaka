@@ -339,19 +339,19 @@ is only its account, and the next commit can make it out of date. To check every
 the harness, the way your tests do, ask:
 
 ```text
-Make our verification harness part of Shaka validation for every PR
+Make our verification harness part of Shaka validation for every PR, so a harness failure fails validation
 ```
 
 The agent adds the harness to your `validate` script, and to `validate-local` if you have
 one, since Shaka accepts a pass from either
-[validation script](settings.md#standard-command-scripts). It makes this change in a
-separate settings PR; PRs opened before that one merges aren't checked by the harness.
-After it merges, each time the agent validates a PR through Shaka, the harness runs, and
-Shaka ties the result to the exact code tested. A PR whose harness fails can't pass
-validation.
+[validation script](settings.md#standard-command-scripts). If that means editing Shaka's
+own scripts, it does so in a separate settings PR. Once a branch includes the change, each
+time the agent validates that branch through Shaka, the harness runs, and Shaka ties the
+result to the exact code tested. A PR whose harness fails can't pass validation.
 
-The harness has to run without a person. One that waits for a sign-in code, for example,
-can't be part of validation; keep reporting those runs in **Companion skill results**.
+The harness has to run without a person wherever those scripts run, including CI if yours
+runs them. One that waits for a sign-in code, for example, can't be part of validation;
+keep reporting those runs in **Companion skill results**.
 
 ## Review a session for improvements
 
