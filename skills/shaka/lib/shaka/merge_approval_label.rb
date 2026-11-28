@@ -69,6 +69,8 @@ module Shaka
       end
     rescue PublicComments::BoundedList::LimitError
       raise refusal('the PR has too many events to find who added it')
+    rescue Error => e
+      raise refusal("GitHub did not list who added it (#{e.message})")
     end
 
     def writer!(actor)

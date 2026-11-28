@@ -919,7 +919,12 @@ phases:
         readiness and the Ask handoff unchanged.
       - In Ask mode, after that refresh, any due walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
-        stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
+        stop. When merge is the only remaining action, nothing above forced Ask, and the PR carries
+        `merge-approved`, the maintainer chose Auto for this PR and later pushes keep that choice
+        ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)):
+        take the Auto path below with `--label-approval`, and continue here after a label refusal.
+        Adding and removing the label stay with the maintainer. Otherwise, if merge is the only
+        remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge --root DIR --ref SHA` to label the PR
         `awaiting-merge-approval`; every `--state merge` takes those flags when trusted settings exist,
         because `review.required` comes from them. It refuses while the published local review reports
@@ -963,11 +968,6 @@ phases:
         checks to pass, then refresh the description and any required rendering preview. Run
         `attention` with `--state merge` so the PR stays in the approval queue while it waits.
         Any other new commit ends the approval.
-      - Under Ask, once nothing above holds the task at Ask, a `merge-approved` label on the PR is the
-        maintainer's choice of Auto for it, and later pushes keep it, unlike the per-head approval above
-        ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)).
-        Follow the Auto path, passing `--label-approval` with `--auto`; a label refusal returns the PR
-        to Ask. Adding and removing the label stay with the maintainer.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base

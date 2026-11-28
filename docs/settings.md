@@ -154,23 +154,27 @@ Shaka uses your account's existing GitHub
 permissions; an account that can bypass protection needs no extra Shaka setting.
 
 Set a task's preference with `Use merge policy auto`.
-To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub,
-then resume the agent that owns the PR; the label alone does not wake it. The agent merges
-once Auto's gates pass. The label covers the PR, not one commit, so later pushes keep it.
-Remove it before the agent submits the merge to take the choice back. On a merge-queue
-branch, a PR already queued stays queued until you remove it from the queue. `shaka merge
---auto --label-approval` counts the label only when the PR's events show that the last
-account to add it has write access now. It trusts the account, not who clicked, so an agent
-working under your account could add it; only you should. When the agent hands a PR back with
-`awaiting-merge-approval`, it also tries to create `merge-approved`, with a description, if
-the repository lacks it. The label does not apply to a first-setup preview or to a PR whose
-base is neither the [`base_branch`](#base_branch) nor the default branch; both stay Ask.
 [First-setup previews](#preview-settings-before-adopting-them) use Ask.
 This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
 approvals still apply. `Go` starts work; it is not merge consent. Ruby checks
 readiness; the agent establishes your task-scoped authority. See
 [merge policy](working-with-shaka.md#choose-a-merge-policy).
+
+To choose Auto for one PR that waits under Ask, add the `merge-approved` label on GitHub,
+then resume the agent that owns the PR; the label alone does not wake it. The agent merges
+once every Auto gate passes, and later pushes keep your choice.
+
+- **Take it back:** remove the label. The agent checks it just before merging, so a removal in
+  the last moment may come too late, and a PR already in a merge queue stays queued.
+- **Who counts:** the label counts only when the last account to add it has write access. It
+  trusts the account, not who clicked, so an agent working under your account could add it;
+  only you should.
+- **Where it applies:** not to a first-setup preview, or to a PR whose base is neither the
+  [`base_branch`](#base_branch) nor the default branch; both stay Ask.
+
+When the agent first asks you to approve a merge in a repository without the label, it
+creates `merge-approved` with a description.
 
 ## `merge.required_checks`
 

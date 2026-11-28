@@ -46,7 +46,7 @@ module Shaka
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      merged = submit(initial, approved_snapshot(queued: initial['isInMergeQueue']), head)
+      merged = submit(initial, approved_snapshot(initial), head)
       AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
@@ -55,10 +55,10 @@ module Shaka
     # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply. It is
     # read before them and again for submission; the PR is then read afresh, so every later gate, the hold
     # included, sees what changed during those reads. GitHub cannot tie the merge to the label, so a change
-    # after that read is not seen. A queued PR already passed the label when it was enqueued.
-    def approved_snapshot(queued: false)
+    # after that read is not seen. A PR queued at the first read passed the label when it was enqueued.
+    def approved_snapshot(initial = nil)
       pull = @github.snapshot
-      return pull if @label_approval.nil? || queued || pull['isInMergeQueue']
+      return pull if @label_approval.nil? || (initial || pull)['isInMergeQueue']
 
       @approval = @label_approval.verify!(pull)
       @github.snapshot.tap { |fresh| @label_approval.present!(fresh) }

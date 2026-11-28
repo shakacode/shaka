@@ -89,15 +89,13 @@ class MergeApprovalLabelTest < Minitest::Test
     refute(@client.api_calls.any? { |method, _| method == 'DELETE' })
   end
 
+  # An account GitHub cannot confirm is refused like one without write access.
   def test_refuses_a_label_added_without_write_access
     @client.events = [labeled('maintainer'), labeled('helper', event: 'unlabeled'), labeled('helper')]
 
     assert_blocked(/merge-approved does not choose Auto: "helper" added it without write access \(read\)/)
-  end
 
-  def test_refuses_a_label_added_by_an_account_github_cannot_confirm
     @client.events = [labeled('stranger')]
-
     assert_blocked(/"stranger" added it without write access \(unavailable\)/)
   end
 
@@ -108,12 +106,6 @@ class MergeApprovalLabelTest < Minitest::Test
     @client.snapshots = [approved]
     @client.events = [labeled('maintainer', name: 'bug')]
     assert_blocked(/GitHub lists no event adding it/)
-  end
-
-  def test_a_label_removed_before_submission_stops_the_merge
-    @client.snapshots = [approved, snapshot]
-
-    assert_blocked(/the PR does not carry it/)
   end
 
   def test_a_label_re_added_without_write_access_before_submission_stops_the_merge
@@ -138,6 +130,19 @@ class MergeApprovalLabelTest < Minitest::Test
     @client.define_singleton_method(:api_list) { |_path| Array.new(100) { {} } }
 
     assert_blocked(/too many events to find who added it. Hand the PR back under Ask/)
+
+    @client.define_singleton_method(:api_list) { |_path| raise Shaka::Error, 'HTTP 403' }
+    assert_blocked(/did not list who added it \(HTTP 403\). Hand the PR back under Ask/)
+  end
+
+  # A PR that a person queues between the reads still has to carry the label at the last one.
+  def test_a_label_removed_before_submission_stops_the_merge_even_once_queued
+    @client.snapshots = [approved, snapshot]
+    assert_blocked(/the PR does not carry it/)
+
+    @client.snapshots = [approved, approved, snapshot.merge('isInMergeQueue' => true, 'isMergeQueueEnabled' => true)]
+
+    assert_blocked(/the PR does not carry it/)
   end
 
   def test_the_label_exempts_no_auto_gate
