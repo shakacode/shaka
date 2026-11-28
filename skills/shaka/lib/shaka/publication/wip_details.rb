@@ -65,13 +65,11 @@ module Shaka
     end
 
     # The owner's machine alias for the chat link label, or nil when it is UNKNOWN or not a plain alias token, so
-    # free text cannot reach the bold label. Its punctuation is escaped so `_` cannot become emphasis.
+    # free text cannot reach the bold label. The token has no backtick, so a code span shows it literally.
     def machine
       detail
       name = @spec['owner'].split('·').first.strip
-      return if name == 'UNKNOWN' || !name.match?(ExecutionProvenance::SAFE_VALUE)
-
-      name.gsub(/[._:-]/) { |character| "\\#{character}" }
+      name if name != 'UNKNOWN' && name.match?(ExecutionProvenance::SAFE_VALUE)
     end
 
     private
