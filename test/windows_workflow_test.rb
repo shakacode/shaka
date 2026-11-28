@@ -5,6 +5,7 @@ require 'yaml'
 
 class WindowsWorkflowTest < Minitest::Test
   PIN = /\A[0-9a-f]{40}\z/
+  DOCS_GATE = "steps.changes.outputs.docs_only != 'true'"
 
   def setup
     @path = File.expand_path('../.github/workflows/windows.yml', __dir__)
@@ -32,7 +33,6 @@ class WindowsWorkflowTest < Minitest::Test
     assert on.dig('schedule', 0, 'cron')
     assert on.key?('workflow_dispatch')
     assert_equal "github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'", suite['if']
-    assert((exercise_steps - [suite]).none? { |step| step.key?('if') })
   end
 
   def test_pins_the_same_checkout_and_ruby_actions_as_validate
@@ -72,7 +72,39 @@ class WindowsWorkflowTest < Minitest::Test
     assert_operator @steps.index(first), :<, checkout
   end
 
+  def test_reports_on_every_pull_request_and_merge_group_so_main_can_require_it
+    on = @workflow['on'] || @workflow[true]
+
+    assert on.key?('merge_group')
+    refute on['pull_request'].to_h.key?('paths-ignore')
+    refute on['push'].to_h.key?('paths-ignore')
+  end
+
+  def test_detects_documentation_changes_like_validate
+    assert_equal validate_job.dig('env', 'SHAKA_BASE_REF'), @job.dig('env', 'SHAKA_BASE_REF')
+    assert_equal detector_run(validate_job.fetch('steps')), detector_run(@steps)
+  end
+
+  def test_detects_right_after_a_full_history_checkout
+    checkout = @steps.index { |step| step['uses'].to_s.start_with?('actions/checkout@') }
+
+    assert_equal 0, @steps.fetch(checkout).dig('with', 'fetch-depth')
+    assert_equal checkout + 1, detector_index
+  end
+
+  def test_skips_every_step_after_detection_for_documentation
+    gated = @steps.drop(detector_index + 1).reject { |step| step['run'] == 'ruby bin/windows-exercise suite' }
+
+    assert_equal([DOCS_GATE], gated.map { |step| step['if'] }.uniq)
+  end
+
   private
+
+  def validate_job = @validate.dig('jobs', 'validate')
+
+  def detector_index = @steps.index { |step| step['id'] == 'changes' }
+
+  def detector_run(steps) = steps.find { |step| step['id'] == 'changes' }.fetch('run')
 
   def uses(steps, name)
     steps.find { |step| step['uses'].to_s.start_with?("#{name}@") }.fetch('uses')

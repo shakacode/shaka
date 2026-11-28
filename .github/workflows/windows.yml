@@ -1,17 +1,16 @@
 name: Windows
 
-# Free windows-latest runner. This workflow is not the required validate check.
-# The job and each step continue after a failure so one Windows bug does not hide
-# the others, and so a red step does not block merge. Justin decides when to require it.
+# Free windows-latest runner. The job and each step continue after a failure so one
+# Windows bug does not hide the others, and so a red step does not block merge.
 # Pull requests and pushes run the quick steps. The full test suite takes about
 # 20 minutes, so it runs nightly and when someone starts this workflow by hand.
-# A change that touches only Markdown under docs/ or internal/ skips it.
+# Every pull request reports this check, so main can require it. A change the shared
+# classifier admits as documentation only skips every step after detection.
 on:
   pull_request:
-    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
+  merge_group:
   push:
     branches: [main]
-    paths-ignore: ['docs/**/*.md', 'internal/**/*.md']
   schedule:
     - cron: '17 7 * * *'
   workflow_dispatch:
@@ -28,6 +27,8 @@ jobs:
     runs-on: windows-latest
     continue-on-error: true
     timeout-minutes: 45
+    env:
+      SHAKA_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
     defaults:
       run:
         shell: bash --noprofile --norc -eo pipefail {0}
@@ -37,31 +38,56 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
+      - name: Detect documentation-only changes
+        id: changes
+        run: |
+          if ! comparison=$(git merge-base "$SHAKA_BASE_REF" HEAD 2>/dev/null); then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          trusted_classifier="$RUNNER_TEMP/docs-only-change"
+          if git show "${SHAKA_BASE_REF}:bin/docs-only-change" > "$trusted_classifier"; then
+            chmod +x "$trusted_classifier"
+            if "$trusted_classifier" "$SHAKA_BASE_REF"; then
+              git diff --check "$comparison" --
+              echo "docs_only=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "docs_only=false" >> "$GITHUB_OUTPUT"
+
       - uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1
+        if: steps.changes.outputs.docs_only != 'true'
         with:
           ruby-version: .ruby-version
           bundler-cache: true
 
       - name: Documentation navigation
+        if: steps.changes.outputs.docs_only != 'true'
         continue-on-error: true
         run: ruby bin/check-docs-navigation
 
       - name: shaka doctor
+        if: steps.changes.outputs.docs_only != 'true'
         continue-on-error: true
         run: ruby bin/windows-exercise doctor
 
       - name: Repository commands
+        if: steps.changes.outputs.docs_only != 'true'
         continue-on-error: true
         run: ruby bin/windows-exercise commands
 
       - name: Cursor usage hook
+        if: steps.changes.outputs.docs_only != 'true'
         continue-on-error: true
         run: ruby bin/windows-exercise cursor
 
       # PowerShell, as a native Windows user starts Shaka; the exercise also drops Git's Unix tools from PATH.
       - name: Product command starts
+        if: steps.changes.outputs.docs_only != 'true'
         continue-on-error: true
         shell: pwsh
         run: ruby bin/windows-exercise product
