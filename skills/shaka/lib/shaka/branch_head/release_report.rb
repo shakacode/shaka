@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative '../publication/text'
 require_relative 'destination'
 require_relative 'owner_tag'
+require_relative 'pickup_checkout'
 
 module Shaka
   class BranchHead
@@ -21,7 +22,7 @@ module Shaka
 
       def rows(maintainer, tag)
         { 'Head' => "`#{@pull['head']}`", 'Checks' => checks, 'Remaining work' => text('remaining'),
-          'Unpushed work' => maintainer ? reported_unpushed : "in the releasing checkout: #{unpushed}",
+          'Unpushed work' => maintainer ? reported_unpushed : owner_unpushed,
           'Released by' => "#{maintainer ? 'maintainer' : 'owner'} `#{tag}`" }
       end
 
@@ -39,6 +40,13 @@ module Shaka
         return 'pending' if PENDING.include?(value)
 
         PASSED.include?(value) ? 'passed' : 'failed'
+      end
+
+      # Counted only in the checkout WIP Details names; a clean second clone would otherwise report `none`.
+      def owner_unpushed
+        return "in the owner's checkout: #{unpushed}" if PickupCheckout.workspace?(@root, @pull)
+
+        "UNKNOWN: released from a checkout other than the WIP Details Workspace (in this one: #{unpushed})"
       end
 
       # A maintainer releasing for an absent owner cannot see that owner's checkout, so says what it was told.

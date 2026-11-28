@@ -207,15 +207,17 @@ push what should travel with it, stop this chat's monitors and `pr watch`, and r
 `attention --state none`. Then run `handover release --pr OWNER/REPO#NUMBER
 --content-file PATH` from this checkout. The content holds `identity`, `owner_tag` from
 this note's Owner, and a one-line `remaining`. The helper posts the live head, check
-counts, and the unpushed work it finds in this checkout. A maintainer releasing for an
-owner who cannot adds `--maintainer` and supplies `unpushed` only from what that owner
-reported; otherwise the release says `UNKNOWN`. A release that did not take effect fails
+counts, and the unpushed work it finds, which is `UNKNOWN` unless this checkout is the
+WIP Details Workspace. A maintainer releasing for an owner who cannot adds `--maintainer`
+and supplies `unpushed` only from what that owner reported; otherwise the release says
+`UNKNOWN`. A release that did not take effect fails
 and says so on the PR. On success the command exits 2, since this chat now stops: report
 the release link and any local work left behind, and end the task.
 
-**Pick up a released PR:** in a checkout whose `origin` holds the PR head, check it out
-under its own branch name, bring it up to the live head, and run `handover pickup --pr
-OWNER/REPO#NUMBER --content-file PATH` with `identity` and a new random `owner_tag`. The
+**Pick up a released PR:** in a checkout other than the previous owner's whose `origin`
+holds the PR head, check it out under its own branch name, bring it up to the live head,
+and run `handover pickup --pr OWNER/REPO#NUMBER --content-file PATH` with `identity` and a
+new random `owner_tag`. The
 helper refuses before posting unless origin's same-named branch is at the PR head. Its
 comment announces the new owner, and the first pickup GitHub stores after the release
 wins. A `lost` result names the owner; report it and stop. On `picked_up`, accept the
