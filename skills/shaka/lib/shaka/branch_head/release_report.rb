@@ -76,7 +76,7 @@ module Shaka
       end
 
       def git(*arguments)
-        output, error, status = Open3.capture3(Destination::ENVIRONMENT, 'git', '-C', @root, *arguments)
+        output, error, status = Open3.capture3(*Destination.runtime(@root), '-C', @root, *arguments)
         raise Error, "git #{arguments.first} failed: #{error.strip}" unless status.success?
 
         output

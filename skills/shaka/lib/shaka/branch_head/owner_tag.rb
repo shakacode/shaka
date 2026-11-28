@@ -26,8 +26,7 @@ module Shaka
 
       # The checked-out branch, which `branch check` requires to be the PR head branch.
       def branch(root)
-        output, error, status = Open3.capture3(Destination::ENVIRONMENT, 'git', '-C', root, 'symbolic-ref', '--quiet',
-                                               'HEAD')
+        output, error, status = git(root, 'symbolic-ref', '--quiet', 'HEAD')
         raise Error, "No branch is checked out: #{error.strip}" unless status.success?
 
         output.strip.delete_prefix('refs/heads/')
@@ -35,7 +34,10 @@ module Shaka
 
       def key(root) = "branch.#{branch(root)}.shakaOwnerTag"
 
-      def config(root, *) = Open3.capture3(Destination::ENVIRONMENT, 'git', '-C', root, 'config', '--local', *)
+      def config(root, *) = git(root, 'config', '--local', *)
+
+      # Git from outside the checkout, as `shaka branch` runs it, so nothing committed in the checkout runs.
+      def git(root, *) = Open3.capture3(*Destination.runtime(root), '-C', root, *)
     end
   end
 end
