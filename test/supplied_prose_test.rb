@@ -35,12 +35,23 @@ class SuppliedProseTest < Minitest::Test
     assert_equal 11, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
   end
 
-  def test_a_publisher_note_counts_only_when_it_shows
-    known = { 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'm', 'effort' => 'low' }
-    content = { 'summary' => 'One.', 'publisher_note' => 'Two more.', 'identity' => known }
+  # An underlined line is a heading, and an image shows no words.
+  def test_setext_headings_and_images_do_not_count
+    body = "Operational notes\n-----------------\n\nTwo words ![a diagram](https://example.com/d.png)\n\nTitle\n====="
 
-    assert_equal 3, Shaka::SuppliedProse.words(content)
-    assert_equal 1, Shaka::SuppliedProse.words(content.merge('identity' => known.merge('effort' => 'UNKNOWN')))
+    assert_equal 2, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
+  end
+
+  # A labeled field renders after its label on one line, so a leading > or # is ordinary visible text.
+  def test_a_labeled_field_keeps_a_leading_quote_or_hash
+    intent = { 'why' => '> Keep the old setting.', 'scope' => '# One file.' }
+
+    assert_equal 8, Shaka::SuppliedProse.words('intent' => intent, 'decisions' => ['> Merge it?'])
+  end
+
+  # Shaka's publisher attribution writes the note, so it is helper text.
+  def test_the_publisher_note_does_not_count
+    assert_equal 1, Shaka::SuppliedProse.words('summary' => 'One.', 'publisher_note' => 'Two more words.')
   end
 
   def test_the_same_supplied_prose_fits_whatever_the_helper_adds
@@ -94,7 +105,7 @@ class SuppliedProseCoverageTest < Minitest::Test
            'max_risk' => 'low', 'reasons' => ['Changes who may merge.'],
            'url' => 'https://github.com/owner/repo/pull/1#issuecomment-9' }.freeze
   # Structured fields the helper validates, links or renders itself are not prose the author writes.
-  STRUCTURED = %w[identity walkthrough deployment provenance usage head recommendation path when].freeze
+  STRUCTURED = %w[identity publisher_note walkthrough deployment provenance usage head recommendation path when].freeze
   FOCUS = { 'path' => 'lib/merge.rb', 'reason' => 'compares the queue base.' }.freeze
 
   def test_every_visible_supplied_field_is_counted
