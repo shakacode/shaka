@@ -122,19 +122,9 @@ then give Shaka the PR:
 The agent checks the current state and explains what remains. It records the
 handover on the PR and rechecks merge authority before continuing.
 
-If you push to the agent's branch yourself, the agent notices at its next turn or push.
-It records the commit it last pushed or accepted and compares the branch on GitHub with that
-record. When they differ, it stops editing and publishing, tells you, and resumes once it has
-combined your commits with its own. Its pushes go through `shaka branch push`, which refuses
-to push over a commit the agent has not seen.
-
-The agent also stops and tells you in these cases:
-
-- The branch was deleted. It pushes the branch again only if you agree.
-- GitHub can't be read, or a push landed but couldn't be recorded. It checks again before
-  continuing.
-- The branch tracks a remote other than `origin`, or the checkout pushes somewhere other than
-  the branch of the same name on `origin`. It waits until you change the setting it names.
+You can push to the agent's branch yourself. At its next turn or push, the agent notices,
+stops editing and publishing, and tells you. It combines your commits with its own before it
+continues, and it never pushes over commits it hasn't seen.
 
 Before a PR exists, return to the original chat and checkout. An issue's start
 comment may identify the machine holding the work. See
