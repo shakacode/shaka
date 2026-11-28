@@ -46,18 +46,22 @@ module Shaka
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      merged = submit(initial, @github.snapshot, head)
+      merged = submit(initial, approved_snapshot(queued: initial['isInMergeQueue']), head)
       AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private
 
-    # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply, so
-    # it is read before them. A queued PR already passed it when it was enqueued.
-    def approved_snapshot
+    # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply. It is
+    # read before them and again for submission; the PR is then read afresh, so every later gate, the hold
+    # included, sees what changed during those reads. GitHub cannot tie the merge to the label, so a change
+    # after that read is not seen. A queued PR already passed the label when it was enqueued.
+    def approved_snapshot(queued: false)
       pull = @github.snapshot
-      @approval = @label_approval&.verify!(pull) unless pull['isInMergeQueue']
-      pull
+      return pull if @label_approval.nil? || queued || pull['isInMergeQueue']
+
+      @approval = @label_approval.verify!(pull)
+      @github.snapshot.tap { |fresh| @label_approval.present!(fresh) }
     end
 
     def approval_evidence = @approval ? { 'merge_approval' => @approval } : {}
@@ -73,9 +77,6 @@ module Shaka
       # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
       # first read, so every check is read again last.
       verify_gate if @auto && @base_failures
-      # Read again just before submitting, so a label removed, or re-added by someone without write access,
-      # stops the merge; the result names who added it then. GitHub cannot tie the merge to the label.
-      @approval = @label_approval&.verify!(current)
       @submission.call(current, head).merge(approval_evidence)
     end
 

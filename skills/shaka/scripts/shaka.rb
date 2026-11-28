@@ -572,7 +572,7 @@ begin
              merge.walkthrough_due = Shaka::WalkthroughDue.new(github, publish: walkthrough_publish)
              merge.risk_gate = auto_merge_gate(seam, review.fetch(:checkpoint), options[:confirmed_head])
              merge.hold = hold
-             merge.label_approval = options[:label_approval] && Shaka::MergeApprovalLabel.new(github, hold:)
+             merge.label_approval = options[:label_approval] && Shaka::MergeApprovalLabel.new(github)
              merge.call(head:, base: options.fetch(:base), walkthrough: options[:walkthrough],
                         limits: merge_limits(options, seam), squash_message:)
            when 'attention'

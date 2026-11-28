@@ -146,14 +146,17 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/not passing: windows/)
   end
 
-  def test_a_hold_added_while_the_labeler_is_looked_up_stops_the_merge
-    # The second lookup is the final read just before submission, after every other hold check.
-    held = approved('hold')
-    client = @client
-    reads = 0
-    client.define_singleton_method(:permission_read) { client.snapshots = [held] if (reads += 1) == 2 }
+  # The second lookup is the last label read, before the PR is read afresh for every other gate.
+  def test_a_hold_or_retarget_while_the_labeler_is_looked_up_stops_the_merge
+    { approved('hold') => /hold label "hold"/,
+      approved.merge('baseRefName' => 'release') => /base/i }.each do |pull, error|
+      client = @client
+      reads = 0
+      client.define_singleton_method(:permission_read) { client.snapshots = [pull] if (reads += 1) == 2 }
+      @client.snapshots = [approved]
 
-    assert_blocked(/hold label "hold"/)
+      assert_blocked(error)
+    end
   end
 
   # The label passed when the PR was enqueued; removing it later leaves the entry queued, as the guide says.

@@ -20,10 +20,8 @@ module Shaka
     FORBIDDEN = 403
     ALREADY_EXISTS = 422
 
-    # hold is the trusted MergeHold, read again after the slow event and permission reads.
-    def initialize(github, hold: MergeHold.new)
+    def initialize(github)
       @github = github
-      @hold = hold
     end
 
     # pull is a GitHub snapshot carrying the PR's labels. Returns who chose Auto and when, read from
@@ -35,7 +33,6 @@ module Shaka
       raise refusal('GitHub lists its removal after it was added') if event['event'] == 'unlabeled'
 
       actor = writer!(event.dig('actor', 'login'))
-      unchanged_while_read!
       { 'label' => NAME, 'labeled_by' => actor, 'labeled_at' => event['created_at'] }
     end
 
@@ -50,20 +47,14 @@ module Shaka
       "failed: #{e.message}"
     end
 
-    private
-
-    # A hold added, or the label removed, while events and access were read stops the merge here.
-    def unchanged_while_read!
-      pull = @github.snapshot
-      @hold.verify!(pull)
-      present!(pull)
-    end
-
+    # Raises when pull, a snapshot carrying the PR's labels, no longer shows the label.
     def present!(pull)
       return if MergeHold.new([NAME]).label(MergeHold.new.names(pull))
 
       raise refusal('the PR does not carry it')
     end
+
+    private
 
     def refusal(reason)
       Error.new("#{NAME} does not choose Auto: #{reason}. Hand the PR back under Ask")
