@@ -72,15 +72,20 @@ reported errors. When every project passes, switch with the verified-checkout pr
 <details>
 <summary>Run the checks from a terminal</summary>
 
-Prepare a branchless detached release checkout (no local `main`):
+Prepare a branchless detached release checkout (no local branch refs):
 
 ```bash
-git clone --no-checkout --branch "v1.0.0" -- https://github.com/shakacode/shaka.git DIR
+git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
+git -C DIR fetch --quiet origin "tag v1.0.0"
 git -C DIR checkout --detach "refs/tags/v1.0.0"
+git -C DIR for-each-ref --format='%(refname:short)' refs/heads/ | while read -r name; do
+  git -C DIR branch -D "$name"
+done
 ```
 
 On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the
-`git clone`. Record `git -C DIR rev-parse HEAD` so the later switch can reuse
+`git clone`. Confirm `git -C DIR for-each-ref --format='%(refname)' refs/heads/`
+is empty, then record `git -C DIR rev-parse HEAD` so the later switch can reuse
 this checkout. Use `DIR/skills/shaka/scripts/shaka` as the helper, or on native
 Windows PowerShell or cmd run `ruby DIR\skills\shaka\scripts\shaka.rb` (the
 POSIX launcher needs Git Bash or another POSIX shell). Set `SHAKA_RUBY` to the
@@ -109,9 +114,10 @@ Preview a migration of this repository's shared pilot settings using the migrati
   [pilot changelog](https://github.com/shakacode/shaka/blob/b11f2f7d0d0cf3c7dd9ca78760a7a8c1eac708cb/CHANGELOG.md#removed).
   The preview identifies work you need to do before applying the conversion.
 
-Review the settings PR and its checks. Whenever any installation in use would
-reject the merged contract (renamed keys, dropped command-path mappings, or
-other validation failures), finish running affected tasks and hold new ones
-before merging, then switch with the verified-checkout prompt under
+Review the settings PR and its checks. Ask your agent whether any installation
+still in use would reject the merged contract (renamed keys, dropped
+command-path mappings, or other validation failures). When the answer is yes or
+unknown, ask it to finish running affected tasks and hold new ones before
+merging, then switch with the verified-checkout prompt under
 [keep a tested release](manual-installation.md#keep-a-tested-release) once the
 merged commit passes.

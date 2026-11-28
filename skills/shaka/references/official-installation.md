@@ -99,24 +99,31 @@ the user's approval for the wider change before running take-over.
 
 ### Install a published release
 
-Prepare a dedicated detached tag checkout `DIR` (the installer requires a
-detached HEAD, not an attached branch such as `main`):
+Prepare a dedicated detached tag checkout `DIR` with no local branch refs (the
+installer requires a detached HEAD and refuses extra local branches):
 
 ```bash
-git clone --no-checkout --branch "vVERSION" -- https://github.com/shakacode/shaka.git DIR
+git clone --no-checkout -- https://github.com/shakacode/shaka.git DIR
+git -C DIR fetch --quiet origin "tag vVERSION"
 git -C DIR checkout --detach "refs/tags/vVERSION"
+git -C DIR for-each-ref --format='%(refname:short)' refs/heads/ | while read -r name; do
+  git -C DIR branch -D "$name"
+done
 ```
 
-On Windows, add `--config core.autocrlf=false --config core.eol=lf` to the
-`git clone`, as in the source-install path above, or the installer refuses the
-checkout because Git converted its line endings. From PowerShell or cmd, start
-the installer as `ruby DIR\bin\install`, since Windows cannot run the
-extensionless script.
+Do not use `git clone --branch vVERSION`: when the remote also has a branch with
+that name, clone creates a local branch that can remain after detach and make
+installation refuse the checkout. On Windows, add
+`--config core.autocrlf=false --config core.eol=lf` to the `git clone`, as in
+the source-install path above, or the installer refuses the checkout because
+Git converted its line endings. From PowerShell or cmd, start the installer as
+`ruby DIR\bin\install`, since Windows cannot run the extensionless script.
 
-Confirm `git -C DIR branch --show-current` prints nothing (detached HEAD). Do
-not use `git branch --list` for that check: it can print a detached-HEAD display
-line even when no local branch is checked out. Inspect the checked-out files,
-and record `git -C DIR rev-parse HEAD` if you are previewing a release cutover.
+Confirm `git -C DIR branch --show-current` prints nothing and
+`git -C DIR for-each-ref --format='%(refname)' refs/heads/` is empty. Do not
+use `git branch --list` for emptiness: it can print a detached-HEAD display
+line even with no local branch refs. Inspect the checked-out files, and record
+`git -C DIR rev-parse HEAD` if you are previewing a release cutover.
 For a first installation, run
 `DIR/bin/install --release VERSION --directory DIR --agent HOST`.
 Use the requested host or pass `--skills-dir SKILLS_DIR` for a custom skills directory.

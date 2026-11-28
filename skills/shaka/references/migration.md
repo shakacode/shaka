@@ -63,25 +63,29 @@ SHA. The helper does not check retained adapters; check each with
 `git ls-tree PR_SHA -- PATH` and require mode `100755` on the file, or on the
 tracked executable a relative in-repository symlink resolves to.
 Review moved wrappers and run the affected local checks. Run a
-`trigger-hosted-ci` wrapper only as part of an authorized CI run. Merge the PR
-after the target settings, tracked wrappers, and affected local checks pass.
-After merge, check the new trusted default-branch SHA in a clean checkout with
-no selected preview using the helper's `seam check --root ROOT --ref
-NEW_DEFAULT_SHA`, and confirm it reports `trusted/ref` for `NEW_DEFAULT_SHA`.
-During a release cutover, switch the active installation only after that check
-passes: confirm the verified preview checkout's `HEAD` still matches the
-recorded commit, then follow
-[Install a published release](official-installation.md#install-a-published-release)
-(including [Before take-over](official-installation.md#before-take-over)) with
-that verified checkout as `--directory DIR`.
+`trigger-hosted-ci` wrapper only as part of an authorized CI run.
 
 An older installation can reject trusted policy when the merged contract
 introduces renamed keys, drops command-path mappings, or otherwise fails that
-installation's validation. Whenever any installation in use rejects the merged
-contract, finish running affected tasks on those installations and hold new ones
-before merging the settings PR, then resume once the helper verifies
-`trusted/ref` for the merged default-branch SHA and affected installations are
-ready.
+installation's validation. Ask the maintainer which installations still run
+this repository (other machines and teammates are not visible from the
+checkout). Whenever any of those would reject the merged contract, or the
+answer is unknown, finish running affected tasks on those installations and
+hold new ones before merging the settings PR. This pause is agent guidance;
+Ruby does not enforce it.
+
+Merge the PR only after the target settings, tracked wrappers, affected local
+checks, and any required pause above are complete. After merge, check the new
+trusted default-branch SHA in a clean checkout with no selected preview using
+the helper's `seam check --root ROOT --ref NEW_DEFAULT_SHA`, and confirm it
+reports `trusted/ref` for `NEW_DEFAULT_SHA`. During a release cutover, switch
+the active installation only after that check passes: confirm the verified
+preview checkout's `HEAD` still matches the recorded commit, then follow
+[Install a published release](official-installation.md#install-a-published-release)
+(including [Before take-over](official-installation.md#before-take-over)) with
+that verified checkout as `--directory DIR`. Resume held work once the helper
+verifies `trusted/ref` for the merged default-branch SHA and affected
+installations are ready.
 
 Keep `version: 1` for configurations supported by Shaka 1.x. Apply the
 [published compatibility policy](https://github.com/shakacode/shaka/blob/main/docs/migration.md#what-stays-compatible-in-1x)
