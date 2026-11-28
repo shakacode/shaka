@@ -190,7 +190,7 @@ module HandoffFixtures
   # A usage-journal comment, as `usage publish` appends it, naming the given commits.
   def self.usage_snapshot(*commits, author: 'shaka-agent', id: 900, response: "r-#{id}", input: '1')
     column = USAGE_COLUMN.merge('label' => 'implementation', 'input' => input)
-    record = USAGE_RECORD.merge('host' => 'codex', 'responses' => [response], 'commits' => commits,
+    record = USAGE_RECORD.merge('host' => 'codex', 'responses' => [response].compact, 'commits' => commits,
                                 'note' => 'Native sample.', 'columns' => [column])
     body = Shaka::UsageJournal.new(nil, identity: AGENT_POST.lines.first.chomp).send(:body, [record], 'handoff')
     comment(id, body, author:)

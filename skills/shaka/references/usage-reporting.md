@@ -65,10 +65,12 @@ shaka usage collect OWNER/REPO NUMBER
 ```
 
 `publish` takes the source options of `usage`; keep the task's `--since-time` or `--turn`
-selection on every publication. After a failure, rerun it. `handoff` owes a snapshot naming
-the current head; on a host without a usage reader, pass it `--usage-gap REASON`. Collection ignores comments from
+selection on every publication. After a failure, rerun it. Collection ignores comments from
 accounts without write access, so `publish` fails for one. A comment `collect` names as unreadable
 stops every read until its owner repairs or deletes it.
+
+`handoff` owes a snapshot with a measured response for the current head. When the host's
+reader finds no responses, pass it `--usage-gap REASON`.
 
 Only the task owner puts `collect` output in the description `usage` object. Other contributors
 publish and leave the description alone. On a conflict `collect` names the response: inspect

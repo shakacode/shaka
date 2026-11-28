@@ -69,6 +69,14 @@ class HandoffUsageTest < Minitest::Test
     assert_includes result.fetch('owed').join, 'Usage snapshots are unread'
   end
 
+  # A reader that found nothing publishes a placeholder; it names the head but saves no usage.
+  def test_a_placeholder_without_responses_does_not_settle_usage
+    placeholder = HandoffFixtures.usage_snapshot(HEAD, response: nil)
+    result = handoff(usage: [placeholder])
+
+    assert_includes result.fetch('status'), 'no usage snapshot'
+  end
+
   def test_a_blank_gap_is_refused
     error = assert_raises(Shaka::Error) { run_with_gap(' ') }
     assert_equal '--usage-gap needs a reason.', error.message
