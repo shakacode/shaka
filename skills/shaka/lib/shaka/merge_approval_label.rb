@@ -61,19 +61,26 @@ module Shaka
     end
 
     # The newest event that added or removed the label; a removal the snapshot has not caught up with counts.
-    def latest_label_change
-      events = PublicComments::BoundedList.new(@github, max_pages: 10, label: 'PR event list')
-                                          .call("repos/#{@github.repository}/issues/#{@github.number}/events")
-      events.reverse.find { |event| change?(event) }
+    def latest_label_change = label_events.reverse.find { |event| change?(event) }
+
+    def label_events
+      PublicComments::BoundedList.new(@github, max_pages: 10, label: 'PR event list')
+                                 .call("repos/#{@github.repository}/issues/#{@github.number}/events")
     rescue PublicComments::BoundedList::LimitError
       raise refusal('the PR has too many events to find who added it')
     rescue Error => e
       raise refusal("GitHub did not list who added it (#{e.message})")
     end
 
-    # Events GitHub returns in an unexpected shape count as no change, so they never approve.
+    # A label change whose label cannot be read might be this one, so it refuses rather than let an older
+    # approval stand.
     def change?(event)
-      LABEL_CHANGES.include?(event['event']) && Hash.try_convert(event['label'])&.fetch('name', nil).to_s.casecmp?(NAME)
+      return false unless LABEL_CHANGES.include?(event['event'])
+
+      name = Hash.try_convert(event['label'])&.fetch('name', nil)
+      raise refusal('GitHub listed a label change it did not name') unless name.is_a?(String)
+
+      name.casecmp?(NAME)
     end
 
     def writer!(actor)

@@ -116,10 +116,12 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/merge-approved does not choose Auto: the PR does not carry it. Hand the PR back under Ask/)
 
     @client.snapshots = [approved]
-    [labeled('maintainer', name: 'bug'), { 'event' => 'labeled', 'label' => NAME }].each do |event|
-      @client.events = [event]
-      assert_blocked(/GitHub lists no event adding it/)
-    end
+    @client.events = [labeled('maintainer', name: 'bug')]
+    assert_blocked(/GitHub lists no event adding it/)
+
+    # An unreadable newer change cannot leave an older writer's approval standing.
+    @client.events = [labeled('maintainer'), { 'event' => 'labeled', 'label' => NAME }]
+    assert_blocked(/Auto: GitHub listed a label change it did not name. Hand/)
   end
 
   def test_a_label_re_added_without_write_access_before_submission_stops_the_merge
