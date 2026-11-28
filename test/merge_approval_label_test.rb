@@ -20,13 +20,21 @@ module MergeApprovalLabelApi
 
   def api(path, method: 'GET', fields: {}, expected: Hash)
     api_calls << [method, path, fields]
-    login = permissions.keys.find { |name| path == format(MergeApprovalLabelTest::PERMISSION, name) }
-    return { 'user' => { 'login' => login }, 'permission' => permissions.fetch(login) } if login
+    permission = permission_response(path)
+    return permission if permission
 
     status = path == MergeApprovalLabelTest::REPO_LABEL ? next_label_status : (create_status if method == 'POST')
     raise Shaka::Error.new("HTTP #{status}", http_status: status) if status
 
     expected == Array ? [] : {}
+  end
+
+  def permission_response(path)
+    login = permissions.keys.find { |name| path == format(MergeApprovalLabelTest::PERMISSION, name) }
+    return unless login
+
+    permission_read if respond_to?(:permission_read)
+    { 'user' => { 'login' => login }, 'permission' => permissions.fetch(login) }
   end
 
   # A list of statuses answers successive label reads in turn, the last one repeating.
@@ -138,10 +146,47 @@ class MergeApprovalLabelTest < Minitest::Test
     assert_blocked(/not passing: windows/)
   end
 
+  def test_a_hold_added_while_the_labeler_is_looked_up_stops_the_merge
+    # The second lookup is the final read just before submission, after every other hold check.
+    held = approved('hold')
+    client = @client
+    reads = 0
+    client.define_singleton_method(:permission_read) { client.snapshots = [held] if (reads += 1) == 2 }
+
+    assert_blocked(/hold label "hold"/)
+  end
+
+  # The label passed when the PR was enqueued; removing it later leaves the entry queued, as the guide says.
+  def test_a_queued_pr_reconciles_after_the_label_is_removed
+    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                            'mergeQueueEntry' => queue_entry, 'mergeStateStatus' => 'UNKNOWN')
+    @client.snapshots = [queued, queued.merge('state' => 'MERGED', 'merged' => true, 'isInMergeQueue' => false,
+                                              'mergeCommit' => { 'oid' => 'e' * 40 }, 'mergeQueueEntry' => nil)]
+
+    assert_equal 'MERGED', merge.fetch('state')
+    assert(@client.api_calls.none? { |_, path| path == EVENTS })
+  end
+
   def test_a_hold_label_still_wins
     @client.snapshots = [approved('hold')]
 
     assert_blocked(/hold label "hold"/)
+  end
+
+  private
+
+  def passing(name) = { 'name' => name, 'state' => 'SUCCESS', 'bucket' => 'pass' }
+  def merge = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
+end
+
+# Labeling a PR awaiting-merge-approval also gives the repository merge-approved with its meaning.
+class MergeApprovalRepositoryLabelTest < Minitest::Test
+  include MergeFixtures
+
+  def setup
+    super
+    @client.extend(MergeApprovalLabelApi)
+    @client.permissions = {}
   end
 
   def test_the_repository_label_is_created_with_its_meaning_once
@@ -169,9 +214,4 @@ class MergeApprovalLabelTest < Minitest::Test
     @client.label_status = 404
     assert_match(/\Anot_created: .*a maintainer creates merge-approved/, label.ensure_repository_label)
   end
-
-  private
-
-  def passing(name) = { 'name' => name, 'state' => 'SUCCESS', 'bucket' => 'pass' }
-  def merge = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
 end

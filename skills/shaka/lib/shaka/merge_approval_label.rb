@@ -15,13 +15,15 @@ module Shaka
     DESCRIPTION = 'A maintainer chose Auto for this PR: the agent merges once every Auto gate passes'
     # GitHub's REST permission reports maintain as write. Triage may add labels, so it does not count.
     WRITER_PERMISSIONS = %w[write admin].freeze
-    NOT_FOUND = 404
     LABEL_CHANGES = %w[labeled unlabeled].freeze
+    NOT_FOUND = 404
     FORBIDDEN = 403
     ALREADY_EXISTS = 422
 
-    def initialize(github)
+    # hold is the trusted MergeHold, read again after the slow event and permission reads.
+    def initialize(github, hold: MergeHold.new)
       @github = github
+      @hold = hold
     end
 
     # pull is a GitHub snapshot carrying the PR's labels. Returns who chose Auto and when, read from
@@ -32,12 +34,8 @@ module Shaka
       raise refusal('GitHub lists no event adding it') unless event
       raise refusal('GitHub lists its removal after it was added') if event['event'] == 'unlabeled'
 
-      actor = event.dig('actor', 'login')
-      permission = permission(actor)
-      unless WRITER_PERMISSIONS.include?(permission)
-        raise refusal("#{actor.inspect} added it without write access (#{permission || 'unknown'})")
-      end
-
+      actor = writer!(event.dig('actor', 'login'))
+      unchanged_while_read!
       { 'label' => NAME, 'labeled_by' => actor, 'labeled_at' => event['created_at'] }
     end
 
@@ -53,6 +51,13 @@ module Shaka
     end
 
     private
+
+    # A hold added, or the label removed, while events and access were read stops the merge here.
+    def unchanged_while_read!
+      pull = @github.snapshot
+      @hold.verify!(pull)
+      present!(pull)
+    end
 
     def present!(pull)
       return if MergeHold.new([NAME]).label(MergeHold.new.names(pull))
@@ -75,10 +80,11 @@ module Shaka
       raise refusal('the PR has too many events to find who added it')
     end
 
-    def permission(actor)
-      return unless actor.is_a?(String)
+    def writer!(actor)
+      permission = PublicComments::Writers.new(@github).permissions([actor])[actor] if actor.is_a?(String)
+      return actor if WRITER_PERMISSIONS.include?(permission)
 
-      PublicComments::Writers.new(@github).permissions([actor])[actor]
+      raise refusal("#{actor.inspect} added it without write access (#{permission || 'unknown'})")
     end
 
     def create

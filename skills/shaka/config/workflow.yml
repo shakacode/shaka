@@ -963,7 +963,8 @@ phases:
         checks to pass, then refresh the description and any required rendering preview. Run
         `attention` with `--state merge` so the PR stays in the approval queue while it waits.
         Any other new commit ends the approval.
-      - Under Ask, a `merge-approved` label chooses Auto for the PR, unlike the per-head approval above
+      - Under Ask outside a first-setup preview, a `merge-approved` label chooses Auto for the PR,
+        unlike the per-head approval above
         ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)).
         Run `attention` with `--state none`, then `merge --auto --label-approval` for the current head.
         On a refusal, hand the PR back under Ask. Adding and removing the label stay with the maintainer.

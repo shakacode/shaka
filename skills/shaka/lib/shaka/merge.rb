@@ -39,26 +39,28 @@ module Shaka
 
     # `squash_message` is a SquashMessage, or nil for the repository's squash default.
     def call(head:, base:, walkthrough: nil, limits: MergeLimits.new, squash_message: nil)
+      initial = approved_snapshot
       @target = MergeTarget.required!(head, base, limits, @risk_gate, @hold)
       @submission.message = squash_message
       @head = head
-      initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       gate = verify_gate
       evidence = verify_reviews(head, base, walkthrough, gate).merge(excused_checks(gate, head))
-      merged = submit_approved(initial, head)
+      merged = submit(initial, @github.snapshot, head)
       AutoMergedLabel.new(@github, enabled: @auto).mark(merged).merge(evidence, base_failure_evidence)
     end
 
     private
 
-    # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply.
-    # It is read once the gates pass and again just before submission; the result names who added it then.
-    def submit_approved(initial, head)
-      @approval = @label_approval&.verify!(initial)
-      merged = submit(initial, @github.snapshot, head)
-      @approval ? merged.merge('merge_approval' => @approval) : merged
+    # The label chooses Auto and exempts nothing: the caller pairs it with --auto, whose gates all apply, so
+    # it is read before them. A queued PR already passed it when it was enqueued.
+    def approved_snapshot
+      pull = @github.snapshot
+      @approval = @label_approval&.verify!(pull) unless pull['isInMergeQueue']
+      pull
     end
+
+    def approval_evidence = @approval ? { 'merge_approval' => @approval } : {}
 
     def submit(initial, current, head)
       return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
@@ -71,10 +73,10 @@ module Shaka
       # Base failures let Auto accept UNSTABLE, which no longer shows a check that failed since the
       # first read, so every check is read again last.
       verify_gate if @auto && @base_failures
-      # Read again just before submitting, so a label removed, or re-added by someone without write
-      # access, stops the merge. GitHub cannot tie the merge to the label, so a change after this read is not seen.
+      # Read again just before submitting, so a label removed, or re-added by someone without write access,
+      # stops the merge; the result names who added it then. GitHub cannot tie the merge to the label.
       @approval = @label_approval&.verify!(current)
-      @submission.call(current, head)
+      @submission.call(current, head).merge(approval_evidence)
     end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
