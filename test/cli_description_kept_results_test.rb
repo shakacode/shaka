@@ -57,8 +57,9 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   # Issue #1344: a copied Verification section and fold published twice without results stays UNKNOWN.
   def test_a_copied_section_and_fold_republished_without_results_stays_unknown
-    @sections = [{ 'heading' => 'Outcome', 'body' => "Context first.\n\n## Verification\n\n#{LINE}\n\n#{FOLD}" }]
+    @top = "Context first.\n\n## Verification\n\n#{LINE}\n\n#{FOLD}"
     first, = republish('')
+    assert_operator first.index(FOLD), :<, first.index(Shaka::VerificationLine::MARKER), 'the copy comes first'
     second, result = republish(first)
 
     assert_includes second, 'UNKNOWN: no validation or review results'
@@ -126,7 +127,7 @@ class CliDescriptionKeptResultsTest < Minitest::Test
 
   def description_content
     content = super
-    content['sections'] = @sections if @sections
+    content['summary'] = @top if @top
     content['verification'] = content['verification'].merge('summary' => @summary) if @summary
     content
   end

@@ -6,7 +6,8 @@ require_relative 'verification_line'
 
 module Shaka
   # Shaka finds its regions by reading its own HTML-comment markers back from the body,
-  # so supplied description text that quotes one would leave the next read ambiguous.
+  # so supplied description text that quotes one would leave the next read ambiguous. It reads
+  # setup gaps back the same way, so a summary cannot start with their label either.
   module QuotedMarkers
     MARKER = %r{<!--\s*/?shaka:[\w:.-]*}
 
