@@ -730,8 +730,8 @@ rules:
     detector: >-
       While `awaiting-merge-approval` is set and `handoff` owes an answer on a review thread,
       it exits 2 with an item telling the agent to run `attention --state none` and
-      withdraw the handoff before working on actionable feedback, or to settle feedback that needs
-      no work with a reply alone. Ruby does not judge which feedback is actionable. It counts the threads the
+      withdraw the handoff before working on actionable feedback, even when no code changes, or to
+      settle non-actionable feedback with a reply alone. Ruby does not judge which feedback is actionable. It counts the threads the
       settled-resolution entry describes, and in a public repository only those whose authors
       `comments` screened and allowed. A thread past its first 100 comments, an unreadable thread
       list, an excluded author, or an author whose permission or trust settings went unread leaves

@@ -41,7 +41,7 @@ module Shaka
 
         @owed << 'Review threads wait for an answer while awaiting-merge-approval is set. Before working on ' \
                  'actionable feedback, run `attention --state none` and withdraw the merge-ready handoff in WIP ' \
-                 'Details; a reply alone settles feedback that needs no work.'
+                 'Details, even when no code changes; a reply alone settles non-actionable feedback.'
       end
 
       def thread_notes(answered, unknown)
