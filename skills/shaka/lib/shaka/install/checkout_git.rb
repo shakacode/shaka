@@ -68,14 +68,19 @@ module Shaka
         end
       end
 
-      def git(*arguments)
-        preserved = %w[clone fetch ls-remote].include?(arguments.first) ? AUTHENTICATION_ENV : []
-        environment = (ENV.keys.grep(/\AGIT_/) - preserved).to_h { |key| [key, nil] }
-        output, error, status = Open3.capture3(environment, 'git', '-c', "core.hooksPath=#{File::NULL}",
-                                               '-c', 'submodule.recurse=false', '-C', @root, *arguments, umask: 0o022)
+      def git(*)
+        output, error, status = run_git(*)
         raise ArgumentError, "Installation Git operation failed: #{error.strip}" unless status.success?
 
         output.strip
+      end
+
+      # For a caller that reads Git's answer from its exit status.
+      def run_git(*arguments)
+        preserved = %w[clone fetch ls-remote].include?(arguments.first) ? AUTHENTICATION_ENV : []
+        environment = (ENV.keys.grep(/\AGIT_/) - preserved).to_h { |key| [key, nil] }
+        Open3.capture3(environment, 'git', '-c', "core.hooksPath=#{File::NULL}",
+                       '-c', 'submodule.recurse=false', '-C', @root, *arguments, umask: 0o022)
       end
     end
   end
