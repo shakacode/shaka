@@ -58,8 +58,8 @@
   - Instead of: “It shows one before-and-after rewrite from #1242.”
   - Write: “Squash messages now replace internal terms with what each part
     does.”
-  - `squash-message` and ready checkpoint publication list each `#N` or
-    `owner/repo#N` reference but the PR's own under
+  - `squash-message` and ready checkpoint publication list each standalone
+    `#N` or `owner/repo#N` reference but the PR's own under
     `squash_message_references`. Keep a number that a closing keyword
     introduces, such as `Fixes`, `Closes`, `Resolves`, or `Part of`, and
     ignore one inside a URL. When another number lacks what that PR did, add

@@ -13,7 +13,7 @@ module Shaka
     COMMIT_PAGES = 3
     TRAILER = /^co-authored-by:[ \t]*(\S[^<\n]*<[^>\n]+>)[ \t]*$/i
     MARKDOWN = [/^\s*```/, /^\s*~~~/, /<details\b/i, /^\s*\|.*\|\s*$/].freeze
-    REFERENCE = %r{(?<![\p{Word}&#])(?:\w[\w-]*/[\w.-]+)?#\d+\b}
+    REFERENCE = %r{(?<![\p{Word}#])(?:\w[\w-]*/[\w.-]+#\d+|(?<!&)#\d+)\b}
     REFERENCE_GUIDANCE = 'Check each number against the squash message rules in references/writing.md.'
 
     attr_reader :headline, :body
@@ -41,7 +41,7 @@ module Shaka
     end
 
     # Ruby cannot tell whether the sentence around a number closes it or says what that PR
-    # did, so the result lists every number other than the PR's own for the agent to judge.
+    # did, so the result lists every standalone number but the PR's own for the agent to judge.
     def reference_check
       return {} if @references.empty?
 
