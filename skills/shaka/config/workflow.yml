@@ -59,8 +59,9 @@ phases:
         update it when the human corrects the direction. When the host can resume this session
         after a delay, wait up to five minutes for a reply while continuing work a reply would
         not invalidate, such as reading and reproducing; otherwise continue at once. No reply
-        means continue. Record whether a person confirmed the readback; a brief from another
-        agent session is not confirmation.
+        means continue. Record whether a person confirmed the readback as it now stands; a
+        material correction needs its own confirmation, and a brief from another agent
+        session is not confirmation.
         Apply the existing question rules; a readback is not human approval.
       - Identify the original request, including planning, and keep its
         [timing input](<{{package_root}}/skills/shaka/references/publication.md#review-evidence>)

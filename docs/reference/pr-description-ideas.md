@@ -207,10 +207,10 @@ production line. pstack is Tan's public skill set in `cursor/plugins`.
   scope, success criteria, and assumptions. Since
   [#1065](https://github.com/shakacode/shaka/pull/1065), the PR description shows that
   readback as Goal and Done when under the Task line.
-- **Limit:** since [#1017](https://github.com/shakacode/shaka/issues/1017), the agent
-  waits up to five minutes for a correction when the coding tool can resume it, and
-  otherwise continues at once. The PR records whether a person confirmed the readback,
-  and the checkpoint compares the result with it. An unread readback still catches nothing.
+- **Limit:** a readback nobody reads catches nothing. Since
+  [#1017](https://github.com/shakacode/shaka/issues/1017), the agent may wait briefly
+  for a correction and records whether a person confirmed the readback; the
+  [guide](../working-with-shaka.md#give-it-an-outcome) says when.
 
 ## Addy Osmani: what proof a human receives
 
