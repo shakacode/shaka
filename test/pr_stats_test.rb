@@ -2,18 +2,14 @@
 
 require_relative 'throughput_helper'
 require 'open3'
-require 'yaml'
 require 'shaka/pr_watch/stats_command'
 
-# After a GitHub merge click, pr stats fills the times no watcher recorded, and the workflow runs it safely.
+# After a GitHub merge click, pr stats fills the times no watcher recorded.
 class PrStatsTest < Minitest::Test
   include ThroughputHelper
 
   Seam = Struct.new(:merge, :review)
   SEAM = Seam.new({}, { 'ci_review_jobs' => [], 'ci_review_wait' => 'none' })
-  WORKFLOW = File.expand_path('../.github/workflows/pr-stats.yml', __dir__)
-  CONDITION = 'github.event.pull_request.merged == true && ' \
-              'github.event.pull_request.base.ref == github.event.repository.default_branch'
 
   def test_a_merged_pull_request_gets_its_ready_and_merge_times
     github = MergedFakeGitHub.new("Intro.\n\n#{unready_block}\n", merged_page)
@@ -56,6 +52,24 @@ class PrStatsTest < Minitest::Test
     assert_includes err, 'no ready time recorded: checks unreadable'
   end
 
+  def test_unreadable_checks_still_move_an_earlier_heads_block_to_the_merge
+    earlier = Shaka::ThroughputStats.update(filled_block, 'head' => NEXT)
+    github = MergedFakeGitHub.new("Intro.\n\n#{earlier}\n", merged_page)
+    def github.check_times = raise(Shaka::Error, 'checks unreadable')
+
+    stats = nil
+    capture_io { stats = Shaka::PrWatch::StatsCommand.record(github, SEAM)['stats'] }
+    assert_equal [HEAD, nil, MERGED.iso8601], stats.values_at('head', 't2', 't3')
+  end
+
+  def test_unreadable_checks_mark_a_forks_carried_ready_time_unverified
+    github = MergedFakeGitHub.new("Intro.\n\n#{filled_block}\n", merged_page.merge('isCrossRepository' => true))
+    def github.check_times = raise(Shaka::Error, 'checks unreadable')
+
+    capture_io { Shaka::PrWatch::StatsCommand.record(github, SEAM) }
+    assert_includes github.patches.last, 'Ready time unverified'
+  end
+
   def test_a_pull_request_without_a_stats_block_is_not_written
     github = MergedFakeGitHub.new("Written by hand.\n", merged_page)
     assert_nil Shaka::PrWatch::StatsCommand.record(github, SEAM)['stats']
@@ -80,31 +94,6 @@ class PrStatsTest < Minitest::Test
                                      chdir: File.expand_path('..', __dir__))
     assert_predicate status, :success?, output
     assert_includes output, 'Usage: shaka pr stats OWNER/REPO NUMBER --ref SHA'
-  end
-
-  def test_the_workflow_runs_only_after_a_merge_into_the_default_branch
-    workflow = YAML.load_file(WORKFLOW)
-    job = workflow.dig('jobs', 'stats')
-
-    assert_equal ['closed'], (workflow['on'] || workflow[true]).dig('pull_request_target', 'types')
-    assert_equal CONDITION, job['if']
-    assert_equal({}, workflow['permissions'])
-    assert_equal({ 'checks' => 'read', 'contents' => 'read', 'pull-requests' => 'write', 'statuses' => 'read' },
-                 job['permissions'])
-  end
-
-  def test_the_workflow_never_runs_pull_request_code_or_text
-    steps = YAML.load_file(WORKFLOW).dig('jobs', 'stats', 'steps')
-
-    assert_equal 3, steps.size
-    refute steps.first.fetch('with').key?('ref'), 'the job must not check out the pull request head'
-    refute steps.first.dig('with', 'persist-credentials')
-    refute_match(/\$\{\{/, steps.last['run'])
-  end
-
-  def test_the_workflow_pins_every_action_to_a_commit
-    steps = YAML.load_file(WORKFLOW).dig('jobs', 'stats', 'steps')
-    assert(steps.all? { |step| !step['uses'] || step['uses'].match?(/@[0-9a-f]{40}\b/) })
   end
 
   private

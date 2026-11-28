@@ -32,15 +32,16 @@ module Shaka
         @wait = wait
       end
 
-      def call(required:)
+      # Passing times: [] records no ready time but still moves the block to this head.
+      def call(required:, times: nil)
         2.times do
-          times = @github.check_times
+          rows = times || @github.check_times
           next unless (pull = timeline) && same_head?(pull)
 
           carried = ThroughputStats.read(body = description_body)
           return unless carried
 
-          updated = ThroughputStats.update(body, fields(pull, required, carried, times))
+          updated = ThroughputStats.update(body, fields(pull, required, carried, rows))
           return if updated == body
           next unless safe_to_write?(body)
 
