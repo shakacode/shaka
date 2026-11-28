@@ -967,8 +967,8 @@ phases:
         unlike the per-head approval above
         ([settings](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergepreference)).
         Run `attention` with `--state none`, then `merge --auto --label-approval` for the current head.
-        On a refusal, hand the PR back under Ask with `attention --state merge`. Adding and removing the
-        label stay with the maintainer.
+        When the label check refuses, restore the merge wait with `attention --state merge`; handle
+        another refusal as that gate's blocker. Adding and removing the label stay with the maintainer.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base
