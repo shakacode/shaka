@@ -204,6 +204,17 @@ class CommentTrustConfigDuplicateKeyTest < Minitest::Test
     end
   end
 
+  def test_deep_nesting_is_refused_without_a_stack_overflow
+    with_machine(nil) do |path|
+      github = client(blob("trusted_users: #{'[' * 3000}#{']' * 3000}\n"))
+      error = assert_raises(Shaka::Error) do
+        Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
+      end
+
+      assert_equal 'Trust config is invalid: YAML nests deeper than 100 levels.', error.message
+    end
+  end
+
   def test_comment_only_allowlist_stays_empty
     with_machine("# no machine-wide actors yet\n") do |path|
       result = Shaka::PublicComments::TrustConfig.new(client(blob('')), machine_path: path).load(base_oid: HEAD)
