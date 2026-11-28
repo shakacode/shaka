@@ -18,35 +18,15 @@ class SuppliedProseTest < Minitest::Test
     assert_equal 34, Shaka::SuppliedProse.words(content)
   end
 
-  def test_folded_tabled_quoted_and_fenced_section_text_does_not_count
-    body = "Two words.\n\n<details>\n<summary>Label</summary>\n\nHidden body text.\n\n</details>\n\n" \
-           "| a | b |\n| --- | --- |\n| c | d |\n\n> quoted words\n\n```\ncode words\n```"
+  # Words count as written, whatever Markdown makes of them; only a collapsed block's body, addresses and images drop
+  # out. A collapsed block's summary label stays, as GitHub shows it.
+  def test_words_count_as_written_except_folded_text_addresses_and_images
+    body = "Two words ![a diagram](https://example.com/d.png).\n\n<details>\n<summary>Label</summary>\n\n" \
+           "Hidden body text.\n\n</details>\n\n| a | b |\n| --- | --- |\n\n> Quoted words\n\nTitle\n====="
     content = { 'summary' => 'One.', 'sections' => [{ 'heading' => 'Heading words', 'body' => body }] }
 
-    # A collapsed block's summary label stays visible, as GitHub shows it.
-    assert_equal 4, Shaka::SuppliedProse.words(content)
-  end
-
-  # GitHub renders these as prose (3, 3, 2, 2 and 1 words): an issue number is no heading, a lone pipe line no
-  # table, and list numbers vanish.
-  def test_lines_that_only_look_hidden_still_count_and_list_markers_do_not
-    body = "#1336 fixes it.\n\n| Keep this because.\n\n1. First step.\n2. Second step.\n\n- Third."
-
-    assert_equal 11, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
-  end
-
-  # An underlined line is a heading, and an image shows no words.
-  def test_setext_headings_and_images_do_not_count
-    body = "Operational notes\n-----------------\n\nTwo words ![a diagram](https://example.com/d.png)\n\nTitle\n====="
-
-    assert_equal 2, Shaka::SuppliedProse.words('sections' => [{ 'heading' => 'H', 'body' => body }])
-  end
-
-  # A labeled field renders after its label on one line, so a leading > or # is ordinary visible text.
-  def test_a_labeled_field_keeps_a_leading_quote_or_hash
-    intent = { 'why' => '> Keep the old setting.', 'scope' => '# One file.' }
-
-    assert_equal 8, Shaka::SuppliedProse.words('intent' => intent, 'decisions' => ['> Merge it?'])
+    # One, two, label, a, b, two quoted, one title.
+    assert_equal 9, Shaka::SuppliedProse.words(content)
   end
 
   # Shaka's publisher attribution writes the note, so it is helper text.

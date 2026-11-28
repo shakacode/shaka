@@ -1148,9 +1148,9 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. Each limit counts selected prose.
-Code blocks, tables, headings, quotes, link addresses, and the body of a
-collapsed details block do not count. A collapsed block's summary label counts,
+it; omitted keys keep their default. The sentence and paragraph limits, and a
+walkthrough's length, count the prose a reader sees: code blocks, tables, headings,
+quotes, link addresses, and the body of a collapsed details block do not count. A collapsed block's summary label counts,
 and an inline code span counts as one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
@@ -1161,14 +1161,21 @@ add outside it is left alone.
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
-In a description, the two length limits count only the prose the agent writes:
-the summary, decisions, intent and verification fields, risk record summary, and
-sections. The lines Shaka adds, such as the links line, metrics, field labels, and
-the risk text that grows with the risk rating, do not count, so the same text fits
-at every rating. Shaka counts these words from the agent's content, so the count
-is the same when GitHub declines to render. Sentence and paragraph limits still
-apply to everything a reader sees, and a walkthrough's length counts all its
-visible prose.
+In a description, the two length limits count only the words the agent writes
+in its summary, decisions, checkpoint next action, intent fields (including
+review focus reasons and the task understanding), verification summary and gaps,
+risk record summary, and sections. The lines Shaka adds, such as the links line,
+metrics, field labels, publisher note, and the risk text that grows with the risk
+rating, do not count, so the same text fits at every rating.
+
+Shaka counts those words as the agent wrote them, so the count is the same when
+GitHub declines to render. Only link and image addresses, images, and the body of
+a collapsed details block are left out, and an inline code span counts as one
+word. Tables, headings, quotes, and code blocks in those fields do count. Put
+supporting material in the description's `details` or `table`, or in
+verification checks, which do not count. Sentence and paragraph limits still apply
+to everything a reader sees, and a walkthrough's length counts all its visible
+prose.
 
 `shaka description` reports identity, task source, verification check and
 skill metadata errors together before it reads the PR. Shaka reports each
